@@ -6,6 +6,9 @@
   "directories": {
     "test": "tests"
   },
+  "keywords": [
+    "module", "modules", "import", "loader"
+  ],
   "scripts": {
     "prepublish": "browserify src/bit-loader.js -o dist/bit-loader.js -s bit-loader --dg false",
     "test": "grunt test"
