@@ -1,0 +1,38 @@
+{
+  "name": "bit-loader",
+  "version": "0.0.1",
+  "description": "Dependency loader and manager micro framework",
+  "main": "dist/bit-loader.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "prepublish": "browserify src/bit-loader.js -o dist/bit-loader.js -s bit-loader --dg false",
+    "test": "grunt test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MiguelCastillo/bit-loader.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MiguelCastillo/bit-loader/issues"
+  },
+  "homepage": "https://github.com/MiguelCastillo/bit-loader",
+  "devDependencies": {
+    "grunt": "~0.4.5",
+    "grunt-contrib-connect": "~0.8.0",
+    "zombie": "~2.1.1",
+    "mocha": "~2.0.1",
+    "grunt-mocha": "~0.4.11",
+    "chai": "~1.10.0",
+    "sinon": "~1.12.2",
+    "requirejs": "~2.1.15",
+    "browserify": "~6.3.3",
+    "spromise": "",
+    "promjax": "",
+    "amd-resolver": ""
+  },
+  "dependencies": {}
+}
