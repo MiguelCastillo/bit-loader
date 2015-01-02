@@ -7,17 +7,11 @@
  */
 
 /**
- * @license almond 0.3.0 Copyright (c) 2011-2014, The Dojo Foundation All Rights Reserved.
- * Available via the MIT or new BSD license.
- * see: http://github.com/jrburke/almond for details
- */
-
-/**
  * spromise Copyright (c) 2014 Miguel Castillo.
  * Licensed under MIT
  */
 
-(function(e,t){typeof require=="function"&&typeof exports=="object"&&typeof module=="object"?module.exports=t():typeof define=="function"&&define.amd?define(t):e.spromise=t()})(this,function(){var e,t,n;return function(r){function v(e,t){return h.call(e,t)}function m(e,t){var n,r,i,s,o,u,a,f,c,h,p,v=t&&t.split("/"),m=l.map,g=m&&m["*"]||{};if(e&&e.charAt(0)===".")if(t){v=v.slice(0,v.length-1),e=e.split("/"),o=e.length-1,l.nodeIdCompat&&d.test(e[o])&&(e[o]=e[o].replace(d,"")),e=v.concat(e);for(c=0;c<e.length;c+=1){p=e[c];if(p===".")e.splice(c,1),c-=1;else if(p===".."){if(c===1&&(e[2]===".."||e[0]===".."))break;c>0&&(e.splice(c-1,2),c-=2)}}e=e.join("/")}else e.indexOf("./")===0&&(e=e.substring(2));if((v||g)&&m){n=e.split("/");for(c=n.length;c>0;c-=1){r=n.slice(0,c).join("/");if(v)for(h=v.length;h>0;h-=1){i=m[v.slice(0,h).join("/")];if(i){i=i[r];if(i){s=i,u=c;break}}}if(s)break;!a&&g&&g[r]&&(a=g[r],f=c)}!s&&a&&(s=a,u=f),s&&(n.splice(0,u,s),e=n.join("/"))}return e}function g(e,t){return function(){var n=p.call(arguments,0);return typeof n[0]!="string"&&n.length===1&&n.push(null),s.apply(r,n.concat([e,t]))}}function y(e){return function(t){return m(t,e)}}function b(e){return function(t){a[e]=t}}function w(e){if(v(f,e)){var t=f[e];delete f[e],c[e]=!0,i.apply(r,t)}if(!v(a,e)&&!v(c,e))throw new Error("No "+e);return a[e]}function E(e){var t,n=e?e.indexOf("!"):-1;return n>-1&&(t=e.substring(0,n),e=e.substring(n+1,e.length)),[t,e]}function S(e){return function(){return l&&l.config&&l.config[e]||{}}}var i,s,o,u,a={},f={},l={},c={},h=Object.prototype.hasOwnProperty,p=[].slice,d=/\.js$/;o=function(e,t){var n,r=E(e),i=r[0];return e=r[1],i&&(i=m(i,t),n=w(i)),i?n&&n.normalize?e=n.normalize(e,y(t)):e=m(e,t):(e=m(e,t),r=E(e),i=r[0],e=r[1],i&&(n=w(i))),{f:i?i+"!"+e:e,n:e,pr:i,p:n}},u={require:function(e){return g(e)},exports:function(e){var t=a[e];return typeof t!="undefined"?t:a[e]={}},module:function(e){return{id:e,uri:"",exports:a[e],config:S(e)}}},i=function(e,t,n,i){var s,l,h,p,d,m=[],y=typeof n,E;i=i||e;if(y==="undefined"||y==="function"){t=!t.length&&n.length?["require","exports","module"]:t;for(d=0;d<t.length;d+=1){p=o(t[d],i),l=p.f;if(l==="require")m[d]=u.require(e);else if(l==="exports")m[d]=u.exports(e),E=!0;else if(l==="module")s=m[d]=u.module(e);else if(v(a,l)||v(f,l)||v(c,l))m[d]=w(l);else{if(!p.p)throw new Error(e+" missing "+l);p.p.load(p.n,g(i,!0),b(l),{}),m[d]=a[l]}}h=n?n.apply(a[e],m):undefined;if(e)if(s&&s.exports!==r&&s.exports!==a[e])a[e]=s.exports;else if(h!==r||!E)a[e]=h}else e&&(a[e]=n)},e=t=s=function(e,t,n,a,f){if(typeof e=="string")return u[e]?u[e](t):w(o(e,t).f);if(!e.splice){l=e,l.deps&&s(l.deps,l.callback);if(!t)return;t.splice?(e=t,t=n,n=null):e=r}return t=t||function(){},typeof n=="function"&&(n=a,a=f),a?i(r,e,t,n):setTimeout(function(){i(r,e,t,n)},4),s},s.config=function(e){return s(e)},e._defined=a,n=function(e,t,n){t.splice||(n=t,t=[]),!v(a,e)&&!v(f,e)&&(f[e]=[e,t,n])},n.amd={jQuery:!0}}(),n("lib/almond/almond",function(){}),n("src/async",[],function(){function n(e){t(e)}var e=this,t;return e.setImmediate?t=e.setImmediate:e.process&&typeof e.process.nextTick=="function"?t=e.process.nextTick:t=function(t){e.setTimeout(t,0)},n.delay=function(t,n,r){e.setTimeout(t.apply.bind(t,this,r||[]),n)},n}),n("src/promise",["src/async"],function(e){function r(e,n){function o(e,t){return n.then(e,t)}function u(){return n.transition(t.resolved,this,arguments),s}function a(){return n.transition(t.rejected,this,arguments),s}if(this instanceof r==0)return new r(e,n);var s=this;n instanceof i==0&&(n=new i),o.constructor=r,o.stateManager=n,s.resolve=u,s.reject=a,s.then=o,s.promise={then:o,always:this.always,done:this.done,"catch":this.fail,fail:this.fail,notify:this.notify,state:this.state},s.promise.promise=s.promise,typeof e=="function"&&e.call(s,s.resolve,s.reject)}function i(e){this.state=t.pending,e&&e.state&&this.transition(e.state,e.context,e.value)}function s(e){this.promise=e||new r}var t={pending:0,always:1,resolved:2,rejected:3,notify:4},n=["pending","","resolved","rejected",""];return r.prototype.delay=function(t){var n=this;return new r(function(r,i){n.then(function(){e.delay(r.bind(this),t,arguments)},i.bind(this))})},r.prototype.always=function(n){return this.then.stateManager.enqueue(t.always,n),this.promise},r.prototype.done=function(n){return this.then.stateManager.enqueue(t.resolved,n),this.promise},r.prototype.fail=r.prototype.catch=function(n){return this.then.stateManager.enqueue(t.rejected,n),this.promise},r.prototype.notify=function(n){return this.then.stateManager.enqueue(t.notify,n),this.promise},r.prototype.state=function(){return n[this.then.stateManager.state]},r.prototype.isPending=function(){return this.then.stateManager.state===t.pending},r.prototype.isResolved=function(){return this.then.stateManager.state===t.resolved},r.prototype.isRejected=function(){return this.then.stateManager.state===t.resolved},r.defer=function(){return new r},r.reject=function(){return new r(null,new i({context:this,value:arguments,state:t.rejected}))},r.resolve=r.thenable=function(e){return e instanceof r?e:e&&typeof e.then=="function"?new r(e.then):new r(null,new i({context:this,value:arguments,state:t.resolved}))},r.delay=function(n){var i=Array.prototype.slice(arguments,1);return new r(function(t){e.delay(t.bind(this),n,i)})},i.prototype.enqueue=function(n,r,i){var s=this.state;s?s===n||t.always===n?i?r.apply(this.context,this.value):e(r.apply.bind(r,this.context,this.value)):t.notify===n&&(i?r.call(this.context,this.state,this.value):e(r.call.bind(r,this.context,this.state,this.value))):(this.queue||(this.queue=[])).push({state:n,cb:r})},i.prototype.transition=function(e,t,n,r){if(this.state)return;this.state=e,this.context=t,this.value=n;if(this.queue){var i=this.queue,s=i.length,o=0,u;this.queue=null;while(o<s)u=i[o++],this.enqueue(u.state,u.cb,r)}},i.prototype.then=function(e,n){e=typeof e=="function"?e:null,n=typeof n=="function"?n:null;if(!e&&this.state===t.resolved||!n&&this.state===t.rejected)return new r(null,this);var i=new s;return this.enqueue(t.notify,e||n?i.resolve(e,n):i.notify()),i.promise},s.prototype.resolve=function(e,n){var r=this;return function(s,o){var u=s===t.resolved?e||n:n||e;try{r.context=this,r.finalize(s,[u.apply(this,o)])}catch(a){r.promise.reject.call(r.context,a)}}},s.prototype.notify=function(){var e=this;return function(n,r){try{e.context=this,e.finalize(n,r)}catch(i){e.promise.reject.call(e.context,i)}}},s.prototype.chain=function(e){var t=this;return function(){try{t.resolved||(t.resolved=!0,t.context=this,t.finalize(e,arguments))}catch(r){t.promise.reject.call(t.context,r)}}},s.prototype.finalize=function(e,n){var i=n[0],o=i&&i.then,u=this.promise,a=this.context,f,l;if(i===this.promise)throw new TypeError("Resolution input must not be the promise being resolved");if(o&&o.constructor===r){o.stateManager.enqueue(t.notify,this.notify(),!0);return}l=typeof o=="function"?typeof i:null;if(l==="function"||l==="object")try{f=new s(u),o.call(i,f.chain(t.resolved),f.chain(t.rejected))}catch(c){f.resolved||u.reject.call(a,c)}else u.then.stateManager.transition(e,a,n,!0)},r.states=t,r}),n("src/all",["src/promise","src/async"],function(e,t){function n(e,t,n){return typeof e=="function"?e.apply(n,t||[]):e}function r(r){function a(){u--,u||s.resolve.call(o,i)}function f(e){return function(){i[e]=arguments.length===1?arguments[0]:arguments,a()}}function l(){var e,t,o;for(e=0,o=u;e<o;e++)t=r[e],t&&typeof t.then=="function"?t.then(f(e),s.reject):(i[e]=n(t),a())}r=r||[];var i=[],s=e.defer(),o=this,u=r.length;return r.length?(t(l),s):s.resolve(r)}return r}),n("src/when",["src/promise","src/all"],function(e,t){function n(){var n=this,r=arguments;return e(function(e,i){t.call(n,r).then(function(t){e.apply(n,t)},function(e){i.call(n,e)})})}return n}),n("src/spromise",["src/promise","src/async","src/when","src/all"],function(e,t,n,r){return e.async=t,e.when=n,e.all=r,e}),t("src/spromise")});
+(function(e,t){typeof require=="function"&&typeof exports=="object"&&typeof module=="object"?module.exports=t():typeof define=="function"&&define.amd?define(t):e.spromise=t()})(this,function(){var e,t;return function(){function i(e){return typeof e.factory=="function"?t(e.deps,e.factory):e.factory}function s(e,t){var n,s,o,u,a=[];for(n=0,s=e.length;n<s;n++){o=e[n],u=r[o]||t[o];if(!u)throw new TypeError("Module "+o+" has not yet been loaded");r[o]?(u.hasOwnProperty("code")||(u.code=i(u)),a[n]=u.code):a[n]=u}return a}var n=this,r={};t=function o(e,t){var i,u,a={};return a.require=o,a.exports={},a.module={exports:a.exports},typeof e=="string"&&(i=e,e=[e]),e.length&&(e=s(e.slice(0),a)),typeof t=="function"?u=t.apply(n,e):u=r[i]?r[i].code:t,u===void 0?a.module.exports:u},e=function(t,n,i){r[t]={name:t,deps:n,factory:i}}}.call(this),e("src/samdy",function(){}),e("src/async",["require","exports","module"],function(e,t,n){function i(e){r(e)}var r;i.delay=function(e,t,n){setTimeout(e.apply.bind(e,this,n||[]),t)},typeof process=="object"&&typeof process.nextTick=="function"?r=process.nextTick:typeof setImmediate=="function"?r=setImmediate:r=function(e){setTimeout(e,0)},i.nextTick=r,n.exports=i}),e("src/promise",["require","exports","module","src/async"],function(e,t,n){function o(e,t){t=t||new u;var n=this;n.then=function(e,n){return t.then(e,n)},n.resolve=function(){return t.transition(i.resolved,arguments,this),n},n.reject=function(){return t.transition(i.rejected,arguments,this),n},n.promise={then:n.then,always:n.always,done:n.done,"catch":n.fail,fail:n.fail,notify:n.notify,state:n.state,constructor:o},n.promise.promise=n.promise,n.then.stateManager=t,e&&e.call(n,n.resolve,n.reject)}function u(e){this.state=i.pending,e&&e.state&&this.transition(e.state,e.value,e.context)}function a(e){this.promise=e.promise}function l(e){c.debug&&(console.error(e),e&&e.stack&&console.log(e.stack))}function c(e){return new o(e)}var r=e("src/async"),i={pending:0,resolved:1,rejected:2,always:3,notify:4},s=["pending","resolved","rejected"];o.prototype.done=function(e){return this.then.stateManager.enqueue(i.resolved,e),this.promise},o.prototype.catch=o.prototype.fail=function(e){return this.then.stateManager.enqueue(i.rejected,e),this.promise},o.prototype.finally=o.prototype.always=function(e){return this.then.stateManager.enqueue(i.always,e),this.promise},o.prototype.notify=function(e){return this.then.stateManager.enqueue(i.notify,e),this.promise},o.prototype.state=function(){return s[this.then.stateManager.state]},o.prototype.isPending=function(){return this.then.stateManager.state===i.pending},o.prototype.isResolved=function(){return this.then.stateManager.state===i.resolved},o.prototype.isRejected=function(){return this.then.stateManager.state===i.resolved},o.prototype.delay=function(t){var n=this;return new o(function(e,i){n.then(function(){r.delay(e.bind(this),t,arguments)},i.bind(this))})},u.prototype.enqueue=function(e,t){function r(){n.state===e||i.always===e?t.apply(n.context,n.value):i.notify===e&&t.call(n.context,n.state,n.value)}this.state?f.asyncTask(r):(this.queue||(this.queue=[])).push(r);var n=this},u.prototype.transition=function(e,t,n){if(this.state)return;this.state=e,this.context=n,this.value=t;var r=this.queue;r&&(this.queue=null,f.asyncQueue(r))},u.prototype.then=function(e,t){var n=this;e=e&&typeof e=="function"?e:null,t=t&&typeof t=="function"?t:null;if(!e&&n.state===i.resolved||!t&&n.state===i.rejected)return new o(null,n);var r=new o;return n.enqueue(i.notify,function(s,o){var f=s===i.resolved?e||t:t||e;f&&(o=u.runHandler(s,o,this,r,f)),o!==!1&&(new a({promise:r})).finalize(s,o,this)}),r},u.runHandler=function(e,t,n,r,i){try{t=i.apply(n,t)}catch(s){return l(s),r.reject.call(n,s),!1}return t===undefined?[]:[t]},a.prototype.finalize=function(e,t,n){var r=this,s=this.promise,u,a;if(t.length){u=t[0];if(u===s)a=s.reject.call(n,new TypeError("Resolution input must not be the promise being resolved"));else if(u&&u.constructor===o)a=u.notify(function(t,n){r.finalize(t,n,this)});else if(u!==undefined&&u!==null)switch(typeof u){case"object":case"function":a=this.runThenable(u,n)}}a||(e===i.resolved?s.resolve.apply(n,t):s.reject.apply(n,t))},a.prototype.runThenable=function(e,t){var n=this,r=!1;try{var s=e.then;if(typeof s=="function")return s.call(e,function(){r||(r=!0,n.finalize(i.resolved,arguments,this))},function(){r||(r=!0,n.promise.reject.apply(this,arguments))}),!0}catch(o){return r||n.promise.reject.call(t,o),!0}return!1};var f={_asyncQueue:[],asyncTask:function(e){f._asyncQueue.push(e)===1&&r(f.taskRunner(f._asyncQueue))},asyncQueue:function(e){e.length===1?f.asyncTask(e[0]):f.asyncTask(f.taskRunner(e))},taskRunner:function(e){return function(){var n;while(n=e[0])f._runTask(n),e.shift()}},_runTask:function(e){try{e()}catch(t){l(t)}}};c.prototype=o.prototype,c.defer=function(){return new o},c.reject=function(){return new o(null,new u({context:this,value:arguments,state:i.rejected}))},c.resolve=c.thenable=function(e){if(e){if(e.constructor===o)return e;if(typeof e.then=="function")return new o(e.then)}return new o(null,new u({context:this,value:arguments,state:i.resolved}))},c.delay=function(t){var n=Array.prototype.slice(arguments,1);return new o(function(e){r.delay(e.bind(this),t,n)})},c.states=i,c.debug=!1,n.exports=c}),e("src/all",["require","exports","module","src/promise","src/async"],function(e,t,n){function s(e,t,n){return typeof e=="function"?e.apply(n,t||[]):e}function o(e){function a(){u--,u||n.resolve.call(o,t)}function f(e){return function(){t[e]=arguments.length===1?arguments[0]:arguments,a()}}function l(){var r,i,o;for(r=0,o=u;r<o;r++)i=e[r],i&&typeof i.then=="function"?i.then(f(r),n.reject):(t[r]=s(i),a())}e=e||[];var t=[],n=r.defer(),o=this,u=e.length;return e.length?(i(l),n):n.resolve(e)}var r=e("src/promise"),i=e("src/async");n.exports=o}),e("src/when",["require","exports","module","src/promise","src/all"],function(e,t,n){function s(){var e=this,t=arguments;return new r(function(n,r){i.call(e,t).then(function(t){n.apply(e,t)},function(t){r.call(e,t)})})}var r=e("src/promise"),i=e("src/all");n.exports=s}),e("src/race",["require","exports","module","src/promise"],function(e,t,n){function i(e){return e?new r(function(t,n){function o(){s||(s=!0,t.apply(this,arguments))}function u(){s||(s=!0,n.apply(this,arguments))}var r,i,s=!1;for(r=0,i=e.length;r<i;r++)e[r].then(o,u)}):r.resolve()}var r=e("src/promise");n.exports=i}),e("src/spromise",["require","exports","module","src/promise","src/async","src/when","src/all","src/race"],function(e,t,n){var r=e("src/promise");r.aync=e("src/async"),r.when=e("src/when"),r.all=e("src/all"),r.race=e("src/race"),n.exports=r}),t("src/spromise")});
 },{}],2:[function(require,module,exports){
 (function () {
   "use strict";
@@ -30,15 +24,15 @@
       Registry = require('./registry'),
       Fetch    = require('./fetch');
 
-  function MLoader() {
+  function BitLoader() {
     this.middlewares = {};
     this.context     = Registry.getById();
 
     // Override any of these constructors if you need specialized implementation
     var providers = {
-      fetch   : new MLoader.Fetch(this),
-      loader  : new MLoader.Loader(this),
-      import  : new MLoader.Import(this)
+      fetch   : new BitLoader.Fetch(this),
+      loader  : new BitLoader.Loader(this),
+      import  : new BitLoader.Import(this)
     };
 
     // Expose interfaces
@@ -48,7 +42,7 @@
     this.import    = providers.import.import.bind(providers.import);
   }
 
-  MLoader.prototype.use = function(name, provider) {
+  BitLoader.prototype.use = function(name, provider) {
     if (!provider || !provider.handler) {
       throw new TypeError("Must provide a providers with a `handler` interface");
     }
@@ -62,7 +56,7 @@
     middleware.push(provider);
   };
 
-  MLoader.prototype.run = function(name) {
+  BitLoader.prototype.run = function(name) {
     var middleware = this.middlewares[name],
         data = Array.prototype.slice.call(arguments, 1),
         result, i, length;
@@ -80,24 +74,24 @@
     }
   };
 
-  MLoader.prototype.clear = function() {
+  BitLoader.prototype.clear = function() {
     return Registry.clearById(this.context._id);
   };
 
 
-  MLoader.prototype.Promise = Promise;
-  MLoader.prototype.Module  = Module;
-  MLoader.prototype.Utils   = Utils;
+  BitLoader.prototype.Promise = Promise;
+  BitLoader.prototype.Module  = Module;
+  BitLoader.prototype.Utils   = Utils;
 
   // Expose constructors and utilities
-  MLoader.Promise  = Promise;
-  MLoader.Utils    = Utils;
-  MLoader.Registry = Registry;
-  MLoader.Loader   = Loader;
-  MLoader.Import   = Import;
-  MLoader.Module   = Module;
-  MLoader.Fetch    = Fetch;
-  module.exports   = MLoader;
+  BitLoader.Promise  = Promise;
+  BitLoader.Utils    = Utils;
+  BitLoader.Registry = Registry;
+  BitLoader.Loader   = Loader;
+  BitLoader.Import   = Import;
+  BitLoader.Module   = Module;
+  BitLoader.Fetch    = Fetch;
+  module.exports   = BitLoader;
 })();
 
 },{"./fetch":3,"./import":4,"./loader":5,"./module":6,"./registry":7,"./utils":8,"spromise":1}],3:[function(require,module,exports){
