@@ -56,7 +56,7 @@
   }
 
   /**
-   * Deep copy of all properties insrouces into target
+   * Deep copy of all properties in sources into target
    */
   function merge(target) {
     var source, length, i;
@@ -67,7 +67,7 @@
     for (i = 0, length  = sources.length; i < length; i++) {
       source = sources[i];
       for (var property in source) {
-        if (source.hasOwnProperty(property)) {
+        if (source.hasOwnProperty(property) && !(target.hasOwnProperty(property) && target[property] === undefined)) {
           if (isPlainObject(source[property])) {
             target[property] = merge(target[property], source[property]);
           }
