@@ -7,7 +7,10 @@
     "test": "tests"
   },
   "keywords": [
-    "module", "modules", "import", "loader"
+    "module",
+    "modules",
+    "import",
+    "loader"
   ],
   "scripts": {
     "prepublish": "browserify src/bit-loader.js -o dist/bit-loader.js -s bit-loader --dg false",
@@ -32,7 +35,7 @@
     "chai": "~1.10.0",
     "sinon": "~1.12.2",
     "requirejs": "~2.1.15",
-    "browserify": "~6.3.3",
+    "browserify": "~8.0.3",
     "spromise": "",
     "promjax": "",
     "amd-resolver": ""
