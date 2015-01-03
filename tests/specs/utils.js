@@ -167,6 +167,54 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
       });
 
+
+      describe("two objects with the same property of type `Array` using a defaults object", function() {
+        var result, target, defaults, package;
+        beforeEach(function() {
+          package = {
+            location : "tests",
+            main     : "main",
+            name     : "js"
+          };
+
+          defaults = {
+            packages : []
+          };
+
+          var source1 = {
+            packages: [package]
+          };
+
+          target = Utils.merge({}, defaults, source1);
+          result = Utils.merge(target, {"one": ["onetest"]});
+        });
+
+        it("then result is target", function() {
+          expect(result).to.equal(target);
+        });
+
+        it("then result is an object", function() {
+          expect(result).to.be.an("object");
+        });
+
+        it("then defaults.packages is an empty array", function() {
+          expect(defaults.packages.length).to.equal(0);
+        });
+
+        it("then result.one is and Array", function() {
+          expect(result.one).to.be.an("Array");
+        });
+
+        it("then result.packages has length of 1", function() {
+          expect(result.packages.length).to.equal(1);
+        });
+
+        it("then result.packages[0] is `package`", function() {
+          expect(result.packages[0]).to.deep.equal(package);
+        });
+      });
+
+
       describe("two objects with one nested objects", function() {
         var result, target;
         beforeEach(function() {
