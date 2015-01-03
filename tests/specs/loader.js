@@ -1,4 +1,4 @@
-define(["dist/bit-loader", "sinon"], function(Bitloader, sinon) {
+define(["dist/bit-loader"], function(Bitloader) {
   var Loader = Bitloader.Loader;
 
   describe("Loader Suite", function() {

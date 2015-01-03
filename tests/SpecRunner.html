@@ -14,20 +14,16 @@
     <!-- Load up mocha -->
     <link rel="stylesheet" href="../node_modules/mocha/mocha.css"/>
     <script type="text/javascript" src="../node_modules/mocha/mocha.js"></script>
-<!--    <script type="text/javascript" src="//sinonjs.org/releases/sinon-1.12.2.js"></script>-->
+    <script type="text/javascript" src="//sinonjs.org/releases/sinon-1.12.2.js"></script>
 
-    <!-- Load global MLoader for integration tests -->
-<!--
-    <script type="text/javascript" src="../dist/mloader-release.js"></script>
+    <script type="text/javascript" src="../node_modules/amd-loader/dist/amd-loader.js"></script>
     <script>
-      MLoader.config = MLoader.configure;
-      var define     = MLoader.define;
-      var require    = MLoader.require;
-      var requirejs  = MLoader;
+      var define    = Bitloader.define;
+      var require   = Bitloader.require;
+      var requirejs = Bitloader;
     </script>
--->
 
-    <script src="../node_modules/requirejs/require.js"></script>
+<!--    <script src="../node_modules/requirejs/require.js"></script>-->
     <script src="requirejs-config.js"></script>
   </head>
 

@@ -24,15 +24,15 @@
       Registry = require('./registry'),
       Fetch    = require('./fetch');
 
-  function BitLoader() {
+  function Bitloader() {
     this.middlewares = {};
     this.context     = Registry.getById();
 
     // Override any of these constructors if you need specialized implementation
     var providers = {
-      fetch   : new BitLoader.Fetch(this),
-      loader  : new BitLoader.Loader(this),
-      import  : new BitLoader.Import(this)
+      fetch   : new Bitloader.Fetch(this),
+      loader  : new Bitloader.Loader(this),
+      import  : new Bitloader.Import(this)
     };
 
     // Expose interfaces
@@ -42,7 +42,7 @@
     this.import    = providers.import.import.bind(providers.import);
   }
 
-  BitLoader.prototype.use = function(name, provider) {
+  Bitloader.prototype.use = function(name, provider) {
     if (!provider || !provider.handler) {
       throw new TypeError("Must provide a providers with a `handler` interface");
     }
@@ -56,7 +56,7 @@
     middleware.push(provider);
   };
 
-  BitLoader.prototype.run = function(name) {
+  Bitloader.prototype.run = function(name) {
     var middleware = this.middlewares[name],
         data = Array.prototype.slice.call(arguments, 1),
         result, i, length;
@@ -74,24 +74,24 @@
     }
   };
 
-  BitLoader.prototype.clear = function() {
+  Bitloader.prototype.clear = function() {
     return Registry.clearById(this.context._id);
   };
 
 
-  BitLoader.prototype.Promise = Promise;
-  BitLoader.prototype.Module  = Module;
-  BitLoader.prototype.Utils   = Utils;
+  Bitloader.prototype.Promise = Promise;
+  Bitloader.prototype.Module  = Module;
+  Bitloader.prototype.Utils   = Utils;
 
   // Expose constructors and utilities
-  BitLoader.Promise  = Promise;
-  BitLoader.Utils    = Utils;
-  BitLoader.Registry = Registry;
-  BitLoader.Loader   = Loader;
-  BitLoader.Import   = Import;
-  BitLoader.Module   = Module;
-  BitLoader.Fetch    = Fetch;
-  module.exports   = BitLoader;
+  Bitloader.Promise  = Promise;
+  Bitloader.Utils    = Utils;
+  Bitloader.Registry = Registry;
+  Bitloader.Loader   = Loader;
+  Bitloader.Import   = Import;
+  Bitloader.Module   = Module;
+  Bitloader.Fetch    = Fetch;
+  module.exports   = Bitloader;
 })();
 
 },{"./fetch":3,"./import":4,"./loader":5,"./module":6,"./registry":7,"./utils":8,"spromise":1}],3:[function(require,module,exports){

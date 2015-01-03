@@ -1,10 +1,11 @@
-define(["dist/bit-loader", "sinon"], function(Bitloader, sinon) {
+define(["dist/bit-loader"], function(Bitloader) {
   var Importer = Bitloader.Import;
 
   describe("Import Suite", function() {
 
     describe("when importing a module called `no` from options.context", function() {
       var no, importer, loadStub;
+
       beforeEach(function() {
         var options = {"modules": {"no": {"item": "hello"}}};
 

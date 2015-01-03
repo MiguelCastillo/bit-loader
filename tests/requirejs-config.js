@@ -2,8 +2,8 @@ requirejs.config({
   "baseUrl": "../",
   "paths": {
     "mocha": "../node_modules/mocha/mocha",
-    "chai": "../node_modules/chai/chai",
-    "sinon": "../node_modules/sinon/pkg/sinon"
+    "chai": "../node_modules/chai/chai"//,
+    //"sinon": "../node_modules/sinon/pkg/sinon"
   },
   "shim": {
     "mocha": {
