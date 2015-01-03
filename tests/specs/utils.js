@@ -182,7 +182,8 @@ define(["dist/bit-loader"], function(Bitloader) {
           };
 
           var source1 = {
-            packages: [package]
+            packages: [package],
+            date: (new Date())
           };
 
           target = Utils.merge({}, defaults, source1);
@@ -201,6 +202,10 @@ define(["dist/bit-loader"], function(Bitloader) {
           expect(defaults.packages.length).to.equal(0);
         });
 
+        it("then defaults.date is undefined", function() {
+          expect(defaults.date).to.be.undefined();
+        });
+
         it("then result.one is and Array", function() {
           expect(result.one).to.be.an("Array");
         });
@@ -211,6 +216,10 @@ define(["dist/bit-loader"], function(Bitloader) {
 
         it("then result.packages[0] is `package`", function() {
           expect(result.packages[0]).to.deep.equal(package);
+        });
+
+        it("then result.date is a Date", function() {
+          expect(result.date).to.be.a("Date");
         });
       });
 

@@ -460,7 +460,7 @@
   }
 
   function isPlainObject(item) {
-    return !!item && !isArray(item) && !isDate(item) && (item.toString() === "[object Object]");
+    return !!item && !isArray(item) && (item.toString() === "[object Object]");
   }
 
   function isFunction(item) {
