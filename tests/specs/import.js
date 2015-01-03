@@ -3,7 +3,7 @@ define(["dist/bit-loader"], function(Bitloader) {
 
   describe("Import Suite", function() {
 
-    describe("when importing a module called `no` from options.context", function() {
+    describe("when importing a module called `no` from options.modules", function() {
       var no, importer, loadStub;
 
       beforeEach(function() {
@@ -38,7 +38,7 @@ define(["dist/bit-loader"], function(Bitloader) {
     });
 
 
-    describe("when importing module `no` and `yes` from options.context", function() {
+    describe("when importing module `no` and `yes` from options.modules", function() {
       var no, yes, date, importer, loadStub;
       beforeEach(function() {
         date = new Date();
@@ -148,7 +148,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
       });
 
-      describe("and module `no` is loaded from options.context", function() {
+      describe("and module `no` is loaded from options.modules", function() {
         var no, yes;
         beforeEach(function() {
           var options = {"modules": {"no": {"item": "overriden"}}};
