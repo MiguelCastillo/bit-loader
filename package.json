@@ -1,6 +1,6 @@
 {
   "name": "bit-loader",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Dependency loader and manager micro framework",
   "main": "dist/bit-loader.js",
   "directories": {
@@ -38,7 +38,8 @@
     "browserify": "~8.0.3",
     "spromise": "",
     "promjax": "",
-    "amd-resolver": ""
+    "amd-resolver": "",
+    "amd-bits": ""
   },
   "dependencies": {}
 }
