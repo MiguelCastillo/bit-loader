@@ -13,6 +13,7 @@ define([
     "tests/specs/import",
     "tests/specs/loader",
     "tests/specs/registry",
+    "tests/specs/middleware",
     "tests/specs/bit-loader"
   ], mocha.run);
 });

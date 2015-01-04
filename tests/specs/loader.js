@@ -35,7 +35,7 @@ define(["dist/bit-loader"], function(Bitloader) {
 
 
     describe("When loading a module with `fetch`", function() {
-      var loader, yes, modYesPromise, moduleMeta, compiledMod, modFetchStub, modCompileStub;
+      var loader, yes, modYesPromise, moduleMeta, compiledMod, modFetchStub, modCompileStub, modRunStub;
 
       beforeEach(function() {
         moduleMeta = {};
@@ -44,9 +44,11 @@ define(["dist/bit-loader"], function(Bitloader) {
         moduleMeta.compile = modCompileStub;
         modYesPromise = Bitloader.Promise.resolve(moduleMeta);
         modFetchStub = sinon.stub().withArgs("yes").returns(modYesPromise);
+        modRunStub = sinon.stub().returns(Promise.resolve());
 
         loader = new Loader({
-          fetch: modFetchStub
+          fetch: modFetchStub,
+          transform: {runAll: modRunStub}
         });
 
         return loader.load("yes")
@@ -71,6 +73,9 @@ define(["dist/bit-loader"], function(Bitloader) {
         expect(yes).to.equal(compiledMod);
       });
 
+      it("then `run` is called", function() {
+        expect(modRunStub.calledOnce).to.equal(true);
+      });
     });
   });
 

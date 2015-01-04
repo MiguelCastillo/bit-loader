@@ -34,6 +34,16 @@
     return input[args];
   }
 
+  function toArray(items) {
+    if (isArray(items)) {
+      return items;
+    }
+
+    return Object.keys(items).map(function(item) {
+      return items[item];
+    });
+  }
+
   /**
    * Copies all properties from sources into target
    */
@@ -88,6 +98,7 @@
     isPlainObject: isPlainObject,
     isFunction: isFunction,
     isDate: isDate,
+    toArray: toArray,
     noop: noop,
     result: result,
     extend: extend,

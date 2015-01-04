@@ -13,8 +13,9 @@
       throw new TypeError("Must provide a manager");
     }
 
-    this.manager = manager;
-    this.context = manager.context || {};
+    this.manager  = manager;
+    this.context  = manager.context || {};
+    this.pipeline = [load, validate, dependencies, finalize, cache];
 
     if (!this.context.modules) {
       this.context.modules = {};
@@ -32,7 +33,6 @@
   Import.prototype.import = function(names, options) {
     options = options || {};
     var importer = this,
-        manager  = this.manager,
         context  = this.context;
 
     // Coerce string to array to simplify input processing
@@ -53,11 +53,7 @@
       }
 
       // Workflow for loading a module that has not yet been loaded
-      return (context.modules[name] = manager.load(name)
-        .then(validate,               passThroughError)
-        .then(dependencies(importer), passThroughError)
-        .then(finalize(importer),     passThroughError)
-        .then(cache(importer),        passThroughError));
+      return (context.modules[name] = runPipeline(importer, name));
     });
 
     return Promise.when.apply((void 0), deps).catch(function(error) {
@@ -65,15 +61,33 @@
     });
   };
 
-  function passThroughError(error) {
+
+  function forwardError(error) {
     return error;
   }
 
-  function validate(mod) {
-    if (mod instanceof(Module) === false) {
-      throw new TypeError("input must be an Instance of Module");
-    }
-    return mod;
+
+  function runPipeline(importer, name) {
+    return importer.pipeline.reduce(function(prev, curr) {
+      return prev.then(curr(importer, name), forwardError);
+    }, Promise.resolve());
+  }
+
+
+  function validate() {
+    return function (mod) {
+      if (mod instanceof(Module) === false) {
+        throw new TypeError("input must be an Instance of Module");
+      }
+      return mod;
+    };
+  }
+
+
+  function load(importer, name) {
+    return function() {
+      return importer.manager.load(name);
+    };
   }
 
   /**

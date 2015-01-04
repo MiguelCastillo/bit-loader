@@ -16,17 +16,19 @@
 (function () {
   "use strict";
 
-  var Promise  = require('spromise'),
-      Utils    = require('./utils'),
-      Import   = require('./import'),
-      Loader   = require('./loader'),
-      Module   = require('./module'),
-      Registry = require('./registry'),
-      Fetch    = require('./fetch');
+  var Promise    = require('spromise'),
+      Utils      = require('./utils'),
+      Import     = require('./import'),
+      Loader     = require('./loader'),
+      Module     = require('./module'),
+      Registry   = require('./registry'),
+      Middleware = require('./middleware'),
+      Fetch      = require('./fetch');
 
   function Bitloader() {
     this.middlewares = {};
     this.context     = Registry.getById();
+    this.transform   = new Middleware();
 
     // Override any of these constructors if you need specialized implementation
     var providers = {
@@ -42,59 +44,27 @@
     this.import    = providers.import.import.bind(providers.import);
   }
 
-  Bitloader.prototype.use = function(name, provider) {
-    if (!provider || !provider.handler) {
-      throw new TypeError("Must provide a providers with a `handler` interface");
-    }
-
-    var middleware = this.middlewares[name] || (this.middlewares[name] = []);
-
-    if (typeof(provider) === "function") {
-      provider = {handler: provider};
-    }
-
-    middleware.push(provider);
-  };
-
-  Bitloader.prototype.run = function(name) {
-    var middleware = this.middlewares[name],
-        data = Array.prototype.slice.call(arguments, 1),
-        result, i, length;
-
-    if (!middleware) {
-      return;
-    }
-
-    for (i = 0, length = middleware.legnth; i < length; i++) {
-      result = middleware[i].handler.apply(middleware[i], data);
-
-      if (result !== (void 0)) {
-        return result;
-      }
-    }
-  };
-
   Bitloader.prototype.clear = function() {
     return Registry.clearById(this.context._id);
   };
-
 
   Bitloader.prototype.Promise = Promise;
   Bitloader.prototype.Module  = Module;
   Bitloader.prototype.Utils   = Utils;
 
   // Expose constructors and utilities
-  Bitloader.Promise  = Promise;
-  Bitloader.Utils    = Utils;
-  Bitloader.Registry = Registry;
-  Bitloader.Loader   = Loader;
-  Bitloader.Import   = Import;
-  Bitloader.Module   = Module;
-  Bitloader.Fetch    = Fetch;
+  Bitloader.Promise    = Promise;
+  Bitloader.Utils      = Utils;
+  Bitloader.Registry   = Registry;
+  Bitloader.Loader     = Loader;
+  Bitloader.Import     = Import;
+  Bitloader.Module     = Module;
+  Bitloader.Fetch      = Fetch;
+  Bitloader.Middleware = Middleware;
   module.exports   = Bitloader;
 })();
 
-},{"./fetch":3,"./import":4,"./loader":5,"./module":6,"./registry":7,"./utils":8,"spromise":1}],3:[function(require,module,exports){
+},{"./fetch":3,"./import":4,"./loader":5,"./middleware":6,"./module":7,"./registry":8,"./utils":9,"spromise":1}],3:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -124,8 +94,9 @@
       throw new TypeError("Must provide a manager");
     }
 
-    this.manager = manager;
-    this.context = manager.context || {};
+    this.manager  = manager;
+    this.context  = manager.context || {};
+    this.pipeline = [load, validate, dependencies, finalize, cache];
 
     if (!this.context.modules) {
       this.context.modules = {};
@@ -143,7 +114,6 @@
   Import.prototype.import = function(names, options) {
     options = options || {};
     var importer = this,
-        manager  = this.manager,
         context  = this.context;
 
     // Coerce string to array to simplify input processing
@@ -164,11 +134,7 @@
       }
 
       // Workflow for loading a module that has not yet been loaded
-      return (context.modules[name] = manager.load(name)
-        .then(validate,               passThroughError)
-        .then(dependencies(importer), passThroughError)
-        .then(finalize(importer),     passThroughError)
-        .then(cache(importer),        passThroughError));
+      return (context.modules[name] = runPipeline(importer, name));
     });
 
     return Promise.when.apply((void 0), deps).catch(function(error) {
@@ -176,15 +142,33 @@
     });
   };
 
-  function passThroughError(error) {
+
+  function forwardError(error) {
     return error;
   }
 
-  function validate(mod) {
-    if (mod instanceof(Module) === false) {
-      throw new TypeError("input must be an Instance of Module");
-    }
-    return mod;
+
+  function runPipeline(importer, name) {
+    return importer.pipeline.reduce(function(prev, curr) {
+      return prev.then(curr(importer, name), forwardError);
+    }, Promise.resolve());
+  }
+
+
+  function validate() {
+    return function (mod) {
+      if (mod instanceof(Module) === false) {
+        throw new TypeError("input must be an Instance of Module");
+      }
+      return mod;
+    };
+  }
+
+
+  function load(importer, name) {
+    return function() {
+      return importer.manager.load(name);
+    };
   }
 
   /**
@@ -235,7 +219,7 @@
   module.exports = Import;
 })(typeof(window) !== 'undefined' ? window : this);
 
-},{"./module":6,"spromise":1}],5:[function(require,module,exports){
+},{"./module":7,"spromise":1}],5:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -259,8 +243,9 @@
       throw new TypeError("Must provide a manager");
     }
 
-    this.manager = manager;
-    this.context = manager.context || {};
+    this.manager  = manager;
+    this.context  = manager.context || {};
+    this.pipeline = [fetch, validate, transform, compile];
 
     if (!this.context.loaded) {
       this.context.loaded = {};
@@ -289,7 +274,6 @@
    */
   Loader.prototype.load = function(name) {
     var loader  = this,
-        manager = this.manager,
         context = this.context;
 
     if (!name) {
@@ -301,34 +285,48 @@
     if (!context.loaded.hasOwnProperty(name)) {
       // This is where the workflow for fetching, transforming, and compiling happens.
       // It is designed to easily add more steps to the workflow.
-      context.loaded[name] = manager.fetch(name)
-        .then(validate,          passThroughError)
-        .then(transform(loader), passThroughError)
-        .then(compile(loader),   passThroughError);
+      context.loaded[name] = runPipeline(loader, name);
     }
 
     return Promise.resolve(context.loaded[name]);
   };
 
 
-  function passThroughError(error) {
+  function forwardError(error) {
     return error;
   }
+
+
+  function runPipeline(loader, name) {
+    return loader.pipeline.reduce(function(prev, curr) {
+      return prev.then(curr(loader, name), forwardError);
+    }, Promise.resolve());
+  }
+
+
+  function fetch(loader, name) {
+    return function() {
+      return loader.manager.fetch(name);
+    };
+  }
+
 
   /**
    * Method to ensure we have a valid module meta object before we continue on with
    * the rest of the pipeline.
    */
-  function validate(moduleMeta) {
-    if (!moduleMeta) {
-      throw new TypeError("Must provide a ModuleMeta");
-    }
+  function validate() {
+    return function(moduleMeta) {
+      if (!moduleMeta) {
+        throw new TypeError("Must provide a ModuleMeta");
+      }
 
-    if (!moduleMeta.compile) {
-      throw new TypeError("ModuleMeta must provide have a `compile` interface");
-    }
+      if (!moduleMeta.compile) {
+        throw new TypeError("ModuleMeta must provide have a `compile` interface");
+      }
 
-    return moduleMeta;
+      return moduleMeta;
+    };
   }
 
   /**
@@ -336,9 +334,10 @@
    * before it is compiled into an actual Module instance.  This is where steps
    * such as linting and processing coffee files can take place.
    */
-  function transform(/*loader*/) {
+  function transform(loader) {
     return function(moduleMeta) {
-      return moduleMeta;
+      return loader.manager.transform.runAll(moduleMeta)
+        .then(function() {return moduleMeta;}, forwardError);
     };
   }
 
@@ -370,6 +369,87 @@
 })(typeof(window) !== 'undefined' ? window : this);
 
 },{"spromise":1}],6:[function(require,module,exports){
+(function() {
+  "use strict";
+
+  var Promise = require('spromise'),
+      Utils   = require('./utils');
+
+
+  function Middleware() {
+    this.handlers = {};
+  }
+
+
+  Middleware.prototype.use = function(name, provider) {
+    if (typeof(name) !== "string") {
+      throw new TypeError("Must provide a name for the middleware group");
+    }
+
+    if (!provider) {
+      throw new TypeError("Must provide a providers a middleware handler");
+    }
+
+    if (typeof(provider) === "function") {
+      provider = {handler: provider};
+    }
+
+    this.handlers[name] = provider;
+  };
+
+
+  Middleware.prototype.run = function(names) {
+    if (typeof(names) === "string") {
+      names = [names];
+    }
+
+    if (names instanceof(Array) === false) {
+      throw new TypeError("List of handlers must be a string or an array of names");
+    }
+
+    var i, length;
+    var handlers = [],
+        data = Array.prototype.slice.call(arguments, 1);
+
+    for (i = 0, length = names.length; i < length; i++) {
+      handlers[i] = this.handlers[names[i]];
+    }
+
+    return _runHandlers(handlers, data);
+  };
+
+
+  Middleware.prototype.runAll = function() {
+    return _runHandlers(Utils.toArray(this.handlers), arguments);
+  };
+
+
+  function _runHandlers(handlers, data) {
+    var cancelled = false;
+
+    return handlers.reduce(function(prev, curr) {
+      return prev.then(function() {
+        if (arguments.length) {
+          cancelled = true;
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        return curr.handler.apply(curr, data);
+      }, function(err) {
+        cancelled = true;
+        return err;
+      });
+    }, Promise.resolve());
+  }
+
+
+  module.exports = Middleware;
+})();
+
+},{"./utils":9,"spromise":1}],7:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -408,7 +488,7 @@
   module.exports = Module;
 })();
 
-},{"./utils":8}],7:[function(require,module,exports){
+},{"./utils":9}],8:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -441,7 +521,7 @@
   module.exports = Registry;
 })();
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -476,6 +556,16 @@
       return input.apply(context, args||[]);
     }
     return input[args];
+  }
+
+  function toArray(items) {
+    if (isArray(items)) {
+      return items;
+    }
+
+    return Object.keys(items).map(function(item) {
+      return items[item];
+    });
   }
 
   /**
@@ -532,6 +622,7 @@
     isPlainObject: isPlainObject,
     isFunction: isFunction,
     isDate: isDate,
+    toArray: toArray,
     noop: noop,
     result: result,
     extend: extend,

@@ -21,8 +21,9 @@
       throw new TypeError("Must provide a manager");
     }
 
-    this.manager = manager;
-    this.context = manager.context || {};
+    this.manager  = manager;
+    this.context  = manager.context || {};
+    this.pipeline = [fetch, validate, transform, compile];
 
     if (!this.context.loaded) {
       this.context.loaded = {};
@@ -51,7 +52,6 @@
    */
   Loader.prototype.load = function(name) {
     var loader  = this,
-        manager = this.manager,
         context = this.context;
 
     if (!name) {
@@ -63,34 +63,48 @@
     if (!context.loaded.hasOwnProperty(name)) {
       // This is where the workflow for fetching, transforming, and compiling happens.
       // It is designed to easily add more steps to the workflow.
-      context.loaded[name] = manager.fetch(name)
-        .then(validate,          passThroughError)
-        .then(transform(loader), passThroughError)
-        .then(compile(loader),   passThroughError);
+      context.loaded[name] = runPipeline(loader, name);
     }
 
     return Promise.resolve(context.loaded[name]);
   };
 
 
-  function passThroughError(error) {
+  function forwardError(error) {
     return error;
   }
+
+
+  function runPipeline(loader, name) {
+    return loader.pipeline.reduce(function(prev, curr) {
+      return prev.then(curr(loader, name), forwardError);
+    }, Promise.resolve());
+  }
+
+
+  function fetch(loader, name) {
+    return function() {
+      return loader.manager.fetch(name);
+    };
+  }
+
 
   /**
    * Method to ensure we have a valid module meta object before we continue on with
    * the rest of the pipeline.
    */
-  function validate(moduleMeta) {
-    if (!moduleMeta) {
-      throw new TypeError("Must provide a ModuleMeta");
-    }
+  function validate() {
+    return function(moduleMeta) {
+      if (!moduleMeta) {
+        throw new TypeError("Must provide a ModuleMeta");
+      }
 
-    if (!moduleMeta.compile) {
-      throw new TypeError("ModuleMeta must provide have a `compile` interface");
-    }
+      if (!moduleMeta.compile) {
+        throw new TypeError("ModuleMeta must provide have a `compile` interface");
+      }
 
-    return moduleMeta;
+      return moduleMeta;
+    };
   }
 
   /**
@@ -98,9 +112,10 @@
    * before it is compiled into an actual Module instance.  This is where steps
    * such as linting and processing coffee files can take place.
    */
-  function transform(/*loader*/) {
+  function transform(loader) {
     return function(moduleMeta) {
-      return moduleMeta;
+      return loader.manager.transform.runAll(moduleMeta)
+        .then(function() {return moduleMeta;}, forwardError);
     };
   }
 
