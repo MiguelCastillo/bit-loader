@@ -1,5 +1,6 @@
 define(["dist/bit-loader"], function(Bitloader) {
-  var Importer = Bitloader.Import;
+  var Importer = Bitloader.Import,
+      Promise  = Bitloader.Promise;
 
   describe("Import Suite", function() {
 
@@ -184,7 +185,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         var importer, yes, modYes, loadStub;
         beforeEach(function() {
           modYes   = new Bitloader.Module({name: 'yes', type: Bitloader.Module.Type.AMD, code: "module code"});
-          loadStub = sinon.stub().returns(Bitloader.Promise.resolve(modYes));
+          loadStub = sinon.stub().returns(Promise.resolve(modYes));
 
           importer = new Importer({
             load: loadStub
@@ -215,7 +216,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         beforeEach(function() {
           modFactoryStub = sinon.stub().returns("module code");
           modYes   = new Bitloader.Module({name: 'yes', type: Bitloader.Module.Type.AMD, factory: modFactoryStub});
-          loadStub = sinon.stub().returns(Bitloader.Promise.resolve(modYes));
+          loadStub = sinon.stub().returns(Promise.resolve(modYes));
 
           importer = new Importer({
             load: loadStub
@@ -258,7 +259,7 @@ define(["dist/bit-loader"], function(Bitloader) {
             deps: ["no", "maybe"]
           });
 
-          loadStub = sinon.stub().returns(Bitloader.Promise.resolve(modYes));
+          loadStub = sinon.stub().returns(Promise.resolve(modYes));
 
           importer = new Importer({
             load: loadStub,

@@ -1,5 +1,6 @@
 define(["dist/bit-loader"], function(Bitloader) {
-  var Loader = Bitloader.Loader;
+  var Loader  = Bitloader.Loader,
+      Promise = Bitloader.Promise;
 
   describe("Loader Suite", function() {
 
@@ -7,7 +8,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       var loader, yes, modYes, modFetchStub;
 
       beforeEach(function() {
-        modFetchStub = sinon.stub().returns(Bitloader.Promise.reject("Fetch must not be called when loading from `context.loaded`"));
+        modFetchStub = sinon.stub().returns(Promise.reject("Fetch must not be called when loading from `context.loaded`"));
         modYes = {};
         loader = new Loader({
           fetch: modFetchStub,
@@ -42,7 +43,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         compiledMod = {name: "yes"};
         modCompileStub = sinon.stub().withArgs(moduleMeta).returns(compiledMod);
         moduleMeta.compile = modCompileStub;
-        modYesPromise = Bitloader.Promise.resolve(moduleMeta);
+        modYesPromise = Promise.resolve(moduleMeta);
         modFetchStub = sinon.stub().withArgs("yes").returns(modYesPromise);
         modRunStub = sinon.stub().returns(Promise.resolve());
 
