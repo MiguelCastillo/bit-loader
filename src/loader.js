@@ -100,12 +100,13 @@
       }
 
       if (!moduleMeta.compile) {
-        throw new TypeError("ModuleMeta must provide have a `compile` interface");
+        throw new TypeError("ModuleMeta must provide have a `compile` interface that creates and returns an instance of Module");
       }
 
       return moduleMeta;
     };
   }
+
 
   /**
    * The transform enables transformation providers to process the moduleMeta

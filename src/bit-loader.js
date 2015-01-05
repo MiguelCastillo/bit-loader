@@ -11,15 +11,14 @@
       Fetch      = require('./fetch');
 
   function Bitloader() {
-    this.middlewares = {};
-    this.context     = Registry.getById();
-    this.transform   = new Middleware();
+    this.context   = Registry.getById();
+    this.transform = Middleware.factory(this);
 
     // Override any of these constructors if you need specialized implementation
     var providers = {
-      fetch   : new Bitloader.Fetch(this),
-      loader  : new Bitloader.Loader(this),
-      import  : new Bitloader.Import(this)
+      fetch  : new Bitloader.Fetch(this),
+      loader : new Bitloader.Loader(this),
+      import : new Bitloader.Import(this)
     };
 
     // Expose interfaces

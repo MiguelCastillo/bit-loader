@@ -1,14 +1,15 @@
 define(['dist/bit-loader'], function(Bitloader) {
-  var Middleware = Bitloader.Middleware;
+  var Middleware = Bitloader.Middleware,
+      Promise    = Bitloader.Promise;
 
   describe("Middleware Test Suite", function() {
 
-    describe("When adding one middleware called `test`", function() {
+    describe("When registering one middleware as an object with name `test`", function() {
       var middleware, testMiddlewareStub;
       beforeEach(function() {
         middleware = new Middleware();
         testMiddlewareStub = sinon.stub();
-        middleware.use("test", testMiddlewareStub);
+        middleware.use({name: "test", handler: testMiddlewareStub});
       });
 
 
@@ -49,16 +50,16 @@ define(['dist/bit-loader'], function(Bitloader) {
     });
 
 
-    describe("When adding two middleware called `sweet`, `sour`, `chicken`", function() {
+    describe("When adding two middleware providers with names `sweet`, `sour`, `chicken`", function() {
       var middleware, sweetMiddlewareStub, sourMiddlewareStub, chickenMiddlewareStub;
       beforeEach(function() {
         middleware = new Middleware();
         sweetMiddlewareStub = sinon.stub();
         sourMiddlewareStub = sinon.stub();
         chickenMiddlewareStub = sinon.stub();
-        middleware.use("sweet", sweetMiddlewareStub);
-        middleware.use("sour", sourMiddlewareStub);
-        middleware.use("chicken", chickenMiddlewareStub);
+        middleware.use({name: "sweet", handler: sweetMiddlewareStub});
+        middleware.use({name: "sour", handler: sourMiddlewareStub});
+        middleware.use({name: "chicken", handler: chickenMiddlewareStub});
       });
 
 
@@ -118,6 +119,34 @@ define(['dist/bit-loader'], function(Bitloader) {
         });
       });
 
+    });
+
+
+    describe("When registering a middleware provider as a string `concat`", function() {
+      var middleware, importStub, handlerStub;
+      beforeEach(function() {
+        var manager = {};
+        handlerStub = sinon.stub();
+        importStub = sinon.stub().returns(Promise.resolve(handlerStub));
+        manager.import = importStub;
+        middleware = new Middleware(manager);
+        middleware.use("concat");
+      });
+
+
+      describe("and running the middleware will `import` the middleware provider", function() {
+        beforeEach(function() {
+          return middleware.run("concat");
+        });
+
+        it("then `importStub` is called once", function() {
+          expect(importStub.calledOnce).to.equal(true);
+        });
+
+        it("then `handlerStub` is called once", function() {
+          expect(importStub.calledOnce).to.equal(true);
+        });
+      });
     });
 
   });

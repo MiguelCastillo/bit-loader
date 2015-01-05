@@ -1,14 +1,19 @@
 (function() {
   "use strict";
 
-  function noop() {}
+  function noop() {
+  }
 
   function isNull(item) {
-    return item === null || item === undefined;
+    return item === null || item === (void 0);
   }
 
   function isArray(item) {
     return item instanceof(Array);
+  }
+
+  function isString(item) {
+    return typeof(item) === "string";
   }
 
   function isObject(item) {
@@ -94,6 +99,7 @@
   module.exports = {
     isNull: isNull,
     isArray: isArray,
+    isString: isString,
     isObject: isObject,
     isPlainObject: isPlainObject,
     isFunction: isFunction,
