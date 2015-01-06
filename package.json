@@ -1,6 +1,6 @@
 {
   "name": "bit-loader",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Dependency loader and manager micro framework",
   "main": "dist/bit-loader.js",
   "directories": {
@@ -34,11 +34,8 @@
     "grunt-mocha": "~0.4.11",
     "chai": "~1.10.0",
     "sinon": "~1.12.2",
-    "requirejs": "~2.1.15",
     "browserify": "~8.0.3",
     "spromise": "",
-    "promjax": "",
-    "amd-resolver": "",
     "amd-bits": ""
   },
   "dependencies": {}
