@@ -10,9 +10,18 @@
       Middleware = require('./middleware'),
       Fetch      = require('./fetch');
 
-  function Bitloader() {
+  function Bitloader(options) {
     this.context   = Registry.getById();
     this.transform = Middleware.factory(this);
+    this.plugin    = Middleware.factory(this);
+
+    if (options.transforms) {
+      this.transform(options.transforms);
+    }
+
+    if (options.plugins) {
+      this.plugin(options.plugins);
+    }
 
     // Override any of these constructors if you need specialized implementation
     var providers = {

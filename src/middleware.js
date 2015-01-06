@@ -29,6 +29,10 @@
    * pass in a name, which will cause the provider to be registered as a `named`
    * provider.
    *
+   * @param {Object | Array<Object>} providers - One or collection of providers to
+   *   be registered in this middleware manager instance.
+   *
+   *
    * For example, the provider below is just a method that will get invoked when
    * running the entire sequence of providers.
    *
@@ -58,27 +62,21 @@
    * });
    * ```
    */
-  Middleware.prototype.use = function(provider) {
-    if (Utils.isFunction(provider)) {
-      provider = {handler: provider};
-    }
-    else if (Utils.isString(provider)) {
-      var name = provider;
-      provider = {};
-      provider.handler = _deferred(this, name, provider);
-      this.named[name] = provider;
-    }
-    else if (Utils.isPlainObject(provider)) {
-      if (provider.name) {
-        this.named[provider.name] = provider;
-      }
-
-      if (!Utils.isFunction(provider.handler)) {
-        throw new TypeError("Middleware provider must have a handler method");
-      }
+  Middleware.prototype.use = function(providers) {
+    if (!Utils.isArray(providers)) {
+      providers = [providers];
     }
 
-    this.providers.push(provider);
+    for (var provider in providers) {
+      if (providers.hasOwnProperty(provider)) {
+        provider = this.configure(providers[provider]);
+        this.providers.push(provider);
+
+        if (Utils.isString(provider.name)) {
+          this.named[provider.name] = provider;
+        }
+      }
+    }
   };
 
 
@@ -131,6 +129,28 @@
 
 
   /**
+   * Method to normalize provider settings to proper provider objects that can
+   * be used by the middleware manager.
+   */
+  Middleware.prototype.configure = function(provider) {
+    if (Utils.isFunction(provider)) {
+      provider = {handler: provider};
+    }
+    else if (Utils.isString(provider)) {
+      provider = {name: provider};
+      provider.handler = _deferred(this, provider);
+    }
+    else if (Utils.isPlainObject(provider)) {
+      if (!Utils.isFunction(provider.handler)) {
+        throw new TypeError("Middleware provider must have a handler method");
+      }
+    }
+
+    return provider;
+  };
+
+
+  /**
    * Convenience method to allow registration of providers by calling the middleware
    * manager itself rather than the use method.
    *
@@ -152,6 +172,9 @@
       middleware.use(provider);
     }
 
+    instance.use    = middleware.use.bind(middleware);
+    instance.run    = middleware.run.bind(middleware);
+    instance.runAll = middleware.runAll.bind(middleware);
     return Utils.extend(instance, middleware);
   };
 
@@ -160,15 +183,17 @@
    * @private
    * Method that enables chaining in providers that have to be dynamically loaded.
    */
-  function _deferred(middleware, name, provider) {
+  function _deferred(middleware, provider) {
     return function() {
       var context = this,
           args    = arguments;
 
-      return middleware.manager.import(name).then(function(handler) {
+      provider.__pending = true;
+      return (provider.handler = middleware.manager.import(provider.name).then(function(handler) {
+        delete provider.__pending;
         provider.handler = handler;
         return handler.apply(context, args);
-      });
+      }));
     };
   }
 
@@ -186,7 +211,7 @@
           cancelled = true;
         }
 
-        if (!cancelled) {
+        if (!cancelled && !curr.__pending) {
           return curr.handler.apply(curr, data);
         }
       }, function(err) {

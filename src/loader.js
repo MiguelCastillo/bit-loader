@@ -93,7 +93,7 @@
    * Method to ensure we have a valid module meta object before we continue on with
    * the rest of the pipeline.
    */
-  function validate() {
+  function validate(loader) {
     return function(moduleMeta) {
       if (!moduleMeta) {
         throw new TypeError("Must provide a ModuleMeta");
@@ -103,6 +103,7 @@
         throw new TypeError("ModuleMeta must provide have a `compile` interface that creates and returns an instance of Module");
       }
 
+      moduleMeta.manager = loader.manager;
       return moduleMeta;
     };
   }
@@ -120,6 +121,7 @@
     };
   }
 
+
   /**
    * The compile step is to convert the moduleMeta to an instance of Module. The
    * fetch provider is in charge of adding the compile interface in the moduleMeta
@@ -129,7 +131,7 @@
   function compile(loader) {
     return function(moduleMeta) {
       var mod     = moduleMeta.compile(),
-          modules = moduleMeta.loaded ? moduleMeta.loaded.modules : {};
+          modules = mod.modules || {};
 
       // Copy modules over to the loaded bucket if it does not exist. Anything
       // that has already been loaded will get ignored.

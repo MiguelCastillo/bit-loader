@@ -25,9 +25,18 @@
       Middleware = require('./middleware'),
       Fetch      = require('./fetch');
 
-  function Bitloader() {
+  function Bitloader(options) {
     this.context   = Registry.getById();
     this.transform = Middleware.factory(this);
+    this.plugin    = Middleware.factory(this);
+
+    if (options.transforms) {
+      this.transform(options.transforms);
+    }
+
+    if (options.plugins) {
+      this.plugin(options.plugins);
+    }
 
     // Override any of these constructors if you need specialized implementation
     var providers = {
@@ -314,7 +323,7 @@
    * Method to ensure we have a valid module meta object before we continue on with
    * the rest of the pipeline.
    */
-  function validate() {
+  function validate(loader) {
     return function(moduleMeta) {
       if (!moduleMeta) {
         throw new TypeError("Must provide a ModuleMeta");
@@ -324,6 +333,7 @@
         throw new TypeError("ModuleMeta must provide have a `compile` interface that creates and returns an instance of Module");
       }
 
+      moduleMeta.manager = loader.manager;
       return moduleMeta;
     };
   }
@@ -341,6 +351,7 @@
     };
   }
 
+
   /**
    * The compile step is to convert the moduleMeta to an instance of Module. The
    * fetch provider is in charge of adding the compile interface in the moduleMeta
@@ -350,7 +361,7 @@
   function compile(loader) {
     return function(moduleMeta) {
       var mod     = moduleMeta.compile(),
-          modules = moduleMeta.loaded ? moduleMeta.loaded.modules : {};
+          modules = mod.modules || {};
 
       // Copy modules over to the loaded bucket if it does not exist. Anything
       // that has already been loaded will get ignored.
@@ -400,6 +411,10 @@
    * pass in a name, which will cause the provider to be registered as a `named`
    * provider.
    *
+   * @param {Object | Array<Object>} providers - One or collection of providers to
+   *   be registered in this middleware manager instance.
+   *
+   *
    * For example, the provider below is just a method that will get invoked when
    * running the entire sequence of providers.
    *
@@ -429,27 +444,21 @@
    * });
    * ```
    */
-  Middleware.prototype.use = function(provider) {
-    if (Utils.isFunction(provider)) {
-      provider = {handler: provider};
-    }
-    else if (Utils.isString(provider)) {
-      var name = provider;
-      provider = {};
-      provider.handler = _deferred(this, name, provider);
-      this.named[name] = provider;
-    }
-    else if (Utils.isPlainObject(provider)) {
-      if (provider.name) {
-        this.named[provider.name] = provider;
-      }
-
-      if (!Utils.isFunction(provider.handler)) {
-        throw new TypeError("Middleware provider must have a handler method");
-      }
+  Middleware.prototype.use = function(providers) {
+    if (!Utils.isArray(providers)) {
+      providers = [providers];
     }
 
-    this.providers.push(provider);
+    for (var provider in providers) {
+      if (providers.hasOwnProperty(provider)) {
+        provider = this.configure(providers[provider]);
+        this.providers.push(provider);
+
+        if (Utils.isString(provider.name)) {
+          this.named[provider.name] = provider;
+        }
+      }
+    }
   };
 
 
@@ -502,6 +511,28 @@
 
 
   /**
+   * Method to normalize provider settings to proper provider objects that can
+   * be used by the middleware manager.
+   */
+  Middleware.prototype.configure = function(provider) {
+    if (Utils.isFunction(provider)) {
+      provider = {handler: provider};
+    }
+    else if (Utils.isString(provider)) {
+      provider = {name: provider};
+      provider.handler = _deferred(this, provider);
+    }
+    else if (Utils.isPlainObject(provider)) {
+      if (!Utils.isFunction(provider.handler)) {
+        throw new TypeError("Middleware provider must have a handler method");
+      }
+    }
+
+    return provider;
+  };
+
+
+  /**
    * Convenience method to allow registration of providers by calling the middleware
    * manager itself rather than the use method.
    *
@@ -523,6 +554,9 @@
       middleware.use(provider);
     }
 
+    instance.use    = middleware.use.bind(middleware);
+    instance.run    = middleware.run.bind(middleware);
+    instance.runAll = middleware.runAll.bind(middleware);
     return Utils.extend(instance, middleware);
   };
 
@@ -531,15 +565,17 @@
    * @private
    * Method that enables chaining in providers that have to be dynamically loaded.
    */
-  function _deferred(middleware, name, provider) {
+  function _deferred(middleware, provider) {
     return function() {
       var context = this,
           args    = arguments;
 
-      return middleware.manager.import(name).then(function(handler) {
+      provider.__pending = true;
+      return (provider.handler = middleware.manager.import(provider.name).then(function(handler) {
+        delete provider.__pending;
         provider.handler = handler;
         return handler.apply(context, args);
-      });
+      }));
     };
   }
 
@@ -557,7 +593,7 @@
           cancelled = true;
         }
 
-        if (!cancelled) {
+        if (!cancelled && !curr.__pending) {
           return curr.handler.apply(curr, data);
         }
       }, function(err) {
