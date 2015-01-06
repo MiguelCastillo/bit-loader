@@ -50,75 +50,192 @@ define(['dist/bit-loader'], function(Bitloader) {
     });
 
 
-    describe("When adding two middleware providers with names `sweet`, `sour`, `chicken`", function() {
-      var middleware, sweetMiddlewareStub, sourMiddlewareStub, chickenMiddlewareStub;
-      beforeEach(function() {
-        middleware = new Middleware();
-        sweetMiddlewareStub = sinon.stub();
-        sourMiddlewareStub = sinon.stub();
-        chickenMiddlewareStub = sinon.stub();
-        middleware.use({name: "sweet", handler: sweetMiddlewareStub});
-        middleware.use({name: "sour", handler: sourMiddlewareStub});
-        middleware.use({name: "chicken", handler: chickenMiddlewareStub});
-      });
+    describe("When adding three providers `sweet`, `sour`, `chicken`", function() {
 
-
-      describe("and running `sweet` middleware with no arguments", function() {
+      describe("and all providers run succesfully", function() {
+        var middleware, sweetMiddlewareStub, sourMiddlewareStub, chickenMiddlewareStub;
         beforeEach(function() {
-          return middleware.run("sweet");
+          middleware = new Middleware();
+          sweetMiddlewareStub = sinon.stub();
+          sourMiddlewareStub = sinon.stub();
+          chickenMiddlewareStub = sinon.stub();
+          middleware.use({name: "sweet", handler: sweetMiddlewareStub});
+          middleware.use({name: "sour", handler: sourMiddlewareStub});
+          middleware.use({name: "chicken", handler: chickenMiddlewareStub});
         });
 
-        it("then `sweet` middleware is called once", function() {
-          expect(sweetMiddlewareStub.calledOnce).to.equal(true);
+
+        describe("and running `sweet` middleware with no arguments", function() {
+          beforeEach(function() {
+            return middleware.run("sweet");
+          });
+
+          it("then `sweet` middleware is called once", function() {
+            expect(sweetMiddlewareStub.calledOnce).to.equal(true);
+          });
+
+          it("then `sweet` middleware is called with no arguments", function() {
+            expect(sweetMiddlewareStub.args[0].length).to.equal(0);
+          });
+
+          it("then `sour` middleware is not called", function() {
+            expect(sourMiddlewareStub.called).to.equal(false);
+          });
+
+          it("then `chicken` middleware is not called", function() {
+            expect(chickenMiddlewareStub.called).to.equal(false);
+          });
         });
 
-        it("then `sour` middleware is not called", function() {
-          expect(sourMiddlewareStub.called).to.equal(false);
+
+        describe("and running `sweet` and `chicken` middlewares with no arguments", function() {
+          beforeEach(function() {
+            return middleware.run(["sweet", "chicken"]);
+          });
+
+          it("then `sweet` middleware is called once", function() {
+            expect(sweetMiddlewareStub.calledOnce).to.equal(true);
+          });
+
+          it("then `sour` middleware is not called", function() {
+            expect(sourMiddlewareStub.called).to.equal(false);
+          });
+
+          it("then `chicken` middleware is called once", function() {
+            expect(chickenMiddlewareStub.calledOnce).to.equal(true);
+          });
         });
 
-        it("then `chicken` middleware is not called", function() {
-          expect(chickenMiddlewareStub.called).to.equal(false);
+
+        describe("and running `sweet` and `chicken` middlewares with `test value` argument", function() {
+          var testValue = "test value";
+          beforeEach(function() {
+            return middleware.run(["sweet", "chicken"], testValue);
+          });
+
+          it("then `sweet` middleware is called once", function() {
+            expect(sweetMiddlewareStub.calledOnce).to.equal(true);
+          });
+
+          it("then `sweet` middleware is called with argument `test value`", function() {
+            expect(sweetMiddlewareStub.calledWithExactly("test value")).to.equal(true);
+          });
+
+          it("then `sour` middleware is not called", function() {
+            expect(sourMiddlewareStub.called).to.equal(false);
+          });
+
+          it("then `chicken` middleware is called once", function() {
+            expect(chickenMiddlewareStub.calledOnce).to.equal(true);
+          });
+
+          it("then `chicken` middleware is called with argument `test value`", function() {
+            expect(chickenMiddlewareStub.calledWithExactly("test value")).to.equal(true);
+          });
+        });
+
+
+        describe("and running all middlewares with no arguments", function() {
+          beforeEach(function() {
+            return middleware.runAll();
+          });
+
+          it("then `sweet` middleware is called once", function() {
+            expect(sweetMiddlewareStub.calledOnce).to.equal(true);
+          });
+
+          it("then `sour` middleware is called once", function() {
+            expect(sourMiddlewareStub.calledOnce).to.equal(true);
+          });
+
+          it("then `chicken` middleware is called once", function() {
+            expect(chickenMiddlewareStub.calledOnce).to.equal(true);
+          });
         });
       });
 
 
-      describe("and running `sweet` and `chicken` middlewares with no arguments", function() {
+      describe("and `sour` provider returns a value", function() {
+        var middleware, sweetMiddlewareStub, sourMiddlewareStub, chickenMiddlewareStub;
         beforeEach(function() {
-          return middleware.run(["sweet", "chicken"]);
+          middleware = new Middleware();
+          sweetMiddlewareStub = sinon.stub();
+          sourMiddlewareStub = sinon.stub().returns({hey: "this will stop execution"});
+          chickenMiddlewareStub = sinon.stub();
+          middleware.use({name: "sweet", handler: sweetMiddlewareStub});
+          middleware.use({name: "sour", handler: sourMiddlewareStub});
+          middleware.use({name: "chicken", handler: chickenMiddlewareStub});
         });
 
-        it("then `sweet` middleware is called once", function() {
-          expect(sweetMiddlewareStub.calledOnce).to.equal(true);
-        });
+        describe("and running all providers", function() {
+          beforeEach(function() {
+            return middleware.runAll();
+          });
 
-        it("then `sour` middleware is not called", function() {
-          expect(sourMiddlewareStub.called).to.equal(false);
-        });
+          it("then `sweet` provider is called once", function() {
+            expect(sweetMiddlewareStub.calledOnce).to.equal(true);
+          });
 
-        it("then `chicken` middleware is called once", function() {
-          expect(chickenMiddlewareStub.calledOnce).to.equal(true);
+          it("then `sour` provider is called once", function() {
+            expect(sourMiddlewareStub.calledOnce).to.equal(true);
+          });
+
+          it("then `chicken` provider is never called", function() {
+            expect(chickenMiddlewareStub.called).to.equal(false);
+          });
         });
       });
 
 
-      describe("and running all middlewares with no arguments", function() {
+      describe("and `sour` provider throws an exception", function() {
+        var middleware, sweetMiddlewareStub, sourMiddlewareStub, chickenMiddlewareStub, typeErrorException;
         beforeEach(function() {
-          return middleware.runAll();
+          typeErrorException = new TypeError("Don't run any other providers");
+          middleware = new Middleware();
+          sweetMiddlewareStub = sinon.stub();
+          sourMiddlewareStub = sinon.stub().throws(typeErrorException);
+          chickenMiddlewareStub = sinon.stub();
+          middleware.use({name: "sweet", handler: sweetMiddlewareStub});
+          middleware.use({name: "sour", handler: sourMiddlewareStub});
+          middleware.use({name: "chicken", handler: chickenMiddlewareStub});
         });
 
-        it("then `sweet` middleware is called once", function() {
-          expect(sweetMiddlewareStub.calledOnce).to.equal(true);
-        });
+        describe("and running all providers", function() {
+          var deferred, error;
+          beforeEach(function() {
+            return new Promise(function(resolve) {
+              deferred = middleware.runAll().then(function(err) {
+                error = err;
+                resolve();
+              });
+            });
+          });
 
-        it("then `sour` middleware is called once", function() {
-          expect(sourMiddlewareStub.calledOnce).to.equal(true);
-        });
+          it("then `sweet` provider is called once", function() {
+            expect(sweetMiddlewareStub.calledOnce).to.equal(true);
+          });
 
-        it("then `chicken` middleware is called once", function() {
-          expect(chickenMiddlewareStub.calledOnce).to.equal(true);
+          it("then `sour` provider is called once", function() {
+            expect(sourMiddlewareStub.calledOnce).to.equal(true);
+          });
+
+          it("then `sour` provider throws `TypeError`", function() {
+            expect(sourMiddlewareStub.threw(typeErrorException)).to.equal(true);
+          });
+
+          it("then `chicken` provider is never called", function() {
+            expect(chickenMiddlewareStub.called).to.equal(false);
+          });
+
+          it("then promise sequence is rejected", function() {
+            expect(deferred.state()).to.equal("rejected");
+          });
+
+          it("then promise sequence reports error", function() {
+            expect(error).to.equal(typeErrorException);
+          });
         });
       });
-
     });
 
 
@@ -134,17 +251,51 @@ define(['dist/bit-loader'], function(Bitloader) {
       });
 
 
-      describe("and running the middleware will `import` the middleware provider", function() {
-        beforeEach(function() {
-          return middleware.run("concat");
+      describe("and running the middleware will `import` the provider", function() {
+        describe("and calling `concat` with no arguments", function() {
+          beforeEach(function() {
+            return middleware.run("concat");
+          });
+
+          it("then `importStub` is called once", function() {
+            expect(importStub.calledOnce).to.equal(true);
+          });
+
+          it("then `importStub` is called with `concat`", function() {
+            expect(importStub.calledWithExactly("concat")).to.equal(true);
+          });
+
+          it("then `handlerStub` is called once", function() {
+            expect(handlerStub.calledOnce).to.equal(true);
+          });
+
+          it("then `handlerStub` is called with no arguments", function() {
+            expect(handlerStub.args[0].length).to.equal(0);
+          });
         });
 
-        it("then `importStub` is called once", function() {
-          expect(importStub.calledOnce).to.equal(true);
-        });
+        describe("and calling `concat` with one argument `test value`", function() {
+          var testValue;
+          beforeEach(function() {
+            testValue = "test value";
+            return middleware.run("concat", testValue);
+          });
 
-        it("then `handlerStub` is called once", function() {
-          expect(importStub.calledOnce).to.equal(true);
+          it("then `importStub` is called once", function() {
+            expect(importStub.calledOnce).to.equal(true);
+          });
+
+          it("then `importStub` is called with `concat`", function() {
+            expect(importStub.calledWithExactly("concat")).to.equal(true);
+          });
+
+          it("then `handlerStub` is called once", function() {
+            expect(handlerStub.calledOnce).to.equal(true);
+          });
+
+          it("then `handlerStub` is called with `test value`", function() {
+            expect(handlerStub.calledWithExactly(testValue)).to.equal(true);
+          });
         });
       });
     });

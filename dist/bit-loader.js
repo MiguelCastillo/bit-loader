@@ -557,11 +557,9 @@
           cancelled = true;
         }
 
-        if (cancelled) {
-          return;
+        if (!cancelled) {
+          return curr.handler.apply(curr, data);
         }
-
-        return curr.handler.apply(curr, data);
       }, function(err) {
         cancelled = true;
         return err;
