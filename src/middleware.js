@@ -5,6 +5,10 @@
       Utils   = require('./utils');
 
 
+  function Provider() {
+  }
+
+
   /**
    * Middleware provides a mechanism for registering `plugins` that can be
    * called in the order in which they are registered.  These middlewares can
@@ -132,20 +136,29 @@
    * Method to normalize provider settings to proper provider objects that can
    * be used by the middleware manager.
    */
-  Middleware.prototype.configure = function(provider) {
-    if (Utils.isFunction(provider)) {
-      provider = {handler: provider};
+  Middleware.prototype.configure = function(options) {
+    var provider = new Provider();
+
+    if (Utils.isFunction(options)) {
+      provider.handler = options;
     }
-    else if (Utils.isString(provider)) {
-      provider = {name: provider};
+    else if (Utils.isString(options)) {
+      provider.name    = options;
       provider.handler = _deferred(this, provider);
     }
-    else if (Utils.isPlainObject(provider)) {
-      if (!Utils.isFunction(provider.handler)) {
-        throw new TypeError("Middleware provider must have a handler method");
+    else if (Utils.isPlainObject(options)) {
+      if (!Utils.isFunction(options.handler)) {
+        if (!Utils.isString(options.name)) {
+          throw new TypeError("Middleware provider must have a handler method or a name");
+        }
+
+        provider.handler = _deferred(this, provider);
       }
+
+      Utils.merge(provider, options);
     }
 
+    provider.settings = provider.settings || {};
     return provider;
   };
 
@@ -179,20 +192,22 @@
   };
 
 
+  Middleware.Provider = Provider;
+
+
   /**
    * @private
    * Method that enables chaining in providers that have to be dynamically loaded.
    */
   function _deferred(middleware, provider) {
     return function() {
-      var context = this,
-          args    = arguments;
-
+      var args = arguments;
       provider.__pending = true;
+
       return (provider.handler = middleware.manager.import(provider.name).then(function(handler) {
         delete provider.__pending;
         provider.handler = handler;
-        return handler.apply(context, args);
+        return handler.apply(provider, args);
       }));
     };
   }

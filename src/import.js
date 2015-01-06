@@ -57,7 +57,7 @@
     });
 
     return Promise.when.apply((void 0), deps).catch(function(error) {
-      console.error("===> error", error);
+      console.error(error);
     });
   };
 

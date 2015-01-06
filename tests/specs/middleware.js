@@ -296,6 +296,10 @@ define(['dist/bit-loader'], function(Bitloader) {
           it("then `handlerStub` is called with `test value`", function() {
             expect(handlerStub.calledWithExactly(testValue)).to.equal(true);
           });
+
+          it("then `handlerStub` is called as an instance of provider", function() {
+            expect(handlerStub.thisValues[0] instanceof(Middleware.Provider)).to.equal(true);
+          });
         });
       });
     });
