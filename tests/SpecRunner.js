@@ -15,5 +15,7 @@ define([
     "tests/specs/registry",
     "tests/specs/middleware",
     "tests/specs/bit-loader"
-  ], mocha.run);
+  ], function() {
+    mocha.run();
+  });
 });
