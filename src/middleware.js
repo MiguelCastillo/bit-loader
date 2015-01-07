@@ -5,6 +5,9 @@
       Utils   = require('./utils');
 
 
+  /**
+   * @constructor For checking middleware provider instances
+   */
   function Provider() {
   }
 
@@ -117,7 +120,7 @@
       handlers.push(this.named[names[i]]);
     }
 
-    return _runProvider(handlers, Array.prototype.slice.call(arguments, 1));
+    return _runProviders(handlers, Array.prototype.slice.call(arguments, 1));
   };
 
 
@@ -128,7 +131,7 @@
    * @returns {Promise}
    */
   Middleware.prototype.runAll = function() {
-    return _runProvider(this.providers, arguments);
+    return _runProviders(this.providers, arguments);
   };
 
 
@@ -200,15 +203,19 @@
    * Method that enables chaining in providers that have to be dynamically loaded.
    */
   function _deferred(middleware, provider) {
-    return function() {
+    return function deferredTransform() {
       var args = arguments;
       provider.__pending = true;
 
-      return (provider.handler = middleware.manager.import(provider.name).then(function(handler) {
-        delete provider.__pending;
-        provider.handler = handler;
-        return handler.apply(provider, args);
-      }));
+      provider.handler = middleware.manager.import(provider.name)
+        .then(function transformReady(handler) {
+          delete provider.__pending;
+          provider.handler = handler;
+          return handler.apply(provider, args);
+        });
+
+      provider.handler.name = provider.name;
+      return provider.handler;
     };
   }
 
@@ -217,10 +224,10 @@
    * @private
    * Method that runs a cancellable sequence of promises.
    */
-  function _runProvider(provider, data) {
+  function _runProviders(providers, data) {
     var cancelled = false;
 
-    return provider.reduce(function(prev, curr) {
+    return providers.reduce(function(prev, curr) {
       return prev.then(function() {
         if (arguments.length) {
           cancelled = true;

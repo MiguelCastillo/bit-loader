@@ -5,7 +5,7 @@
   }
 
   Fetch.prototype.fetch = function(/*name*/) {
-    throw new TypeError("Not implemented");
+    throw new TypeError("Not implemented, must be implemented by the consumer code");
   };
 
   module.exports = Fetch;
