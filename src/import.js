@@ -131,7 +131,7 @@
    */
   function cache(importer) {
     return function(mod) {
-      return (importer.context.modules[name] = mod.code);
+      return (importer.context.modules[mod.name] = mod.code);
     };
   }
 
