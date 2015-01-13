@@ -12,9 +12,9 @@
     }
 
     return storage[id] || (storage[id] = {
-      _id       : id,
-      loaded    : {},
-      modules   : {},
+      _id     : id,
+      code    : {},
+      modules : {}
     });
   };
 

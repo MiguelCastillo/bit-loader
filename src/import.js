@@ -1,8 +1,15 @@
-(function(root) {
+(function() {
   "use strict";
 
-  var Promise = require('spromise'),
-      Module  = require('./module');
+  var Promise       = require('spromise'),
+      StatefulItems = require('./stateful-items'),
+      Utils         = require('./utils');
+
+
+  var StateTypes = {
+    pending: "pending"
+  };
+
 
   /**
    * Module importer.  Primary function is to load Module instances and resolving
@@ -13,14 +20,11 @@
       throw new TypeError("Must provide a manager");
     }
 
-    this.manager  = manager;
-    this.context  = manager.context || {};
-    this.pipeline = [load, validate, dependencies, finalize, cache];
-
-    if (!this.context.modules) {
-      this.context.modules = {};
-    }
+    this.manager = manager;
+    this.context = manager.context || {};
+    this.modules = new StatefulItems();
   }
+
 
   /**
    * Import is the interface to load up a Module, fully resolving its dependencies,
@@ -33,107 +37,86 @@
   Import.prototype.import = function(names, options) {
     options = options || {};
     var importer = this,
-        context  = this.context;
+        manager  = this.manager;
 
     // Coerce string to array to simplify input processing
     if (typeof(names) === "string") {
       names = [names];
     }
 
-    // This logic figures out if the module's dependencies need to be resolved and if
-    // they also need to be downloaded.
-    var deps = names.map(function(name) {
-      // Search in the options passed in for the module being loaded.  This is how I
-      // allow dependency injection to happen.
-      if (options.modules && options.modules.hasOwnProperty(name)) {
-        return options.modules[name];
-      }
-      else if (context.modules.hasOwnProperty(name)) {
-        return context.modules[name];
+    return new Promise(function(resolve, reject) {
+      // Callback when modules are loaded
+      function modulesLoaded(modules) {
+        resolve.apply((void 0), modules);
       }
 
-      // Workflow for loading a module that has not yet been loaded
-      return (context.modules[name] = runPipeline(importer, name));
+      // Callback if there was an error loading the modules
+      function handleError(error) {
+        reject.call((void 0), Utils.printError(error));
+      }
+
+      // Load modules
+      Promise
+        .all(getModules())
+        .then(modulesLoaded, handleError);
     });
 
-    return Promise.when.apply((void 0), deps).catch(function(error) {
-      console.error(error);
-    });
+
+    // Load modules wherever they are found...
+    function getModules() {
+      return names.map(function(name) {
+        // Search in the options passed in for the module being loaded.  This is how I
+        // allow dependency injection to happen.
+        if (isModuleInOptions(name)) {
+          return options.modules[name];
+        }
+        else if (manager.hasModuleCode(name)) {
+          return manager.getModuleCode(name);
+        }
+        else if (importer.isPending(name)) {
+          return importer.getPending(name);
+        }
+
+        // Workflow for loading a module that has not yet been loaded
+        return importer.setPending(name, loadModule(name));
+      });
+    }
+
+    // Checks if the module is in the options.modules object.
+    function isModuleInOptions(name) {
+      return options.modules && options.modules.hasOwnProperty(name);
+    }
+
+    function loadModule(name) {
+      return manager.load(name).then(getModuleCode, Utils.forwardError);
+    }
+
+    function getModuleCode(mod) {
+      importer.removePending(mod.name);
+      return manager.providers.loader.getModuleCode(mod.name);
+    }
   };
 
 
-  function forwardError(error) {
-    return error;
-  }
+  Import.prototype.isPending = function(name) {
+    return this.modules.isState(StateTypes.pending, name);
+  };
 
 
-  function runPipeline(importer, name) {
-    return importer.pipeline.reduce(function(prev, curr) {
-      return prev.then(curr(importer, name), forwardError);
-    }, Promise.resolve());
-  }
+  Import.prototype.getPending = function(name) {
+    return this.modules.getItem(StateTypes.pending, name);
+  };
 
 
-  function validate() {
-    return function (mod) {
-      if (mod instanceof(Module) === false) {
-        throw new TypeError("input must be an Instance of Module");
-      }
-      return mod;
-    };
-  }
+  Import.prototype.setPending = function(name, item) {
+    return this.modules.setItem(StateTypes.pending, name, item);
+  };
 
 
-  function load(importer, name) {
-    return function() {
-      return importer.manager.load(name);
-    };
-  }
+  Import.prototype.removePending = function(name) {
+    return this.modules.removeItem(name);
+  };
 
-  /**
-   * Loads up all dependencies for the modules
-   *
-   * @returns {Function} callback to call with the Module instance with the
-   *   dependencies to be resolved
-   */
-  function dependencies(importer) {
-    return function(mod) {
-      // If the module has a property `code` that means the module has already
-      // been fully resolved.
-      if (!mod.deps.length || mod.hasOwnProperty("code")) {
-        return mod;
-      }
-
-      return new Promise(function(resolve /*, reject*/) {
-        importer.import(mod.deps).then(function() {
-          resolve(mod, arguments);
-        });
-      });
-    };
-  }
-
-  /**
-   * Finalizes the module by calling the `factory` method with any dependencies
-   *
-   * @returns {Function} callback to call with the Module instance to finalize
-   */
-  function finalize() {
-    return function(mod, deps) {
-      if (mod.factory && !mod.hasOwnProperty("code")) {
-        mod.code = mod.factory.apply(root, deps);
-      }
-      return mod;
-    };
-  }
-
-  /**
-   * Adds module to the context to cache it
-   */
-  function cache(importer) {
-    return function(mod) {
-      return (importer.context.modules[mod.name] = mod.code);
-    };
-  }
 
   module.exports = Import;
-})(typeof(window) !== 'undefined' ? window : this);
+})();
