@@ -7,7 +7,7 @@
 
 
   var StateTypes = {
-    pending: "pending"
+    loading: "loading"
   };
 
 
@@ -27,8 +27,7 @@
 
 
   /**
-   * Import is the interface to load up a Module, fully resolving its dependencies,
-   * and caching it to prevent the same module from being processed more than once.
+   * Import is the interface to load a Module
    *
    * @param {Array<string> | string} names - module(s) to import
    *
@@ -36,15 +35,14 @@
    */
   Import.prototype.import = function(names, options) {
     options = options || {};
-    var importer = this,
-        manager  = this.manager;
+    var importer = this;
 
     // Coerce string to array to simplify input processing
     if (typeof(names) === "string") {
       names = [names];
     }
 
-    return new Promise(function(resolve, reject) {
+    return new Promise(function deferredModuleImport(resolve, reject) {
       // Callback when modules are loaded
       function modulesLoaded(modules) {
         resolve.apply((void 0), modules);
@@ -57,32 +55,32 @@
 
       // Load modules
       Promise
-        .all(getModules())
+        .all(importer.getModules(names, options))
         .then(modulesLoaded, handleError);
+    });
+  };
+
+  // Load modules wherever they are found...
+  Import.prototype.getModules = function(names, options) {
+    var importer = this,
+        manager  = this.manager;
+
+    return names.map(function getModule(name) {
+      if (isModuleInOptions(name)) {
+        return options.modules[name];
+      }
+      else if (manager.hasModuleCode(name)) {
+        return manager.getModuleCode(name);
+      }
+      else if (importer.hasModule(name)) {
+        return importer.getModule(name);
+      }
+
+      // Workflow for loading a module that has not yet been loaded
+      return importer.setModule(name, loadModule(name));
     });
 
 
-    // Load modules wherever they are found...
-    function getModules() {
-      return names.map(function(name) {
-        // Search in the options passed in for the module being loaded.  This is how I
-        // allow dependency injection to happen.
-        if (isModuleInOptions(name)) {
-          return options.modules[name];
-        }
-        else if (manager.hasModuleCode(name)) {
-          return manager.getModuleCode(name);
-        }
-        else if (importer.isPending(name)) {
-          return importer.getPending(name);
-        }
-
-        // Workflow for loading a module that has not yet been loaded
-        return importer.setPending(name, loadModule(name));
-      });
-    }
-
-    // Checks if the module is in the options.modules object.
     function isModuleInOptions(name) {
       return options.modules && options.modules.hasOwnProperty(name);
     }
@@ -92,28 +90,28 @@
     }
 
     function getModuleCode(mod) {
-      importer.removePending(mod.name);
-      return manager.providers.loader.getModuleCode(mod.name);
+      importer.removeModule(mod.name);
+      return manager.getModuleCode(mod.name);
     }
   };
 
 
-  Import.prototype.isPending = function(name) {
-    return this.modules.isState(StateTypes.pending, name);
+  Import.prototype.hasModule = function(name) {
+    return this.modules.hasItemWithState(StateTypes.loading, name);
   };
 
 
-  Import.prototype.getPending = function(name) {
-    return this.modules.getItem(StateTypes.pending, name);
+  Import.prototype.getModule = function(name) {
+    return this.modules.getItem(StateTypes.loading, name);
   };
 
 
-  Import.prototype.setPending = function(name, item) {
-    return this.modules.setItem(StateTypes.pending, name, item);
+  Import.prototype.setModule = function(name, item) {
+    return this.modules.setItem(StateTypes.loading, name, item);
   };
 
 
-  Import.prototype.removePending = function(name) {
+  Import.prototype.removeModule = function(name) {
     return this.modules.removeItem(name);
   };
 

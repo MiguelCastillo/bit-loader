@@ -5,11 +5,12 @@
       Utils            = require('./utils'),
       Pipeline         = require('./pipeline'),
       StatefulItems    = require('./stateful-items'),
-      moduleLinker     = require('./module-linker'),
-      metaValidation   = require('./meta-validation'),
-      metaTransform    = require('./meta-transform'),
-      metaDependencies = require('./meta-dependencies'),
-      metaCompilation  = require('./meta-compilation');
+      moduleLinker     = require('./module/linker'),
+      metaFetch        = require('./meta/fetch'),
+      metaValidation   = require('./meta/validation'),
+      metaTransform    = require('./meta/transform'),
+      metaDependencies = require('./meta/dependencies'),
+      metaCompilation  = require('./meta/compilation');
 
   var StateTypes = {
     loaded:  "loaded",
@@ -36,7 +37,7 @@
     }
 
     this.manager  = manager;
-    this.pipeline = new Pipeline([fetchModuleMeta, metaValidation, metaTransform, metaDependencies]);
+    this.pipeline = new Pipeline([metaFetch, metaValidation, metaTransform, metaDependencies]);
     this.modules  = new StatefulItems();
   }
 
@@ -56,8 +57,8 @@
    * Primary workflow:
    * fetch     -> module name {string}
    * transform -> module meta {compile:fn, source:string}
-   * compile   -> module meta {compile:fn, source:string}
-   * Module: {deps:array, name:string}
+   * load deps -> module meta {compile:fn, source:string}
+   * create module
    *
    * @param {string} name - The name of the module to load.
    */
@@ -72,33 +73,54 @@
     if (manager.hasModule(name)) {
       return Promise.resolve(manager.getModule(name));
     }
-    else if (loader.isLoaded(name)) {
-      return loader.getLoaded(name);
+    else if (loader.hasModule(name)) {
+      return Promise.resolve(loader.getItem(name));
     }
     else {
-      return loader.isLoading(name) ? loader.getLoading(name) : loader.setLoading(name, fetchModule());
+      return loader.setLoading(name, loader.fetch(name).then(moduleFetched, Utils.forwardError));
     }
 
-
-    /**
-     * Helper methods for code readability and organization
-     */
-    function fetchModule() {
-      return loader.pipeline.run(manager, name).then(moduleFetched, Utils.printError);
-    }
-
-    function moduleFetched(moduleMeta) {
-      return loader.setLoaded(name, moduleMeta);
+    function moduleFetched(getModuleDelegate) {
+      return getModuleDelegate();
     }
   };
 
 
-  /**
-   * Finalizes the module by calling the `factory` method with any dependencies
-   *
-   * @returns {Function} callback to call with the Module instance to finalize
-   */
-  Loader.prototype.getModuleCode = function(name) {
+  Loader.prototype.fetch = function(name) {
+    var loader  = this,
+        manager = this.manager;
+
+    function getModuleDelegate() {
+      if (manager.hasModule(name)) {
+        return manager.getModule(name);
+      }
+      else {
+        return loader.getModule(name);
+      }
+    }
+
+    return new Promise(function(resolve, reject) {
+      if (manager.hasModule(name) || loader.isLoaded(name)) {
+        return resolve(getModuleDelegate);
+      }
+
+      var loading = loader.isLoading(name) ? loader.getLoading(name) : loader.pipeline.run(manager, name);
+      loading.then(moduleFetched, handleError);
+
+      function moduleFetched(moduleMeta) {
+        loader.setLoaded(name, moduleMeta);
+        resolve(getModuleDelegate);
+      }
+
+      function handleError(error) {
+        Utils.printError(error);
+        reject(error);
+      }
+    });
+  };
+
+
+  Loader.prototype.getModule = function(name) {
     var manager = this.manager,
         mod;
 
@@ -109,16 +131,24 @@
       mod = metaCompilation(manager)(this.removeModule(name));
     }
     else {
-      throw new TypeError("Module `" + name + "` is not loaded");
+      throw new TypeError("Module `" + name + "` is not loaded yet.  Make sure to call `load` or `fetch` prior to calling this method");
     }
 
     // Resolve module dependencies and return the final code.
-    return moduleLinker(manager)(mod).code;
+    return moduleLinker(manager)(mod);
   };
 
 
+  Loader.prototype.hasModule = function(name) {
+    this.modules.hasItem(name);
+  };
+
+  Loader.prototype.getItem = function(name) {
+    return this.modules.getItem(name);
+  };
+
   Loader.prototype.isLoading = function(name) {
-    return this.modules.isState(StateTypes.loading, name);
+    return this.modules.hasItemWithState(StateTypes.loading, name);
   };
 
   Loader.prototype.getLoading = function(name) {
@@ -130,7 +160,7 @@
   };
 
   Loader.prototype.isLoaded = function(name) {
-    return this.modules.isState(StateTypes.loaded, name);
+    return this.modules.hasItemWithState(StateTypes.loaded, name);
   };
 
   Loader.prototype.getLoaded = function(name) {
@@ -144,13 +174,6 @@
   Loader.prototype.removeModule = function(name) {
     return this.modules.removeItem(name);
   };
-
-
-  function fetchModuleMeta(manager, name) {
-    return function() {
-      return manager.fetch(name);
-    };
-  }
 
 
   module.exports = Loader;

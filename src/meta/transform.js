@@ -1,7 +1,8 @@
 (function() {
   "use strict";
 
-  var Utils = require('./utils');
+  var Logger = require('../logger'),
+      logger = Logger.factory("Meta/Tranform");
 
   /**
    * The transform enables transformation providers to process the moduleMeta
@@ -10,8 +11,9 @@
    */
   function MetaTransform(manager) {
     return function tranform(moduleMeta) {
+      logger.log(moduleMeta);
       return manager.transform.runAll(moduleMeta)
-        .then(function() {return moduleMeta;}, Utils.forwardError);
+        .then(function() {return moduleMeta;}, manager.Utils.forwardError);
     };
   }
 

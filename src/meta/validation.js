@@ -1,12 +1,17 @@
 (function() {
   "use strict";
 
+  var Logger = require('../logger'),
+      logger = Logger.factory("Meta/Validation");
+
   /**
    * Method to ensure we have a valid module meta object before we continue on with
    * the rest of the pipeline.
    */
   function MetaValidation(manager) {
     return function validateMeta(moduleMeta) {
+      logger.log(moduleMeta);
+
       if (!moduleMeta) {
         throw new TypeError("Must provide a ModuleMeta");
       }

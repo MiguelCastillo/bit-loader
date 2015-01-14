@@ -1,8 +1,13 @@
 (function(root) {
   "use strict";
 
+  var Logger = require('../logger'),
+      logger = Logger.factory("Module/Linker");
+
   function ModuleLinker(manager) {
     return function traverseDependencies(mod) {
+      logger.log(mod);
+
       // Get all dependencies to feed them to the module factory
       var deps = mod.deps.map(function resolveDependency(mod_name) {
         if (manager.hasModuleCode(mod_name)) {

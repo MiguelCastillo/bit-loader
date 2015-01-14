@@ -3,6 +3,7 @@
 
   var Promise    = require('spromise'),
       Utils      = require('./utils'),
+      Logger     = require('./logger'),
       Import     = require('./import'),
       Loader     = require('./loader'),
       Module     = require('./module'),
@@ -10,7 +11,9 @@
       Middleware = require('./middleware'),
       Fetch      = require('./fetch');
 
-  function Bitloader(options) {
+  function Bitloader(options, factories) {
+    factories = factories || {};
+
     this.context   = Registry.getById();
     this.transform = Middleware.factory(this);
     this.plugin    = Middleware.factory(this);
@@ -25,9 +28,9 @@
 
     // Override any of these constructors if you need specialized implementation
     var providers = {
-      fetch  : new Bitloader.Fetch(this),
-      loader : new Bitloader.Loader(this),
-      import : new Bitloader.Import(this)
+      fetch  : factories.fetch  ? factories.fetch(this)  : new Bitloader.Fetch(this),
+      loader : factories.loader ? factories.loader(this) : new Bitloader.Loader(this),
+      import : factories.import ? factories.import(this) : new Bitloader.Import(this)
     };
 
     // Expose interfaces
@@ -53,9 +56,12 @@
       throw new TypeError("Module `" + name + "` has not yet been loaded");
     }
 
-    return this.context.code.hasOwnProperty(name) ?
-            this.context.code[name] :
-            this.providers.loader.getModuleCode(name);
+    if (this.context.code.hasOwnProperty(name)) {
+      return this.context.code[name];
+    }
+    else {
+      return (this.context.code[name] = this.providers.loader.getModule(name).code);
+    }
   };
 
 
@@ -98,6 +104,7 @@
   Bitloader.prototype.Promise = Promise;
   Bitloader.prototype.Module  = Module;
   Bitloader.prototype.Utils   = Utils;
+  Bitloader.prototype.Logger  = Logger;
 
   // Expose constructors and utilities
   Bitloader.Promise    = Promise;
@@ -108,5 +115,6 @@
   Bitloader.Module     = Module;
   Bitloader.Fetch      = Fetch;
   Bitloader.Middleware = Middleware;
+  Bitloader.Logger     = Logger;
   module.exports       = Bitloader;
 })();

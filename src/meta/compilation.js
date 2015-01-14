@@ -1,6 +1,9 @@
 (function() {
   "use strict";
 
+  var Logger = require('../logger'),
+      logger = Logger.factory("Meta/Compilation");
+
   /**
    * The compile step is to convert the moduleMeta to an instance of Module. The
    * fetch provider is in charge of adding the compile interface in the moduleMeta
@@ -9,6 +12,8 @@
    */
   function MetaCompilation(manager) {
     return function compileModuleMeta(moduleMeta) {
+      logger.log(moduleMeta);
+
       var mod     = moduleMeta.compile(),
           modules = mod.modules || {};
 

@@ -9,13 +9,29 @@
   /**
    * Helper methods for CRUD operations on `items` map for based on their StateTypes
    */
-  StatefulItems.prototype.isState = function(state, name) {
-    return this.items[name] && this.items[name].state === state;
+
+
+  StatefulItems.prototype.getState = function(name) {
+    if (!this.hasItem(name)) {
+      throw new TypeError("`" + name + "` not found");
+    }
+
+    return this.items[name].state;
+  };
+
+
+  StatefulItems.prototype.hasItemWithState = function(state, name) {
+    return this.hasItem(name) && this.items[name].state === state;
+  };
+
+
+  StatefulItems.prototype.hasItem = function(name) {
+    return this.items.hasOwnProperty(name);
   };
 
 
   StatefulItems.prototype.getItem = function(state, name) {
-    if (!this.isState(state, name)) {
+    if (!this.hasItemWithState(state, name)) {
       throw new TypeError("`" + name + "` is not " + state);
     }
 

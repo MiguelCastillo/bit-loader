@@ -2,8 +2,10 @@
   "use strict";
 
   var Promise = require('spromise'),
+      Logger  = require('./logger'),
       Utils   = require('./utils');
 
+  var logger = Logger.factory("Middleware");
 
   /**
    * @constructor For checking middleware provider instances
@@ -207,8 +209,10 @@
       var args = arguments;
       provider.__pending = true;
 
+      logger.log("import [start]", provider);
       provider.handler = middleware.manager.import(provider.name)
         .then(function transformReady(handler) {
+          logger.log("import [end]", provider);
           delete provider.__pending;
           provider.handler = handler;
           return handler.apply(provider, args);
@@ -228,12 +232,13 @@
     var cancelled = false;
 
     return providers.reduce(function(prev, curr) {
-      return prev.then(function() {
-        if (arguments.length) {
+      return prev.then(function(next) {
+        if (next === false) {
           cancelled = true;
         }
 
         if (!cancelled && !curr.__pending) {
+          logger.log("transformation", curr.name);
           return curr.handler.apply(curr, data);
         }
       }, function(err) {
