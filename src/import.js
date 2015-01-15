@@ -21,7 +21,6 @@
     }
 
     this.manager = manager;
-    this.context = manager.context || {};
     this.modules = new StatefulItems();
   }
 

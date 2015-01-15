@@ -60,7 +60,7 @@
       return this.context.code[name];
     }
     else {
-      return (this.context.code[name] = this.providers.loader.getModule(name).code);
+      return (this.context.code[name] = this.providers.loader.buildModule(name).code);
     }
   };
 

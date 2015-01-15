@@ -75,7 +75,7 @@
       return this.context.code[name];
     }
     else {
-      return (this.context.code[name] = this.providers.loader.getModule(name).code);
+      return (this.context.code[name] = this.providers.loader.buildModule(name).code);
     }
   };
 
@@ -172,7 +172,6 @@
     }
 
     this.manager = manager;
-    this.context = manager.context || {};
     this.modules = new StatefulItems();
   }
 
@@ -323,15 +322,15 @@
    * the given name isn't loaded, then we fetch it.  The fetch call returns a promise, which
    * when resolved returns a moduleMeta. The moduleMeta is an intermediate object that contains
    * the module source from fetch and a compile method used for converting the source to an
-   * instance of Module. The purporse for moduleMeta is to allows to process the raw source
-   * with a tranformation pipeline before compiling it to the final product.  The transformation
-   * pipeline allows us to do things like convert coffeescript to javascript.
+   * instance of Module. The purporse for moduleMeta is to allow a tranformation pipeline to process
+   * the raw source before compiling it to the final product. The transformation pipeline allows us
+   * to do things like convert coffeescript to javascript.
    *
    * Primary workflow:
    * fetch     -> module name {string}
    * transform -> module meta {compile:fn, source:string}
    * load deps -> module meta {compile:fn, source:string}
-   * create module
+   * compile
    *
    * @param {string} name - The name of the module to load.
    */
@@ -347,7 +346,7 @@
       return Promise.resolve(manager.getModule(name));
     }
     else if (loader.hasModule(name)) {
-      return Promise.resolve(loader.getItem(name));
+      return Promise.resolve(loader.getModule(name));
     }
     else {
       return loader.setLoading(name, loader.fetch(name).then(moduleFetched, Utils.forwardError));
@@ -368,7 +367,7 @@
         return manager.getModule(name);
       }
       else {
-        return loader.getModule(name);
+        return loader.buildModule(name);
       }
     }
 
@@ -393,7 +392,7 @@
   };
 
 
-  Loader.prototype.getModule = function(name) {
+  Loader.prototype.buildModule = function(name) {
     var manager = this.manager,
         mod;
 
@@ -416,7 +415,7 @@
     this.modules.hasItem(name);
   };
 
-  Loader.prototype.getItem = function(name) {
+  Loader.prototype.getModule = function(name) {
     return this.modules.getItem(name);
   };
 

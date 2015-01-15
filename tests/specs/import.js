@@ -4,175 +4,205 @@ define(["dist/bit-loader"], function(Bitloader) {
 
   describe("Import Suite", function() {
 
+    describe("when creating an empty `Importer`", function() {
+      var importerSpy, exception;
+      beforeEach(function() {
+        importerSpy = sinon.spy(Importer);
+        try {
+          new importerSpy();
+        }
+        catch(ex) {
+          exception = ex;
+        }
+      });
+
+      it("then an exception is thrown", function() {
+        expect(importerSpy.threw(exception)).to.equal(true);
+      });
+
+      it("then the exception message is `Must provide a manager`", function() {
+        expect(exception.message).to.equal("Must provide a manager");
+      });
+    });
+
+
     describe("when importing a module called `no` from options.modules", function() {
-      var no, importer, loadStub;
+      var no, importer, loadStub, moduleImportedStub;
 
       beforeEach(function() {
-        var options = {"modules": {"no": {"item": "hello"}}};
-
+        no = {"item": "hello"};
         loadStub = sinon.stub();
+        moduleImportedStub = sinon.stub();
+
         importer = new Importer({
           load: loadStub
         });
 
+        var options = {"modules": {"no": no}};
         return importer.import("no", options)
-          .then(function(_no) {
-            no = _no;
-          });
+          .then(moduleImportedStub);
       });
 
-      it("then `no` is an object", function() {
-        expect(no).to.be.an("object");
-      });
-
-      it("the `no.item` is a string", function() {
-        expect(no.item).to.be.a("string");
-      });
-
-      it("then `no.item` is `hello`", function() {
-        expect(no.item).to.equal("hello");
-      });
-
-      it("then `import.load` is not called", function() {
+      it("then `manager.load` is not called", function() {
         expect(loadStub.called).to.equal(false);
+      });
+
+      it("then module importer callback is called with module `no`", function() {
+        expect(moduleImportedStub.calledWithExactly(no)).to.equal(true);
       });
     });
 
 
     describe("when importing module `no` and `yes` from options.modules", function() {
-      var no, yes, date, importer, loadStub;
+      var no, yes, date, importer, loadStub, moduleImportedStub;
       beforeEach(function() {
         date = new Date();
-        var options = {"modules": {"no": {"item": "hello"}, "yes": {"item": date}}};
+        yes = {"item": date};
+        no = {"item": "hello"};
 
         loadStub = sinon.stub();
+        moduleImportedStub = sinon.stub();
         importer = new Importer({
           load: loadStub
         });
 
+        var options = {"modules": {"no": no, "yes": yes}};
         return importer.import(["no", "yes"], options)
-          .then(function(_no, _yes) {
-            no = _no;
-            yes = _yes;
-          });
+          .then(moduleImportedStub);
       });
 
-      describe("and module `no` is loaded", function() {
-        it("then module `no` is an object", function() {
-          expect(no).to.be.an("object");
-        });
-
-        it("then module `no` has a string property `item`", function() {
-          expect(no.item).to.be.a("string");
-        });
-
-        it("then module `no.item` is `hello`", function() {
-          expect(no.item).to.equal("hello");
-        });
-
-        it("then `import.load` is not called", function() {
-          expect(loadStub.called).to.equal(false);
-        });
+      it("them module importer callback is called with modules `no` and `yes`", function() {
+        expect(moduleImportedStub.calledWithExactly(no, yes)).to.equal(true);
       });
 
-      describe("and module `yes` is loaded", function() {
-        it("then `yes` is an object", function() {
-          expect(yes).to.be.an("object");
-        });
-
-        it("then `yes.item` is a Date", function() {
-          expect(yes.item).to.be.a("date");
-        });
-
-        it("then `yes.item` equals date", function() {
-          expect(yes.item).to.equal(date);
-        });
-
-        it("then `import.load` is not called", function() {
-          expect(loadStub.called).to.equal(false);
-        });
+      it("then `manager.load` is not called", function() {
+        expect(loadStub.called).to.equal(false);
       });
     });
 
 
-    describe("when importing modules `no` and `yes` from instance.context", function() {
-      var importer, date, no, yes, loadStub;
+    describe("when importing module `yes`", function() {
+      var importer, date, yes, loadStub, hasModuleCodeStub, getModuleCodeStub, moduleImportedStub;
       beforeEach(function() {
         date = new Date();
+        yes = {date: date};
         loadStub = sinon.stub();
+        moduleImportedStub = sinon.stub();
+        hasModuleCodeStub = sinon.stub().returns(true);
+        getModuleCodeStub = sinon.stub().returns(yes);
 
         importer = new Importer({
           load: loadStub,
-          context: {"modules": {"no": {"item": "hello"}, "yes": {"item": date}}}
+          hasModuleCode: hasModuleCodeStub,
+          getModuleCode: getModuleCodeStub
         });
 
-        return importer.import(["no", "yes"])
-          .then(function(_no, _yes) {
-            no = _no;
-            yes = _yes;
-          });
+        return importer.import("yes")
+          .then(moduleImportedStub);
       });
+
+
+      it("then `manager.load` is not called", function() {
+        expect(loadStub.called).to.equal(false);
+      });
+
+      it("then module importer callback is called with module `yes`", function() {
+        expect(moduleImportedStub.calledWithExactly(yes)).to.equal(true);
+      });
+
+      it("then `manager.hasModuleCode` is called once", function() {
+        expect(hasModuleCodeStub.calledOnce).to.equal(true);
+      });
+
+      it("then `manager.hasModuleCode` is called with `yes`", function() {
+        expect(hasModuleCodeStub.calledWithExactly("yes")).to.equal(true);
+      });
+
+      it("then `manager.getModuleCode` is called once", function() {
+        expect(getModuleCodeStub.calledOnce).to.equal(true);
+      });
+
+      it("then `manager.getModuleCode` is called with `yes`", function() {
+        expect(getModuleCodeStub.calledWithExactly("yes")).to.equal(true);
+      });
+    });
+
+
+    describe("when importing modules `no` and `yes`", function() {
+      var importer, date, yes, no, loadStub, hasModuleCodeStub, getModuleCodeStub, moduleImportedStub;
+      beforeEach(function() {
+        date = new Date();
+        yes = {date: date};
+        no = {meh: "something else"};
+        loadStub = sinon.stub();
+        moduleImportedStub = sinon.stub();
+        hasModuleCodeStub = sinon.stub().returns(true);
+        getModuleCodeStub = sinon.stub();
+        getModuleCodeStub.withArgs("no").returns(no);
+        getModuleCodeStub.withArgs("yes").returns(yes);
+
+        importer = new Importer({
+          hasModuleCode: hasModuleCodeStub,
+          getModuleCode: getModuleCodeStub
+        });
+      });
+
 
       describe("and module `no` is loaded", function() {
-        it("then `no` is an object", function() {
-          expect(no).to.be.an("object");
+        beforeEach(function() {
+          return importer.import(["no", "yes"])
+            .then(moduleImportedStub);
         });
 
-        it("then `no.item` is a string", function() {
-          expect(no.item).to.be.a("string");
-        });
-
-        it("then `no.item` is `hello`", function() {
-          expect(no.item).to.equal("hello");
-        });
-
-        it("then `import.load` is not called", function() {
+        it("then `manager.load` is not called", function() {
           expect(loadStub.called).to.equal(false);
+        });
+
+        it("them module importer callback is called with modules `no` and `yes`", function() {
+          expect(moduleImportedStub.calledWithExactly(no, yes)).to.equal(true);
+        });
+
+        it("then `manager.hasModuleCode` is called twice - once for each module", function() {
+          expect(hasModuleCodeStub.calledTwice).to.equal(true);
+        });
+
+        it("then `manager.hasModuleCode` is called with `yes`", function() {
+          expect(hasModuleCodeStub.calledWithExactly("yes")).to.equal(true);
+        });
+
+        it("then `manager.hasModuleCode` is called with `no`", function() {
+          expect(hasModuleCodeStub.calledWithExactly("no")).to.equal(true);
+        });
+
+        it("then `manager.getModuleCode` is called twice - once for each module", function() {
+          expect(getModuleCodeStub.calledTwice).to.equal(true);
+        });
+
+        it("then `manager.getModuleCode` is called with `yes`", function() {
+          expect(getModuleCodeStub.calledWithExactly("yes")).to.equal(true);
+        });
+
+        it("then `manager.getModuleCode` is called with `no`", function() {
+          expect(getModuleCodeStub.calledWithExactly("no")).to.equal(true);
         });
       });
 
-      describe("and module `yes` is loaded", function() {
-        it("then `yes` is an object", function() {
-          expect(yes).to.be.an("object");
-        });
-
-        it("then `yes.item` is a Date", function() {
-          expect(yes.item).to.be.a("date");
-        });
-
-        it("then `yes.item` is date", function() {
-          expect(yes.item).to.equal(date);
-        });
-
-        it("then `import.load` is not called", function() {
-          expect(loadStub.called).to.equal(false);
-        });
-      });
 
       describe("and module `no` is loaded from options.modules", function() {
-        var no, yes;
+        var overriden;
         beforeEach(function() {
-          var options = {"modules": {"no": {"item": "overriden"}}};
+          overriden = {"item": "overriden"};
+          var options = {"modules": {"no": overriden}};
+
           return importer.import(["no", "yes"], options)
-            .then(function(_no, _yes) {
-              no = _no;
-              yes = _yes;
-            });
+            .then(moduleImportedStub);
         });
 
-        it("then `no` is an object", function() {
-          expect(no).to.be.an("object");
+        it("then module importer callback with called with modules `overriden` and `yes`", function() {
+          expect(moduleImportedStub.calledWithExactly(overriden, yes)).to.equal(true);
         });
 
-        it("then `no.item` is a string", function() {
-          expect(no.item).to.be.a("string");
-        });
-
-        it("then `no.item` is `overriden`", function() {
-          expect(no.item).to.equal("overriden");
-        });
-
-        it("then `import.load` is not called", function() {
+        it("then `manager.load` is not called", function() {
           expect(loadStub.called).to.equal(false);
         });
       });
@@ -180,129 +210,73 @@ define(["dist/bit-loader"], function(Bitloader) {
 
 
     describe("When importing module `yes` using the `load` interface", function() {
-
       describe("and module defines `code`", function() {
-        var importer, yes, modYes, loadStub;
+        var importer, modYes, loadStub, loadDeferred, hasModuleCodeStub, moduleImportedStub, getModuleCodeStub, factoryStub, setModuleSpy, removeModuleSpy;
         beforeEach(function() {
-          modYes   = new Bitloader.Module({name: 'yes', type: Bitloader.Module.Type.AMD, code: "module code"});
-          loadStub = sinon.stub().returns(Promise.resolve(modYes));
-
-          importer = new Importer({
-            load: loadStub
-          });
-
-          return importer.import("yes")
-            .then(function(_yes) {
-              yes = _yes;
-            });
-        });
-
-        it("then `load` is called with `yes`", function() {
-          expect(loadStub.calledOnce).to.equal(true);
-        });
-
-        it("then `load` is called once", function() {
-          expect(loadStub.calledWith('yes')).to.equal(true);
-        });
-
-        it("then `yes` is equal to modYes.code", function() {
-          expect(yes).to.equal(modYes.code);
-        });
-      });
-
-
-      describe("and module defines `factory`", function() {
-        var importer, yes, modYes, modFactoryStub, loadStub;
-        beforeEach(function() {
-          modFactoryStub = sinon.stub().returns("module code");
-          modYes   = new Bitloader.Module({name: 'yes', type: Bitloader.Module.Type.AMD, factory: modFactoryStub});
-          loadStub = sinon.stub().returns(Promise.resolve(modYes));
-
-          importer = new Importer({
-            load: loadStub
-          });
-
-          return importer.import("yes")
-            .then(function(_yes) {
-              yes = _yes;
-            });
-        });
-
-        it("then `load` is called with `yes`", function() {
-          expect(loadStub.calledOnce).to.equal(true);
-        });
-
-        it("then `load` is called once", function() {
-          expect(loadStub.calledWith('yes')).to.equal(true);
-        });
-
-        it("then `yes` is equal to modYes.code", function() {
-          expect(yes).to.equal(modYes.code);
-        });
-
-        it("then `modYes.factory` is called once", function() {
-          expect(modFactoryStub.calledOnce).to.equal(true);
-        });
-      });
-
-
-      describe("and module defines `factory` with dependencies `no` and `maybe`", function() {
-        var importer, yes, modYes, modFactoryStub, loadStub;
-        beforeEach(function() {
-
-          modFactoryStub = sinon.stub().withArgs("module no", "module maybe").returns("module code");
+          factoryStub = sinon.stub();
 
           modYes = new Bitloader.Module({
-            name: 'yes',
             type: Bitloader.Module.Type.AMD,
-            factory: modFactoryStub,
-            deps: ["no", "maybe"]
+            name: 'yes',
+            code: "module code",
+            factory: factoryStub
           });
 
-          loadStub = sinon.stub().returns(Promise.resolve(modYes));
+          loadDeferred = Promise.resolve(modYes);
+          moduleImportedStub = sinon.stub();
+          hasModuleCodeStub = sinon.stub().returns(false);
+          getModuleCodeStub = sinon.stub().returns(modYes.code);
+          loadStub = sinon.stub().returns(loadDeferred);
 
           importer = new Importer({
             load: loadStub,
-            context: {
-              modules: {
-                "no": "module no",
-                "maybe": "module maybe"
-              }
-            }
+            hasModuleCode: hasModuleCodeStub,
+            getModuleCode: getModuleCodeStub
           });
 
+          setModuleSpy = sinon.spy(importer, "setModule");
+          removeModuleSpy = sinon.spy(importer, "removeModule");
+
           return importer.import("yes")
-            .then(function(_yes) {
-              yes = _yes;
-            });
+            .then(moduleImportedStub);
         });
 
-        it("then `load` is called with `yes`", function() {
+        it("then `manager.load` is called once", function() {
           expect(loadStub.calledOnce).to.equal(true);
         });
 
-        it("then `load` is called once", function() {
-          expect(loadStub.calledWith('yes')).to.equal(true);
+        it("then `manager.load` is called once", function() {
+          expect(loadStub.calledWithExactly('yes')).to.equal(true);
         });
 
-        it("then `yes` is equal to modYes.code", function() {
-          expect(yes).to.equal(modYes.code);
+        it("them `module.factory` is not called", function() {
+          expect(factoryStub.called).to.equal(false);
         });
 
-        it("then `modYes.factory` is called once", function() {
-          expect(modFactoryStub.calledOnce).to.equal(true);
+        it("then module importer callback is called once", function() {
+          expect(moduleImportedStub.calledOnce).to.equal(true);
         });
 
-        it("then `modYes.factory` is called once with `module no` and `module maybe`", function() {
-          expect(modFactoryStub.withArgs("module no", "module maybe").calledOnce).to.equal(true);
+        it("then module importer callback is called with module `yes`", function() {
+          expect(moduleImportedStub.calledWithExactly(modYes.code)).to.equal(true);
         });
 
-        it("then `modYes.factory` returned `module code`", function() {
-          expect(modFactoryStub.returnValues[0]).to.equal("module code");
+        it("then setModule is called once", function() {
+          expect(setModuleSpy.calledOnce).to.equal(true);
+        });
+
+        it("then setModule is called with `yes`", function() {
+          expect(setModuleSpy.calledWith("yes")).to.equal(true);
+        });
+
+        it("then removeModule is called once", function() {
+          expect(removeModuleSpy.calledOnce).to.equal(true);
+        });
+
+        it("then removeModule is called with `yes`", function() {
+          expect(removeModuleSpy.calledWithExactly("yes")).to.equal(true);
         });
       });
-
     });
-
   });
 });
