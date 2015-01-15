@@ -96,6 +96,27 @@
     return target;
   }
 
+
+  function printError(error) {
+    if (error && !error.handled) {
+      error.handled = true;
+      if (error.stack) {
+        console.log(error.stack);
+      }
+      else {
+        console.error(error);
+      }
+    }
+
+    return error;
+  }
+
+
+  function forwardError(error) {
+    return error;
+  }
+
+
   module.exports = {
     isNull: isNull,
     isArray: isArray,
@@ -108,6 +129,8 @@
     noop: noop,
     result: result,
     extend: extend,
-    merge: merge
+    merge: merge,
+    printError: printError,
+    forwardError: forwardError
   };
 })();

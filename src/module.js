@@ -29,7 +29,7 @@
     this.type     = options.type;
     this.name     = options.name;
     this.deps     = options.deps ? options.deps.slice(0) : [];
-    this.settings = Utils.merge({}, options);
+    this.settings = Utils.extend({}, options);
   }
 
   Module.Type = Type;

@@ -18,6 +18,7 @@
 
   var Promise    = require('spromise'),
       Utils      = require('./utils'),
+      Logger     = require('./logger'),
       Import     = require('./import'),
       Loader     = require('./loader'),
       Module     = require('./module'),
@@ -25,7 +26,9 @@
       Middleware = require('./middleware'),
       Fetch      = require('./fetch');
 
-  function Bitloader(options) {
+  function Bitloader(options, factories) {
+    factories = factories || {};
+
     this.context   = Registry.getById();
     this.transform = Middleware.factory(this);
     this.plugin    = Middleware.factory(this);
@@ -40,9 +43,9 @@
 
     // Override any of these constructors if you need specialized implementation
     var providers = {
-      fetch  : new Bitloader.Fetch(this),
-      loader : new Bitloader.Loader(this),
-      import : new Bitloader.Import(this)
+      fetch  : factories.fetch  ? factories.fetch(this)  : new Bitloader.Fetch(this),
+      loader : factories.loader ? factories.loader(this) : new Bitloader.Loader(this),
+      import : factories.import ? factories.import(this) : new Bitloader.Import(this)
     };
 
     // Expose interfaces
@@ -52,13 +55,71 @@
     this.import    = providers.import.import.bind(providers.import);
   }
 
+
   Bitloader.prototype.clear = function() {
     return Registry.clearById(this.context._id);
   };
 
+
+  Bitloader.prototype.hasModuleCode = function(name) {
+    return this.context.code.hasOwnProperty(name) || this.providers.loader.isLoaded(name) || this.hasModule(name);
+  };
+
+
+  Bitloader.prototype.getModuleCode = function(name) {
+    if (!this.hasModuleCode(name)) {
+      throw new TypeError("Module `" + name + "` has not yet been loaded");
+    }
+
+    if (this.context.code.hasOwnProperty(name)) {
+      return this.context.code[name];
+    }
+    else {
+      return (this.context.code[name] = this.providers.loader.buildModule(name).code);
+    }
+  };
+
+
+  Bitloader.prototype.setModuleCode = function(name, code) {
+    if (this.hasModuleCode(name)) {
+      throw new TypeError("Module code for `" + name + "` already exists");
+    }
+
+    return (this.context.code[name] = code);
+  };
+
+
+  Bitloader.prototype.hasModule = function(name) {
+    return this.context.modules.hasOwnProperty(name);
+  };
+
+
+  Bitloader.prototype.getModule = function(name) {
+    if (!this.hasModule(name)) {
+      throw new TypeError("Module `" + name + "` has not yet been loaded");
+    }
+
+    return this.context.modules[name];
+  };
+
+
+  Bitloader.prototype.setModule = function(name, mod) {
+    if (!(mod instanceof(Module))) {
+      throw new TypeError("Module `" + name + "` is not an instance of Module");
+    }
+
+    if (this.hasModule(name)) {
+      throw new TypeError("Module instance `" + name + "` already exists");
+    }
+
+    return (this.context.modules[name] = mod);
+  };
+
+
   Bitloader.prototype.Promise = Promise;
   Bitloader.prototype.Module  = Module;
   Bitloader.prototype.Utils   = Utils;
+  Bitloader.prototype.Logger  = Logger;
 
   // Expose constructors and utilities
   Bitloader.Promise    = Promise;
@@ -69,10 +130,11 @@
   Bitloader.Module     = Module;
   Bitloader.Fetch      = Fetch;
   Bitloader.Middleware = Middleware;
-  module.exports   = Bitloader;
+  Bitloader.Logger     = Logger;
+  module.exports       = Bitloader;
 })();
 
-},{"./fetch":3,"./import":4,"./loader":5,"./middleware":6,"./module":7,"./registry":8,"./utils":9,"spromise":1}],3:[function(require,module,exports){
+},{"./fetch":3,"./import":4,"./loader":5,"./logger":6,"./middleware":12,"./module":13,"./registry":16,"./utils":18,"spromise":1}],3:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -87,11 +149,18 @@
 })();
 
 },{}],4:[function(require,module,exports){
-(function(root) {
+(function() {
   "use strict";
 
-  var Promise = require('spromise'),
-      Module  = require('./module');
+  var Promise       = require('spromise'),
+      StatefulItems = require('./stateful-items'),
+      Utils         = require('./utils');
+
+
+  var StateTypes = {
+    loading: "loading"
+  };
+
 
   /**
    * Module importer.  Primary function is to load Module instances and resolving
@@ -102,18 +171,13 @@
       throw new TypeError("Must provide a manager");
     }
 
-    this.manager  = manager;
-    this.context  = manager.context || {};
-    this.pipeline = [load, validate, dependencies, finalize, cache];
-
-    if (!this.context.modules) {
-      this.context.modules = {};
-    }
+    this.manager = manager;
+    this.modules = new StatefulItems();
   }
 
+
   /**
-   * Import is the interface to load up a Module, fully resolving its dependencies,
-   * and caching it to prevent the same module from being processed more than once.
+   * Import is the interface to load a Module
    *
    * @param {Array<string> | string} names - module(s) to import
    *
@@ -121,117 +185,110 @@
    */
   Import.prototype.import = function(names, options) {
     options = options || {};
-    var importer = this,
-        context  = this.context;
+    var importer = this;
 
     // Coerce string to array to simplify input processing
     if (typeof(names) === "string") {
       names = [names];
     }
 
-    // This logic figures out if the module's dependencies need to be resolved and if
-    // they also need to be downloaded.
-    var deps = names.map(function(name) {
-      // Search in the options passed in for the module being loaded.  This is how I
-      // allow dependency injection to happen.
-      if (options.modules && options.modules.hasOwnProperty(name)) {
-        return options.modules[name];
-      }
-      else if (context.modules.hasOwnProperty(name)) {
-        return context.modules[name];
+    return new Promise(function deferredModuleImport(resolve, reject) {
+      // Callback when modules are loaded
+      function modulesLoaded(modules) {
+        resolve.apply((void 0), modules);
       }
 
-      // Workflow for loading a module that has not yet been loaded
-      return (context.modules[name] = runPipeline(importer, name));
-    });
+      // Callback if there was an error loading the modules
+      function handleError(error) {
+        reject.call((void 0), Utils.printError(error));
+      }
 
-    return Promise.when.apply((void 0), deps).catch(function(error) {
-      console.error(error);
+      // Load modules
+      Promise
+        .all(importer.getModules(names, options))
+        .then(modulesLoaded, handleError);
     });
   };
 
+  // Load modules wherever they are found...
+  Import.prototype.getModules = function(names, options) {
+    var importer = this,
+        manager  = this.manager;
 
-  function forwardError(error) {
-    return error;
-  }
-
-
-  function runPipeline(importer, name) {
-    return importer.pipeline.reduce(function(prev, curr) {
-      return prev.then(curr(importer, name), forwardError);
-    }, Promise.resolve());
-  }
-
-
-  function validate() {
-    return function (mod) {
-      if (mod instanceof(Module) === false) {
-        throw new TypeError("input must be an Instance of Module");
+    return names.map(function getModule(name) {
+      if (isModuleInOptions(name)) {
+        return options.modules[name];
       }
-      return mod;
-    };
-  }
-
-
-  function load(importer, name) {
-    return function() {
-      return importer.manager.load(name);
-    };
-  }
-
-  /**
-   * Loads up all dependencies for the modules
-   *
-   * @returns {Function} callback to call with the Module instance with the
-   *   dependencies to be resolved
-   */
-  function dependencies(importer) {
-    return function(mod) {
-      // If the module has a property `code` that means the module has already
-      // been fully resolved.
-      if (!mod.deps.length || mod.hasOwnProperty("code")) {
-        return mod;
+      else if (manager.hasModuleCode(name)) {
+        return manager.getModuleCode(name);
+      }
+      else if (importer.hasModule(name)) {
+        return importer.getModule(name);
       }
 
-      return new Promise(function(resolve /*, reject*/) {
-        importer.import(mod.deps).then(function() {
-          resolve(mod, arguments);
-        });
-      });
-    };
-  }
+      // Workflow for loading a module that has not yet been loaded
+      return importer.setModule(name, loadModule(name));
+    });
 
-  /**
-   * Finalizes the module by calling the `factory` method with any dependencies
-   *
-   * @returns {Function} callback to call with the Module instance to finalize
-   */
-  function finalize() {
-    return function(mod, deps) {
-      if (mod.factory && !mod.hasOwnProperty("code")) {
-        mod.code = mod.factory.apply(root, deps);
-      }
-      return mod;
-    };
-  }
 
-  /**
-   * Adds module to the context to cache it
-   */
-  function cache(importer) {
-    return function(mod) {
-      return (importer.context.modules[mod.name] = mod.code);
-    };
-  }
+    function isModuleInOptions(name) {
+      return options.modules && options.modules.hasOwnProperty(name);
+    }
+
+    function loadModule(name) {
+      return manager.load(name).then(getModuleCode, Utils.forwardError);
+    }
+
+    function getModuleCode(mod) {
+      importer.removeModule(mod.name);
+      return manager.getModuleCode(mod.name);
+    }
+  };
+
+
+  Import.prototype.hasModule = function(name) {
+    return this.modules.hasItemWithState(StateTypes.loading, name);
+  };
+
+
+  Import.prototype.getModule = function(name) {
+    return this.modules.getItem(StateTypes.loading, name);
+  };
+
+
+  Import.prototype.setModule = function(name, item) {
+    return this.modules.setItem(StateTypes.loading, name, item);
+  };
+
+
+  Import.prototype.removeModule = function(name) {
+    return this.modules.removeItem(name);
+  };
+
 
   module.exports = Import;
-})(typeof(window) !== 'undefined' ? window : this);
+})();
 
-},{"./module":7,"spromise":1}],5:[function(require,module,exports){
+},{"./stateful-items":17,"./utils":18,"spromise":1}],5:[function(require,module,exports){
 (function() {
   "use strict";
 
-  var Promise = require('spromise');
+  var Promise          = require('spromise'),
+      Utils            = require('./utils'),
+      Pipeline         = require('./pipeline'),
+      StatefulItems    = require('./stateful-items'),
+      moduleLinker     = require('./module/linker'),
+      metaFetch        = require('./meta/fetch'),
+      metaValidation   = require('./meta/validation'),
+      metaTransform    = require('./meta/transform'),
+      metaDependencies = require('./meta/dependencies'),
+      metaCompilation  = require('./meta/compilation');
+
+  var StateTypes = {
+    loaded:  "loaded",
+    loading: "loading"
+  };
+
 
   /**
    * The purpose of Loader is to return full instances of Module.  Module instances
@@ -252,13 +309,10 @@
     }
 
     this.manager  = manager;
-    this.context  = manager.context || {};
-    this.pipeline = [fetch, validate, transform, compile];
-
-    if (!this.context.loaded) {
-      this.context.loaded = {};
-    }
+    this.pipeline = new Pipeline([metaFetch, metaValidation, metaTransform, metaDependencies]);
+    this.modules  = new StatefulItems();
   }
+
 
   /**
    * Handles the process of returning the instance of the Module if one exists, otherwise
@@ -268,89 +322,229 @@
    * the given name isn't loaded, then we fetch it.  The fetch call returns a promise, which
    * when resolved returns a moduleMeta. The moduleMeta is an intermediate object that contains
    * the module source from fetch and a compile method used for converting the source to an
-   * instance of Module. The purporse for moduleMeta is to allows to process the raw source
-   * with a tranformation pipeline before compiling it to the final product.  The transformation
-   * pipeline allows us to do things like convert coffeescript to javascript.
+   * instance of Module. The purporse for moduleMeta is to allow a tranformation pipeline to process
+   * the raw source before compiling it to the final product. The transformation pipeline allows us
+   * to do things like convert coffeescript to javascript.
    *
    * Primary workflow:
    * fetch     -> module name {string}
    * transform -> module meta {compile:fn, source:string}
-   * compile   -> module meta {compile:fn, source:string}
-   * Module: {deps:array, name:string}
+   * load deps -> module meta {compile:fn, source:string}
+   * compile
    *
    * @param {string} name - The name of the module to load.
    */
   Loader.prototype.load = function(name) {
     var loader  = this,
-        context = this.context;
+        manager = this.manager;
 
     if (!name) {
       throw new TypeError("Must provide the name of the module to load");
     }
 
-    // If the context does not have a module with the given name, then we go on to
-    // fetch the source and put it through the workflow to create a Module instance.
-    if (!context.loaded.hasOwnProperty(name)) {
-      // This is where the workflow for fetching, transforming, and compiling happens.
-      // It is designed to easily add more steps to the workflow.
-      context.loaded[name] = runPipeline(loader, name);
+    if (manager.hasModule(name)) {
+      return Promise.resolve(manager.getModule(name));
+    }
+    else if (loader.hasModule(name)) {
+      return Promise.resolve(loader.getModule(name));
+    }
+    else {
+      return loader.setLoading(name, loader.fetch(name).then(moduleFetched, Utils.forwardError));
     }
 
-    return Promise.resolve(context.loaded[name]);
+    function moduleFetched(getModuleDelegate) {
+      return getModuleDelegate();
+    }
   };
 
 
-  function forwardError(error) {
-    return error;
-  }
+  Loader.prototype.fetch = function(name) {
+    var loader  = this,
+        manager = this.manager;
 
+    function getModuleDelegate() {
+      if (manager.hasModule(name)) {
+        return manager.getModule(name);
+      }
+      else {
+        return loader.buildModule(name);
+      }
+    }
 
-  function runPipeline(loader, name) {
-    return loader.pipeline.reduce(function(prev, curr) {
-      return prev.then(curr(loader, name), forwardError);
-    }, Promise.resolve());
-  }
-
-
-  function fetch(loader, name) {
-    return function() {
-      return loader.manager.fetch(name);
-    };
-  }
-
-
-  /**
-   * Method to ensure we have a valid module meta object before we continue on with
-   * the rest of the pipeline.
-   */
-  function validate(loader) {
-    return function(moduleMeta) {
-      if (!moduleMeta) {
-        throw new TypeError("Must provide a ModuleMeta");
+    return new Promise(function(resolve, reject) {
+      if (manager.hasModule(name) || loader.isLoaded(name)) {
+        return resolve(getModuleDelegate);
       }
 
-      if (!moduleMeta.compile) {
-        throw new TypeError("ModuleMeta must provide have a `compile` interface that creates and returns an instance of Module");
+      var loading = loader.isLoading(name) ? loader.getLoading(name) : loader.pipeline.run(manager, name);
+      loading.then(moduleFetched, handleError);
+
+      function moduleFetched(moduleMeta) {
+        loader.setLoaded(name, moduleMeta);
+        resolve(getModuleDelegate);
       }
 
-      moduleMeta.manager = loader.manager;
-      return moduleMeta;
-    };
+      function handleError(error) {
+        Utils.printError(error);
+        reject(error);
+      }
+    });
+  };
+
+
+  Loader.prototype.buildModule = function(name) {
+    var manager = this.manager,
+        mod;
+
+    if (manager.hasModule(name)) {
+      mod = manager.getModule(name);
+    }
+    else if (this.isLoaded(name)) {
+      mod = metaCompilation(manager)(this.removeModule(name));
+    }
+    else {
+      throw new TypeError("Module `" + name + "` is not loaded yet.  Make sure to call `load` or `fetch` prior to calling this method");
+    }
+
+    // Resolve module dependencies and return the final code.
+    return moduleLinker(manager)(mod);
+  };
+
+
+  Loader.prototype.hasModule = function(name) {
+    this.modules.hasItem(name);
+  };
+
+  Loader.prototype.getModule = function(name) {
+    return this.modules.getItem(name);
+  };
+
+  Loader.prototype.isLoading = function(name) {
+    return this.modules.hasItemWithState(StateTypes.loading, name);
+  };
+
+  Loader.prototype.getLoading = function(name) {
+    return this.modules.getItem(StateTypes.loading, name);
+  };
+
+  Loader.prototype.setLoading = function(name, item) {
+    return this.modules.setItem(StateTypes.loading, name, item);
+  };
+
+  Loader.prototype.isLoaded = function(name) {
+    return this.modules.hasItemWithState(StateTypes.loaded, name);
+  };
+
+  Loader.prototype.getLoaded = function(name) {
+    return this.modules.getItem(StateTypes.loaded, name);
+  };
+
+  Loader.prototype.setLoaded = function(name, item) {
+    return this.modules.setItem(StateTypes.loaded, name, item);
+  };
+
+  Loader.prototype.removeModule = function(name) {
+    return this.modules.removeItem(name);
+  };
+
+
+  module.exports = Loader;
+})();
+
+},{"./meta/compilation":7,"./meta/dependencies":8,"./meta/fetch":9,"./meta/transform":10,"./meta/validation":11,"./module/linker":14,"./pipeline":15,"./stateful-items":17,"./utils":18,"spromise":1}],6:[function(require,module,exports){
+var _enabled = false,
+    _only    = false;
+
+function getDate() {
+  return (new Date()).getTime();
+}
+
+function Logger(name) {
+  this.name = name;
+  this._enabled = true;
+}
+
+Logger.prototype.factory = function(name) {
+  return new Logger(name);
+};
+
+Logger.prototype.log = function() {
+  if (!this.isEnabled()) {
+    return;
   }
 
+  console.log.apply(console, [getDate(), this.name].concat(arguments));
+};
 
-  /**
-   * The transform enables transformation providers to process the moduleMeta
-   * before it is compiled into an actual Module instance.  This is where steps
-   * such as linting and processing coffee files can take place.
-   */
-  function transform(loader) {
-    return function(moduleMeta) {
-      return loader.manager.transform.runAll(moduleMeta)
-        .then(function() {return moduleMeta;}, forwardError);
-    };
+Logger.prototype.dir = function() {
+  if (!this.isEnabled()) {
+    return;
   }
 
+  console.dir.apply(console, arguments);
+};
+
+Logger.prototype.error = function() {
+  if (!this.isEnabled()) {
+    return;
+  }
+
+  console.error.apply(console, arguments);
+};
+
+Logger.prototype.isEnabled = function() {
+  return this._enabled && _enabled && (!_only || _only === this.name);
+};
+
+Logger.prototype.enable = function() {
+  this._enabled = true;
+};
+
+Logger.prototype.disable = function() {
+  this._enabled = false;
+};
+
+Logger.prototype.only = function() {
+  Logger._only = this.name;
+};
+
+Logger.prototype.all = function() {
+  Logger._only = null;
+};
+
+Logger.prototype.disableAll = function() {
+  Logger.disable();
+};
+
+Logger.prototype.enableAll = function() {
+  Logger.enable();
+};
+
+
+// Expose the constructor to be able to create new instances from an
+// existing instance.
+Logger.prototype.Logger = Logger;
+Logger._enabled = typeof(console) !== 'undefined';
+Logger.enable  = function() {
+  _enabled = true;
+};
+
+Logger.disable = function() {
+  _enabled = false;
+};
+
+Logger.only = function(name) {
+  _only = name;
+};
+
+module.exports = new Logger();
+
+},{}],7:[function(require,module,exports){
+(function() {
+  "use strict";
+
+  var Logger = require('../logger'),
+      logger = Logger.factory("Meta/Compilation");
 
   /**
    * The compile step is to convert the moduleMeta to an instance of Module. The
@@ -358,34 +552,146 @@
    * as that is the place with the most knowledge about how the module was loaded
    * from the server/local file system.
    */
-  function compile(loader) {
-    return function(moduleMeta) {
+  function MetaCompilation(manager) {
+    return function compileModuleMeta(moduleMeta) {
+      logger.log(moduleMeta);
+
       var mod     = moduleMeta.compile(),
           modules = mod.modules || {};
 
-      // Copy modules over to the loaded bucket if it does not exist. Anything
+      // Copy modules over to the modules bucket if it does not exist. Anything
       // that has already been loaded will get ignored.
       for (var item in modules) {
-        if (modules.hasOwnProperty(item) && !loader.context.loaded.hasOwnProperty(item)) {
-          loader.context.loaded[item] = modules[item];
+        if (modules.hasOwnProperty(item) && !manager.hasModule(item) && mod.name !== item) {
+          manager.setModule(item, modules[item]);
         }
       }
 
       mod.meta = moduleMeta;
-      return (loader.context.loaded[mod.name] = mod);
+      return mod;
     };
   }
 
-  module.exports = Loader;
-})(typeof(window) !== 'undefined' ? window : this);
+  module.exports = MetaCompilation;
+})();
 
-},{"spromise":1}],6:[function(require,module,exports){
+},{"../logger":6}],8:[function(require,module,exports){
+(function() {
+  "use strict";
+
+  var Logger = require('../logger'),
+      logger = Logger.factory("Meta/Dependencies");
+
+  /**
+   * Loads up all dependencies for the module
+   *
+   * @returns {Function} callback to call with the Module instance with the
+   *   dependencies to be resolved
+   */
+  function MetaDependencies(manager) {
+    function fetchDependencies(moduleMeta) {
+      logger.log(moduleMeta);
+
+      // Return if the module has no dependencies
+      if (!moduleMeta.deps.length) {
+        return manager.Promise.resolve(moduleMeta);
+      }
+
+      var loading = moduleMeta.deps.map(function fetchDependency(mod_name) {
+        return manager.providers.loader.fetch(mod_name);
+      });
+
+      return manager.Promise.all(loading).then(function dependenciesFetched() {
+        return moduleMeta;
+      }, manager.Utils.forwardError);
+    }
+
+    return fetchDependencies;
+  }
+
+  module.exports = MetaDependencies;
+})();
+
+},{"../logger":6}],9:[function(require,module,exports){
+(function() {
+  "use strict";
+
+  var Logger = require('../logger'),
+      logger = Logger.factory("Meta/Fetch");
+
+  function MetaFetch(manager, name) {
+    return function fetch() {
+      logger.log(name);
+      return manager.fetch(name);
+    };
+  }
+
+  module.exports = MetaFetch;
+})();
+
+},{"../logger":6}],10:[function(require,module,exports){
+(function() {
+  "use strict";
+
+  var Logger = require('../logger'),
+      logger = Logger.factory("Meta/Tranform");
+
+  /**
+   * The transform enables transformation providers to process the moduleMeta
+   * before it is compiled into an actual Module instance.  This is where steps
+   * such as linting and processing coffee files can take place.
+   */
+  function MetaTransform(manager) {
+    return function tranform(moduleMeta) {
+      logger.log(moduleMeta);
+      return manager.transform.runAll(moduleMeta)
+        .then(function() {return moduleMeta;}, manager.Utils.forwardError);
+    };
+  }
+
+  module.exports = MetaTransform;
+})();
+
+},{"../logger":6}],11:[function(require,module,exports){
+(function() {
+  "use strict";
+
+  var Logger = require('../logger'),
+      logger = Logger.factory("Meta/Validation");
+
+  /**
+   * Method to ensure we have a valid module meta object before we continue on with
+   * the rest of the pipeline.
+   */
+  function MetaValidation(manager) {
+    return function validateMeta(moduleMeta) {
+      logger.log(moduleMeta);
+
+      if (!moduleMeta) {
+        throw new TypeError("Must provide a ModuleMeta");
+      }
+
+      if (typeof(moduleMeta.compile) !== "function") {
+        throw new TypeError("ModuleMeta must provide have a `compile` interface that creates and returns an instance of Module");
+      }
+
+      moduleMeta.manager = manager;
+      return moduleMeta;
+    };
+  }
+
+  module.exports = MetaValidation;
+})();
+
+},{"../logger":6}],12:[function(require,module,exports){
 (function() {
   "use strict";
 
   var Promise = require('spromise'),
+      Logger  = require('./logger'),
       Utils   = require('./utils');
 
+  var logger = Logger.factory("Middleware");
 
   /**
    * @constructor For checking middleware provider instances
@@ -589,8 +895,10 @@
       var args = arguments;
       provider.__pending = true;
 
+      logger.log("import [start]", provider);
       provider.handler = middleware.manager.import(provider.name)
         .then(function transformReady(handler) {
+          logger.log("import [end]", provider);
           delete provider.__pending;
           provider.handler = handler;
           return handler.apply(provider, args);
@@ -610,12 +918,13 @@
     var cancelled = false;
 
     return providers.reduce(function(prev, curr) {
-      return prev.then(function() {
-        if (arguments.length) {
+      return prev.then(function(next) {
+        if (next === false) {
           cancelled = true;
         }
 
         if (!cancelled && !curr.__pending) {
+          logger.log("transformation", curr.name);
           return curr.handler.apply(curr, data);
         }
       }, function(err) {
@@ -629,7 +938,7 @@
   module.exports = Middleware;
 })();
 
-},{"./utils":9,"spromise":1}],7:[function(require,module,exports){
+},{"./logger":6,"./utils":18,"spromise":1}],13:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -661,14 +970,71 @@
     this.type     = options.type;
     this.name     = options.name;
     this.deps     = options.deps ? options.deps.slice(0) : [];
-    this.settings = Utils.merge({}, options);
+    this.settings = Utils.extend({}, options);
   }
 
   Module.Type = Type;
   module.exports = Module;
 })();
 
-},{"./utils":9}],8:[function(require,module,exports){
+},{"./utils":18}],14:[function(require,module,exports){
+(function(root) {
+  "use strict";
+
+  var Logger = require('../logger'),
+      logger = Logger.factory("Module/Linker");
+
+  function ModuleLinker(manager) {
+    return function traverseDependencies(mod) {
+      logger.log(mod);
+
+      // Get all dependencies to feed them to the module factory
+      var deps = mod.deps.map(function resolveDependency(mod_name) {
+        if (manager.hasModuleCode(mod_name)) {
+          return manager.getModuleCode(mod_name);
+        }
+
+        return traverseDependencies(manager.getModule(mod_name)).code;
+      });
+
+      if (mod.factory && !mod.hasOwnProperty("code")) {
+        mod.code = mod.factory.apply(root, deps);
+      }
+
+      manager.setModuleCode(mod.name, mod.code);
+      manager.setModule(mod.name, mod);
+      return mod;
+    };
+  }
+
+  module.exports = ModuleLinker;
+})(typeof(window) !== 'undefined' ? window : this);
+
+},{"../logger":6}],15:[function(require,module,exports){
+(function() {
+  "use strict";
+
+  var Promise = require('spromise');
+
+  function Pipeline(assets) {
+    this.assets = assets;
+  }
+
+  Pipeline.prototype.run = function() {
+    var args = arguments;
+    return this.assets.reduce(function(prev, curr) {
+      return prev.then(curr.apply((void 0), args), forwardError);
+    }, Promise.resolve());
+  };
+
+  function forwardError(error) {
+    return error;
+  }
+
+  module.exports = Pipeline;
+})();
+
+},{"spromise":1}],16:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -683,9 +1049,9 @@
     }
 
     return storage[id] || (storage[id] = {
-      _id       : id,
-      loaded    : {},
-      modules   : {},
+      _id     : id,
+      code    : {},
+      modules : {}
     });
   };
 
@@ -701,7 +1067,68 @@
   module.exports = Registry;
 })();
 
-},{}],9:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
+(function() {
+  "use strict";
+
+  function StatefulItems(items) {
+    this.items = items || {};
+  }
+
+
+  /**
+   * Helper methods for CRUD operations on `items` map for based on their StateTypes
+   */
+
+
+  StatefulItems.prototype.getState = function(name) {
+    if (!this.hasItem(name)) {
+      throw new TypeError("`" + name + "` not found");
+    }
+
+    return this.items[name].state;
+  };
+
+
+  StatefulItems.prototype.hasItemWithState = function(state, name) {
+    return this.hasItem(name) && this.items[name].state === state;
+  };
+
+
+  StatefulItems.prototype.hasItem = function(name) {
+    return this.items.hasOwnProperty(name);
+  };
+
+
+  StatefulItems.prototype.getItem = function(state, name) {
+    if (!this.hasItemWithState(state, name)) {
+      throw new TypeError("`" + name + "` is not " + state);
+    }
+
+    return this.items[name].item;
+  };
+
+
+  StatefulItems.prototype.setItem = function(state, name, item) {
+    return (this.items[name] = {item: item, state: state}).item;
+  };
+
+
+  StatefulItems.prototype.removeItem = function(name) {
+    if (!this.items.hasOwnProperty(name)) {
+      throw new TypeError("`" + name + "` cannot be removed - not found");
+    }
+
+    var item = this.items[name];
+    delete this.items[name];
+    return item.item;
+  };
+
+
+  module.exports = StatefulItems;
+})();
+
+},{}],18:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -800,6 +1227,27 @@
     return target;
   }
 
+
+  function printError(error) {
+    if (error && !error.handled) {
+      error.handled = true;
+      if (error.stack) {
+        console.log(error.stack);
+      }
+      else {
+        console.error(error);
+      }
+    }
+
+    return error;
+  }
+
+
+  function forwardError(error) {
+    return error;
+  }
+
+
   module.exports = {
     isNull: isNull,
     isArray: isArray,
@@ -812,7 +1260,9 @@
     noop: noop,
     result: result,
     extend: extend,
-    merge: merge
+    merge: merge,
+    printError: printError,
+    forwardError: forwardError
   };
 })();
 

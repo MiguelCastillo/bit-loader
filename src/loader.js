@@ -1,7 +1,22 @@
 (function() {
   "use strict";
 
-  var Promise = require('spromise');
+  var Promise          = require('spromise'),
+      Utils            = require('./utils'),
+      Pipeline         = require('./pipeline'),
+      StatefulItems    = require('./stateful-items'),
+      moduleLinker     = require('./module/linker'),
+      metaFetch        = require('./meta/fetch'),
+      metaValidation   = require('./meta/validation'),
+      metaTransform    = require('./meta/transform'),
+      metaDependencies = require('./meta/dependencies'),
+      metaCompilation  = require('./meta/compilation');
+
+  var StateTypes = {
+    loaded:  "loaded",
+    loading: "loading"
+  };
+
 
   /**
    * The purpose of Loader is to return full instances of Module.  Module instances
@@ -22,13 +37,10 @@
     }
 
     this.manager  = manager;
-    this.context  = manager.context || {};
-    this.pipeline = [fetch, validate, transform, compile];
-
-    if (!this.context.loaded) {
-      this.context.loaded = {};
-    }
+    this.pipeline = new Pipeline([metaFetch, metaValidation, metaTransform, metaDependencies]);
+    this.modules  = new StatefulItems();
   }
+
 
   /**
    * Handles the process of returning the instance of the Module if one exists, otherwise
@@ -38,113 +50,131 @@
    * the given name isn't loaded, then we fetch it.  The fetch call returns a promise, which
    * when resolved returns a moduleMeta. The moduleMeta is an intermediate object that contains
    * the module source from fetch and a compile method used for converting the source to an
-   * instance of Module. The purporse for moduleMeta is to allows to process the raw source
-   * with a tranformation pipeline before compiling it to the final product.  The transformation
-   * pipeline allows us to do things like convert coffeescript to javascript.
+   * instance of Module. The purporse for moduleMeta is to allow a tranformation pipeline to process
+   * the raw source before compiling it to the final product. The transformation pipeline allows us
+   * to do things like convert coffeescript to javascript.
    *
    * Primary workflow:
    * fetch     -> module name {string}
    * transform -> module meta {compile:fn, source:string}
-   * compile   -> module meta {compile:fn, source:string}
-   * Module: {deps:array, name:string}
+   * load deps -> module meta {compile:fn, source:string}
+   * compile
    *
    * @param {string} name - The name of the module to load.
    */
   Loader.prototype.load = function(name) {
     var loader  = this,
-        context = this.context;
+        manager = this.manager;
 
     if (!name) {
       throw new TypeError("Must provide the name of the module to load");
     }
 
-    // If the context does not have a module with the given name, then we go on to
-    // fetch the source and put it through the workflow to create a Module instance.
-    if (!context.loaded.hasOwnProperty(name)) {
-      // This is where the workflow for fetching, transforming, and compiling happens.
-      // It is designed to easily add more steps to the workflow.
-      context.loaded[name] = runPipeline(loader, name);
+    if (manager.hasModule(name)) {
+      return Promise.resolve(manager.getModule(name));
+    }
+    else if (loader.hasModule(name)) {
+      return Promise.resolve(loader.getModule(name));
+    }
+    else {
+      return loader.setLoading(name, loader.fetch(name).then(moduleFetched, Utils.forwardError));
     }
 
-    return Promise.resolve(context.loaded[name]);
+    function moduleFetched(getModuleDelegate) {
+      return getModuleDelegate();
+    }
   };
 
 
-  function forwardError(error) {
-    return error;
-  }
+  Loader.prototype.fetch = function(name) {
+    var loader  = this,
+        manager = this.manager;
 
+    function getModuleDelegate() {
+      if (manager.hasModule(name)) {
+        return manager.getModule(name);
+      }
+      else {
+        return loader.buildModule(name);
+      }
+    }
 
-  function runPipeline(loader, name) {
-    return loader.pipeline.reduce(function(prev, curr) {
-      return prev.then(curr(loader, name), forwardError);
-    }, Promise.resolve());
-  }
-
-
-  function fetch(loader, name) {
-    return function() {
-      return loader.manager.fetch(name);
-    };
-  }
-
-
-  /**
-   * Method to ensure we have a valid module meta object before we continue on with
-   * the rest of the pipeline.
-   */
-  function validate(loader) {
-    return function(moduleMeta) {
-      if (!moduleMeta) {
-        throw new TypeError("Must provide a ModuleMeta");
+    return new Promise(function(resolve, reject) {
+      if (manager.hasModule(name) || loader.isLoaded(name)) {
+        return resolve(getModuleDelegate);
       }
 
-      if (!moduleMeta.compile) {
-        throw new TypeError("ModuleMeta must provide have a `compile` interface that creates and returns an instance of Module");
+      var loading = loader.isLoading(name) ? loader.getLoading(name) : loader.pipeline.run(manager, name);
+      loading.then(moduleFetched, handleError);
+
+      function moduleFetched(moduleMeta) {
+        loader.setLoaded(name, moduleMeta);
+        resolve(getModuleDelegate);
       }
 
-      moduleMeta.manager = loader.manager;
-      return moduleMeta;
-    };
-  }
-
-
-  /**
-   * The transform enables transformation providers to process the moduleMeta
-   * before it is compiled into an actual Module instance.  This is where steps
-   * such as linting and processing coffee files can take place.
-   */
-  function transform(loader) {
-    return function(moduleMeta) {
-      return loader.manager.transform.runAll(moduleMeta)
-        .then(function() {return moduleMeta;}, forwardError);
-    };
-  }
-
-
-  /**
-   * The compile step is to convert the moduleMeta to an instance of Module. The
-   * fetch provider is in charge of adding the compile interface in the moduleMeta
-   * as that is the place with the most knowledge about how the module was loaded
-   * from the server/local file system.
-   */
-  function compile(loader) {
-    return function(moduleMeta) {
-      var mod     = moduleMeta.compile(),
-          modules = mod.modules || {};
-
-      // Copy modules over to the loaded bucket if it does not exist. Anything
-      // that has already been loaded will get ignored.
-      for (var item in modules) {
-        if (modules.hasOwnProperty(item) && !loader.context.loaded.hasOwnProperty(item)) {
-          loader.context.loaded[item] = modules[item];
-        }
+      function handleError(error) {
+        Utils.printError(error);
+        reject(error);
       }
+    });
+  };
 
-      mod.meta = moduleMeta;
-      return (loader.context.loaded[mod.name] = mod);
-    };
-  }
+
+  Loader.prototype.buildModule = function(name) {
+    var manager = this.manager,
+        mod;
+
+    if (manager.hasModule(name)) {
+      mod = manager.getModule(name);
+    }
+    else if (this.isLoaded(name)) {
+      mod = metaCompilation(manager)(this.removeModule(name));
+    }
+    else {
+      throw new TypeError("Module `" + name + "` is not loaded yet.  Make sure to call `load` or `fetch` prior to calling this method");
+    }
+
+    // Resolve module dependencies and return the final code.
+    return moduleLinker(manager)(mod);
+  };
+
+
+  Loader.prototype.hasModule = function(name) {
+    this.modules.hasItem(name);
+  };
+
+  Loader.prototype.getModule = function(name) {
+    return this.modules.getItem(name);
+  };
+
+  Loader.prototype.isLoading = function(name) {
+    return this.modules.hasItemWithState(StateTypes.loading, name);
+  };
+
+  Loader.prototype.getLoading = function(name) {
+    return this.modules.getItem(StateTypes.loading, name);
+  };
+
+  Loader.prototype.setLoading = function(name, item) {
+    return this.modules.setItem(StateTypes.loading, name, item);
+  };
+
+  Loader.prototype.isLoaded = function(name) {
+    return this.modules.hasItemWithState(StateTypes.loaded, name);
+  };
+
+  Loader.prototype.getLoaded = function(name) {
+    return this.modules.getItem(StateTypes.loaded, name);
+  };
+
+  Loader.prototype.setLoaded = function(name, item) {
+    return this.modules.setItem(StateTypes.loaded, name, item);
+  };
+
+  Loader.prototype.removeModule = function(name) {
+    return this.modules.removeItem(name);
+  };
+
 
   module.exports = Loader;
-})(typeof(window) !== 'undefined' ? window : this);
+})();

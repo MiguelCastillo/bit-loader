@@ -155,12 +155,12 @@ define(['dist/bit-loader'], function(Bitloader) {
       });
 
 
-      describe("and `sour` provider returns a value", function() {
+      describe("and `sour` provider returns false to stop middleware chain", function() {
         var middleware, sweetMiddlewareStub, sourMiddlewareStub, chickenMiddlewareStub;
         beforeEach(function() {
           middleware = new Middleware();
           sweetMiddlewareStub = sinon.stub();
-          sourMiddlewareStub = sinon.stub().returns({hey: "this will stop execution"});
+          sourMiddlewareStub = sinon.stub().returns(false);
           chickenMiddlewareStub = sinon.stub();
           middleware.use({name: "sweet", handler: sweetMiddlewareStub});
           middleware.use({name: "sour", handler: sourMiddlewareStub});
