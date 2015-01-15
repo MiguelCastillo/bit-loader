@@ -35,7 +35,8 @@
     "chai": "~1.10.0",
     "sinon": "~1.12.2",
     "browserify": "~8.0.3",
-    "spromise": ""
+    "spromise": "",
+    "bit-imports": ""
   },
   "dependencies": {}
 }
