@@ -1,7 +1,7 @@
 {
   "name": "bit-loader",
   "version": "0.0.7",
-  "description": "Dependency loader and manager micro framework",
+  "description": "Dependency loader and management micro framework",
   "main": "dist/bit-loader.js",
   "directories": {
     "test": "tests"
@@ -36,7 +36,7 @@
     "sinon": "~1.12.2",
     "browserify": "~8.0.3",
     "spromise": "",
-    "amd-bits": ""
+    "bit-imports": ""
   },
   "dependencies": {}
 }

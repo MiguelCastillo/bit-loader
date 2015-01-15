@@ -1,7 +1,7 @@
 var require = (function() {
   "use strict";
 
-  var importer = Bitimporter.config({
+  var importer = Bitimports.config({
     "baseUrl": "../",
     "paths": {
       "mocha": "../node_modules/mocha/mocha",
@@ -27,6 +27,6 @@ var require = (function() {
     return !(ignoreList && ignoreList.length && ignoreList.indexOf(moduleMeta.name) !== -1);
   }
 
-  Bitimporter.Logger.enableAll();
+  Bitimports.Logger.enableAll();
   return importer.require;
 })();
