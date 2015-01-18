@@ -4,9 +4,9 @@
   var Logger = require('../logger'),
       logger = Logger.factory("Module/Linker");
 
-  function ModuleLinker(manager) {
-    return function traverseDependencies(mod) {
-      logger.log(mod);
+  function ModuleLinker(manager, mod) {
+    function traverseDependencies(mod) {
+      logger.log(mod.name, mod);
 
       // Get all dependencies to feed them to the module factory
       var deps = mod.deps.map(function resolveDependency(mod_name) {
@@ -24,7 +24,9 @@
       manager.setModuleCode(mod.name, mod.code);
       manager.setModule(mod.name, mod);
       return mod;
-    };
+    }
+
+    return traverseDependencies(mod);
   }
 
   module.exports = ModuleLinker;
