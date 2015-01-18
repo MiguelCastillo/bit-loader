@@ -293,7 +293,7 @@
 
   /**
    * The purpose of Loader is to return full instances of Module.  Module instances
-   * are stored in the context to avoid loading the same module multiple times.
+   * are stored in the manager's context to avoid loading the same module multiple times.
    * If the module is loaded, then we just return that.  If it has not bee loaded yet,
    * then we:
    *
@@ -360,6 +360,23 @@
   };
 
 
+  /**
+   * This method fetches the module meta if it is not already loaded. Once the
+   * the module meta is fetched, it is put through the transform pipeline. Once
+   * the transformation is done, all dependencies are fetched.
+   *
+   * The purpose for this method is to setup the module meta and all its dependencies
+   * so that the module meta can be converted to an instance of Module synchronously,
+   * without having to loaded any resources.
+   *
+   * Use this method if the intent is to preload dependencies without actually compiling
+   * module metas to instances of Module.
+   *
+   * @param {string} name - The name of the module to fetch
+   * @returns {Promise} A promise that when resolved will provide a delegate method
+   *   that can be called to actually compile the module meta to an instance of Module.
+   *
+   */
   Loader.prototype.fetch = function(name) {
     var loader  = this,
         manager = this.manager;
@@ -373,15 +390,15 @@
     }
 
     //
-    // This is where the call to fetch the module meta takes. Once the module
-    // meta is loaded, it is put through the transformation pipeline.
+    // This is where the call to fetch the module meta takes place. Once the
+    // module meta is loaded, it is put through the transformation pipeline.
     //
     var loading = metaFetch(manager, name)
       .then(processModuleMeta, handleError)
       .then(moduleFetched, handleError);
 
-    // Make sure to set the module as loading so that further request know the
-    // state of the module meta
+    // Set the state of the module meta to pending so that future fetch request
+    // can just use the currently loading one.
     return loader.setLoading(name, loading);
 
 
@@ -396,7 +413,9 @@
     }
 
     function processModuleMeta(moduleMeta) {
-      return loader.processModuleMeta(moduleMeta);
+      return loader.pipeline
+        .run(manager, moduleMeta)
+        .then(function() {return moduleMeta;}, Utils.forwardError);
     }
 
     function getModuleDelegate() {
@@ -410,13 +429,12 @@
   };
 
 
-  Loader.prototype.processModuleMeta = function(moduleMeta) {
-    return this.pipeline
-      .run(this.manager, moduleMeta)
-      .then(function() {return moduleMeta;}, Utils.forwardError);
-  };
-
-
+  /**
+   * Converts a module meta to a full Module instance.
+   *
+   * @param {string} name - The name of the module meta to convert to an instance of Module
+   * @return {Module} Module instance from the convertion of module meta
+   */
   Loader.prototype.buildModule = function(name) {
     var manager = this.manager,
         mod;
@@ -437,8 +455,9 @@
 
 
   /**
-   * Check is there is currently a module loaded or loading.
+   * Check if there is currently a module loading or loaded.
    *
+   * @param {string} name - The name of the module meta to check
    * @returns {Boolean}
    */
   Loader.prototype.hasModule = function(name) {
@@ -447,10 +466,11 @@
 
 
   /**
-   * Method to retrieve the moduleMeta regardless of whether it is loading or
-   * already loaded.  If it is loading, then a promise is returned, otherwise
-   * the actual metaModule object is returned.
+   * Method to retrieve the module meta with the given name, if one exists.  If it
+   * is loading, then the promise for the pending request is returned. Otherwise
+   * the actual module meta object is returned.
    *
+   * @param {string} name - The name of the module meta to get
    * @returns {moduleMeta | Promise}
    */
   Loader.prototype.getModule = function(name) {
@@ -459,8 +479,9 @@
 
 
   /**
-   * Checks is a module is being put through the fetch and the transform pipeline.
+   * Checks if the module meta with the given name is currently loading
    *
+   * @param {string} name - The name of the module meta to check
    * @returns {Boolean} - true if the module name is being loaded, false otherwise.
    */
   Loader.prototype.isLoading = function(name) {
@@ -469,31 +490,67 @@
 
 
   /**
-   * Method to retrieve the moduleMeta if it is in the loading state.  Otherwise
-   * an exception is thrown.
+   * Method to retrieve the module meta with the given name, if it is loading.
    *
+   * @param {string} name - The name of the loading module meta to get.
    * @returns {Promise}
    */
   Loader.prototype.getLoading = function(name) {
     return this.modules.getItem(StateTypes.loading, name);
   };
 
+
+  /**
+   * Method to set the loading module meta with the given name.
+   *
+   * @param {string} name - The name of the module meta to set
+   * @param {Object} item - The module meta to set
+   * @return {Object} The module meta being set
+   */
   Loader.prototype.setLoading = function(name, item) {
     return this.modules.setItem(StateTypes.loading, name, item);
   };
 
+  /**
+   * Method to check if a module meta with the given name is already loaded.
+   *
+   * @param {string} name - The name of the module meta to check.
+   * @param {Boolean}
+   */
   Loader.prototype.isLoaded = function(name) {
     return this.modules.hasItemWithState(StateTypes.loaded, name);
   };
 
+
+  /**
+   * Method to retrieve the module meta with the given name, if one exists.
+   *
+   * @param {string} name - The name of the loaded module meta to set
+   * @returns {Object} The loaded module meta
+   */
   Loader.prototype.getLoaded = function(name) {
     return this.modules.getItem(StateTypes.loaded, name);
   };
 
+
+  /**
+   * Method to set the loaded module meta with the given name
+   *
+   * @param {string} name - The name of the module meta to set
+   * @param {Object} item - The module meta to set
+   * @returns {Object} The module meta being set
+   */
   Loader.prototype.setLoaded = function(name, item) {
     return this.modules.setItem(StateTypes.loaded, name, item);
   };
 
+
+  /**
+   * Method to remove the module from storage
+   *
+   * @param {string} name - The name of the module meta to remove
+   * @returns {Object} The module meta being removed
+   */
   Loader.prototype.removeModule = function(name) {
     return this.modules.removeItem(name);
   };

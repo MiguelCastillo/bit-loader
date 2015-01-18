@@ -119,46 +119,5 @@ define(["dist/bit-loader"], function(Bitloader) {
       });
     });
 
-
-    describe("When calling `Loader.processModuleMeta`", function() {
-      var loader, moduleMeta, metaCompileStub, runAllSub, processModuleMetaResult;
-
-      beforeEach(function() {
-        metaCompileStub = sinon.stub();
-        runAllSub = sinon.stub().returns(Promise.resolve());
-
-        moduleMeta = {
-          compile: metaCompileStub
-        };
-
-        processModuleMetaResult = sinon.stub();
-
-        var manager = {
-          transform: {
-            runAll: runAllSub
-          },
-          Utils: Utils,
-          Promise: Promise
-        };
-
-        loader = new Loader(manager);
-        return loader.processModuleMeta(moduleMeta)
-          .then(processModuleMetaResult);
-      });
-
-
-      it("then process module callback is called once", function() {
-        expect(processModuleMetaResult.calledOnce).to.equal(true);
-      });
-
-      it("then process module callback is called with the input `moduleMeta`", function() {
-        expect(processModuleMetaResult.calledWithExactly(moduleMeta)).to.equal(true);
-      });
-
-      it("then `moduleMeta.compile` is not called", function() {
-        expect(metaCompileStub.called).to.equal(false);
-      });
-    });
-
   });
 });
