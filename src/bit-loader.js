@@ -12,6 +12,7 @@
       Fetch      = require('./fetch');
 
   function Bitloader(options, factories) {
+    options   = options   || {};
     factories = factories || {};
 
     this.context   = Registry.getById();

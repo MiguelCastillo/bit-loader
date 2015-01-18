@@ -37,14 +37,15 @@
     }
 
     this.manager  = manager;
-    this.pipeline = new Pipeline([metaFetch, metaValidation, metaTransform, metaDependencies]);
+    this.pipeline = new Pipeline([metaValidation, metaTransform, metaDependencies]);
     this.modules  = new StatefulItems();
   }
 
 
   /**
    * Handles the process of returning the instance of the Module if one exists, otherwise
-   * the workflow for creating the instance is kicked off.
+   * the workflow for creating the instance is kicked off, which will eventually lead to
+   * the creation of a Module instance
    *
    * The workflow is to take in a module name that needs to be loaded.  If a module with
    * the given name isn't loaded, then we fetch it.  The fetch call returns a promise, which
@@ -61,13 +62,15 @@
    * compile
    *
    * @param {string} name - The name of the module to load.
+   *
+   * @returns {Promise} - Promise that will resolve to a Module instance
    */
   Loader.prototype.load = function(name) {
     var loader  = this,
         manager = this.manager;
 
     if (!name) {
-      throw new TypeError("Must provide the name of the module to load");
+      return Promise.reject(new TypeError("Must provide the name of the module to load"));
     }
 
     if (manager.hasModule(name)) {
@@ -76,19 +79,52 @@
     else if (loader.hasModule(name)) {
       return Promise.resolve(loader.getModule(name));
     }
-    else {
-      return loader.setLoading(name, loader.fetch(name).then(moduleFetched, Utils.forwardError));
-    }
 
-    function moduleFetched(getModuleDelegate) {
-      return getModuleDelegate();
-    }
+    return loader.fetch(name)
+      .then(function moduleFetched(getModuleDelegate) {
+        return getModuleDelegate();
+      }, Utils.forwardError);
   };
 
 
   Loader.prototype.fetch = function(name) {
     var loader  = this,
         manager = this.manager;
+
+    if (manager.hasModule(name) || loader.isLoaded(name)) {
+      return Promise.resolve(getModuleDelegate);
+    }
+
+    if (loader.isLoading(name)) {
+      return loader.getLoading(name);
+    }
+
+    //
+    // This is where the call to fetch the module meta takes. Once the module
+    // meta is loaded, it is put through the transformation pipeline.
+    //
+    var loading = metaFetch(manager, name)
+      .then(processModuleMeta, handleError)
+      .then(moduleFetched, handleError);
+
+    // Make sure to set the module as loading so that further request know the
+    // state of the module meta
+    return loader.setLoading(name, loading);
+
+
+    function moduleFetched(moduleMeta) {
+      loader.setLoaded(name, moduleMeta);
+      return getModuleDelegate;
+    }
+
+    function handleError(error) {
+      Utils.printError(error);
+      return error;
+    }
+
+    function processModuleMeta(moduleMeta) {
+      return loader.processModuleMeta(moduleMeta);
+    }
 
     function getModuleDelegate() {
       if (manager.hasModule(name)) {
@@ -98,25 +134,13 @@
         return loader.buildModule(name);
       }
     }
+  };
 
-    return new Promise(function(resolve, reject) {
-      if (manager.hasModule(name) || loader.isLoaded(name)) {
-        return resolve(getModuleDelegate);
-      }
 
-      var loading = loader.isLoading(name) ? loader.getLoading(name) : loader.pipeline.run(manager, name);
-      loading.then(moduleFetched, handleError);
-
-      function moduleFetched(moduleMeta) {
-        loader.setLoaded(name, moduleMeta);
-        resolve(getModuleDelegate);
-      }
-
-      function handleError(error) {
-        Utils.printError(error);
-        reject(error);
-      }
-    });
+  Loader.prototype.processModuleMeta = function(moduleMeta) {
+    return this.pipeline
+      .run(this.manager, moduleMeta)
+      .then(function() {return moduleMeta;}, Utils.forwardError);
   };
 
 
@@ -128,29 +152,55 @@
       mod = manager.getModule(name);
     }
     else if (this.isLoaded(name)) {
-      mod = metaCompilation(manager)(this.removeModule(name));
+      mod = metaCompilation(manager, this.removeModule(name));
     }
     else {
       throw new TypeError("Module `" + name + "` is not loaded yet.  Make sure to call `load` or `fetch` prior to calling this method");
     }
 
     // Resolve module dependencies and return the final code.
-    return moduleLinker(manager)(mod);
+    return moduleLinker(manager, mod);
   };
 
 
+  /**
+   * Check is there is currently a module loaded or loading.
+   *
+   * @returns {Boolean}
+   */
   Loader.prototype.hasModule = function(name) {
     this.modules.hasItem(name);
   };
 
+
+  /**
+   * Method to retrieve the moduleMeta regardless of whether it is loading or
+   * already loaded.  If it is loading, then a promise is returned, otherwise
+   * the actual metaModule object is returned.
+   *
+   * @returns {moduleMeta | Promise}
+   */
   Loader.prototype.getModule = function(name) {
     return this.modules.getItem(name);
   };
 
+
+  /**
+   * Checks is a module is being put through the fetch and the transform pipeline.
+   *
+   * @returns {Boolean} - true if the module name is being loaded, false otherwise.
+   */
   Loader.prototype.isLoading = function(name) {
     return this.modules.hasItemWithState(StateTypes.loading, name);
   };
 
+
+  /**
+   * Method to retrieve the moduleMeta if it is in the loading state.  Otherwise
+   * an exception is thrown.
+   *
+   * @returns {Promise}
+   */
   Loader.prototype.getLoading = function(name) {
     return this.modules.getItem(StateTypes.loading, name);
   };

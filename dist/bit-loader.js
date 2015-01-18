@@ -27,6 +27,7 @@
       Fetch      = require('./fetch');
 
   function Bitloader(options, factories) {
+    options   = options   || {};
     factories = factories || {};
 
     this.context   = Registry.getById();
@@ -309,14 +310,15 @@
     }
 
     this.manager  = manager;
-    this.pipeline = new Pipeline([metaFetch, metaValidation, metaTransform, metaDependencies]);
+    this.pipeline = new Pipeline([metaValidation, metaTransform, metaDependencies]);
     this.modules  = new StatefulItems();
   }
 
 
   /**
    * Handles the process of returning the instance of the Module if one exists, otherwise
-   * the workflow for creating the instance is kicked off.
+   * the workflow for creating the instance is kicked off, which will eventually lead to
+   * the creation of a Module instance
    *
    * The workflow is to take in a module name that needs to be loaded.  If a module with
    * the given name isn't loaded, then we fetch it.  The fetch call returns a promise, which
@@ -333,13 +335,15 @@
    * compile
    *
    * @param {string} name - The name of the module to load.
+   *
+   * @returns {Promise} - Promise that will resolve to a Module instance
    */
   Loader.prototype.load = function(name) {
     var loader  = this,
         manager = this.manager;
 
     if (!name) {
-      throw new TypeError("Must provide the name of the module to load");
+      return Promise.reject(new TypeError("Must provide the name of the module to load"));
     }
 
     if (manager.hasModule(name)) {
@@ -348,19 +352,52 @@
     else if (loader.hasModule(name)) {
       return Promise.resolve(loader.getModule(name));
     }
-    else {
-      return loader.setLoading(name, loader.fetch(name).then(moduleFetched, Utils.forwardError));
-    }
 
-    function moduleFetched(getModuleDelegate) {
-      return getModuleDelegate();
-    }
+    return loader.fetch(name)
+      .then(function moduleFetched(getModuleDelegate) {
+        return getModuleDelegate();
+      }, Utils.forwardError);
   };
 
 
   Loader.prototype.fetch = function(name) {
     var loader  = this,
         manager = this.manager;
+
+    if (manager.hasModule(name) || loader.isLoaded(name)) {
+      return Promise.resolve(getModuleDelegate);
+    }
+
+    if (loader.isLoading(name)) {
+      return loader.getLoading(name);
+    }
+
+    //
+    // This is where the call to fetch the module meta takes. Once the module
+    // meta is loaded, it is put through the transformation pipeline.
+    //
+    var loading = metaFetch(manager, name)
+      .then(processModuleMeta, handleError)
+      .then(moduleFetched, handleError);
+
+    // Make sure to set the module as loading so that further request know the
+    // state of the module meta
+    return loader.setLoading(name, loading);
+
+
+    function moduleFetched(moduleMeta) {
+      loader.setLoaded(name, moduleMeta);
+      return getModuleDelegate;
+    }
+
+    function handleError(error) {
+      Utils.printError(error);
+      return error;
+    }
+
+    function processModuleMeta(moduleMeta) {
+      return loader.processModuleMeta(moduleMeta);
+    }
 
     function getModuleDelegate() {
       if (manager.hasModule(name)) {
@@ -370,25 +407,13 @@
         return loader.buildModule(name);
       }
     }
+  };
 
-    return new Promise(function(resolve, reject) {
-      if (manager.hasModule(name) || loader.isLoaded(name)) {
-        return resolve(getModuleDelegate);
-      }
 
-      var loading = loader.isLoading(name) ? loader.getLoading(name) : loader.pipeline.run(manager, name);
-      loading.then(moduleFetched, handleError);
-
-      function moduleFetched(moduleMeta) {
-        loader.setLoaded(name, moduleMeta);
-        resolve(getModuleDelegate);
-      }
-
-      function handleError(error) {
-        Utils.printError(error);
-        reject(error);
-      }
-    });
+  Loader.prototype.processModuleMeta = function(moduleMeta) {
+    return this.pipeline
+      .run(this.manager, moduleMeta)
+      .then(function() {return moduleMeta;}, Utils.forwardError);
   };
 
 
@@ -400,29 +425,55 @@
       mod = manager.getModule(name);
     }
     else if (this.isLoaded(name)) {
-      mod = metaCompilation(manager)(this.removeModule(name));
+      mod = metaCompilation(manager, this.removeModule(name));
     }
     else {
       throw new TypeError("Module `" + name + "` is not loaded yet.  Make sure to call `load` or `fetch` prior to calling this method");
     }
 
     // Resolve module dependencies and return the final code.
-    return moduleLinker(manager)(mod);
+    return moduleLinker(manager, mod);
   };
 
 
+  /**
+   * Check is there is currently a module loaded or loading.
+   *
+   * @returns {Boolean}
+   */
   Loader.prototype.hasModule = function(name) {
     this.modules.hasItem(name);
   };
 
+
+  /**
+   * Method to retrieve the moduleMeta regardless of whether it is loading or
+   * already loaded.  If it is loading, then a promise is returned, otherwise
+   * the actual metaModule object is returned.
+   *
+   * @returns {moduleMeta | Promise}
+   */
   Loader.prototype.getModule = function(name) {
     return this.modules.getItem(name);
   };
 
+
+  /**
+   * Checks is a module is being put through the fetch and the transform pipeline.
+   *
+   * @returns {Boolean} - true if the module name is being loaded, false otherwise.
+   */
   Loader.prototype.isLoading = function(name) {
     return this.modules.hasItemWithState(StateTypes.loading, name);
   };
 
+
+  /**
+   * Method to retrieve the moduleMeta if it is in the loading state.  Otherwise
+   * an exception is thrown.
+   *
+   * @returns {Promise}
+   */
   Loader.prototype.getLoading = function(name) {
     return this.modules.getItem(StateTypes.loading, name);
   };
@@ -552,24 +603,23 @@ module.exports = new Logger();
    * as that is the place with the most knowledge about how the module was loaded
    * from the server/local file system.
    */
-  function MetaCompilation(manager) {
-    return function compileModuleMeta(moduleMeta) {
-      logger.log(moduleMeta);
+  function MetaCompilation(manager, moduleMeta) {
+    logger.log(moduleMeta.name, moduleMeta);
 
-      var mod     = moduleMeta.compile(),
-          modules = mod.modules || {};
+    var mod     = moduleMeta.compile(),
+        modules = mod.modules || {};
 
-      // Copy modules over to the modules bucket if it does not exist. Anything
-      // that has already been loaded will get ignored.
-      for (var item in modules) {
-        if (modules.hasOwnProperty(item) && !manager.hasModule(item) && mod.name !== item) {
-          manager.setModule(item, modules[item]);
-        }
+    // Copy modules over to the modules bucket if it does not exist. Anything
+    // that has already been loaded will get ignored.
+    for (var item in modules) {
+      if (modules.hasOwnProperty(item) && !manager.hasModule(item) && mod.name !== item) {
+        manager.setModule(item, modules[item]);
       }
+    }
 
-      mod.meta = moduleMeta;
-      return mod;
-    };
+    mod.deps = mod.deps.concat(moduleMeta.deps);
+    mod.meta = moduleMeta;
+    return mod;
   }
 
   module.exports = MetaCompilation;
@@ -588,25 +638,20 @@ module.exports = new Logger();
    * @returns {Function} callback to call with the Module instance with the
    *   dependencies to be resolved
    */
-  function MetaDependencies(manager) {
-    function fetchDependencies(moduleMeta) {
-      logger.log(moduleMeta);
+  function MetaDependencies(manager, moduleMeta) {
+    logger.log(moduleMeta.name, moduleMeta);
 
-      // Return if the module has no dependencies
-      if (!moduleMeta.deps.length) {
-        return manager.Promise.resolve(moduleMeta);
-      }
-
-      var loading = moduleMeta.deps.map(function fetchDependency(mod_name) {
-        return manager.providers.loader.fetch(mod_name);
-      });
-
-      return manager.Promise.all(loading).then(function dependenciesFetched() {
-        return moduleMeta;
-      }, manager.Utils.forwardError);
+    // Return if the module has no dependencies
+    if (!moduleMeta.deps || !moduleMeta.deps.length) {
+      return manager.Promise.resolve(moduleMeta);
     }
 
-    return fetchDependencies;
+    var loading = moduleMeta.deps.map(function fetchDependency(mod_name) {
+      return manager.providers.loader.fetch(mod_name);
+    });
+
+    return manager.Promise.all(loading)
+      .then(function dependenciesFetched() {return moduleMeta;}, manager.Utils.forwardError);
   }
 
   module.exports = MetaDependencies;
@@ -620,10 +665,8 @@ module.exports = new Logger();
       logger = Logger.factory("Meta/Fetch");
 
   function MetaFetch(manager, name) {
-    return function fetch() {
-      logger.log(name);
-      return manager.fetch(name);
-    };
+    logger.log(name);
+    return manager.fetch(name);
   }
 
   module.exports = MetaFetch;
@@ -641,12 +684,10 @@ module.exports = new Logger();
    * before it is compiled into an actual Module instance.  This is where steps
    * such as linting and processing coffee files can take place.
    */
-  function MetaTransform(manager) {
-    return function tranform(moduleMeta) {
-      logger.log(moduleMeta);
-      return manager.transform.runAll(moduleMeta)
-        .then(function() {return moduleMeta;}, manager.Utils.forwardError);
-    };
+  function MetaTransform(manager, moduleMeta) {
+    logger.log(moduleMeta.name, moduleMeta);
+    return manager.transform.runAll(moduleMeta)
+      .then(function() {return moduleMeta;}, manager.Utils.forwardError);
   }
 
   module.exports = MetaTransform;
@@ -663,21 +704,19 @@ module.exports = new Logger();
    * Method to ensure we have a valid module meta object before we continue on with
    * the rest of the pipeline.
    */
-  function MetaValidation(manager) {
-    return function validateMeta(moduleMeta) {
-      logger.log(moduleMeta);
+  function MetaValidation(manager, moduleMeta) {
+    logger.log(moduleMeta.name, moduleMeta);
 
-      if (!moduleMeta) {
-        throw new TypeError("Must provide a ModuleMeta");
-      }
+    if (!moduleMeta) {
+      throw new TypeError("Must provide a ModuleMeta");
+    }
 
-      if (typeof(moduleMeta.compile) !== "function") {
-        throw new TypeError("ModuleMeta must provide have a `compile` interface that creates and returns an instance of Module");
-      }
+    if (typeof(moduleMeta.compile) !== "function") {
+      throw new TypeError("ModuleMeta must provide have a `compile` interface that creates and returns an instance of Module");
+    }
 
-      moduleMeta.manager = manager;
-      return moduleMeta;
-    };
+    moduleMeta.manager = manager;
+    return moduleMeta;
   }
 
   module.exports = MetaValidation;
@@ -984,9 +1023,9 @@ module.exports = new Logger();
   var Logger = require('../logger'),
       logger = Logger.factory("Module/Linker");
 
-  function ModuleLinker(manager) {
-    return function traverseDependencies(mod) {
-      logger.log(mod);
+  function ModuleLinker(manager, mod) {
+    function traverseDependencies(mod) {
+      logger.log(mod.name, mod);
 
       // Get all dependencies to feed them to the module factory
       var deps = mod.deps.map(function resolveDependency(mod_name) {
@@ -1004,7 +1043,9 @@ module.exports = new Logger();
       manager.setModuleCode(mod.name, mod.code);
       manager.setModule(mod.name, mod);
       return mod;
-    };
+    }
+
+    return traverseDependencies(mod);
   }
 
   module.exports = ModuleLinker;
@@ -1022,8 +1063,14 @@ module.exports = new Logger();
 
   Pipeline.prototype.run = function() {
     var args = arguments;
+    function cb(curr) {
+      return function pipelineAssetReady() {
+        return curr.apply((void 0), args);
+      };
+    }
+
     return this.assets.reduce(function(prev, curr) {
-      return prev.then(curr.apply((void 0), args), forwardError);
+      return prev.then(cb(curr), forwardError);
     }, Promise.resolve());
   };
 
