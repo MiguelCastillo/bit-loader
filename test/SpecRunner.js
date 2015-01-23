@@ -6,12 +6,12 @@ window.assert = chai.assert;
 mocha.setup("bdd");
 
 require([
-  "tests/specs/utils",
-  "tests/specs/import",
-  "tests/specs/loader",
-  "tests/specs/registry",
-  "tests/specs/middleware",
-  "tests/specs/bit-loader"
+  "test/spec/utils",
+  "test/spec/import",
+  "test/spec/loader",
+  "test/spec/registry",
+  "test/spec/middleware",
+  "test/spec/bit-loader"
 ], function() {
   mocha.run();
 });

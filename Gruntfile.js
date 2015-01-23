@@ -16,7 +16,7 @@ module.exports = function(grunt) {
           port: 8000,
           host: "localhost",
           keepalive: true,
-          open: "http://localhost:8000/tests/SpecRunner.html"
+          open: "http://localhost:8000/test/SpecRunner.html"
         }
       }
     },
@@ -28,13 +28,13 @@ module.exports = function(grunt) {
           reporter: "Spec",
           run: false,
           timeout: 10000,
-          urls: ["http://localhost:8002/tests/SpecRunner.html"]
+          urls: ["http://localhost:8002/test/SpecRunner.html"]
         }
       }
     },
     watch: {
       test: {
-        files: ['src/**/*.js', 'tests/**/*.js', '*.js'],
+        files: ['src/**/*.js', 'test/**/*.js', '*.js'],
         tasks: ['jshint:all', 'build'],
         options: {
           livereload: true
@@ -46,7 +46,7 @@ module.exports = function(grunt) {
         options: {
           reporter: require('jshint-stylish')
         },
-        src: ['tests/**/*.js', '*.js']
+        src: ['src/**.*.js', 'test/**/*.js', '*.js']
       }
     },
     concurrent: {
