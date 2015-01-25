@@ -5,9 +5,9 @@
       Utils  = require('../utils'),
       logger = Logger.factory("Meta/Fetch");
 
-  function MetaFetch(manager, name) {
+  function MetaFetch(manager, name, parentMeta) {
     logger.log(name);
-    return manager.fetch(name)
+    return manager.fetch(name, parentMeta)
       .then(moduleFetched, Utils.forwardError);
 
     // Once the module meta is fetched, we want to add helper properties

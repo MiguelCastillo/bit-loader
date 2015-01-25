@@ -19,7 +19,7 @@
     }
 
     var loading = moduleMeta.deps.map(function fetchDependency(mod_name) {
-      return manager.providers.loader.fetch(mod_name);
+      return manager.providers.loader.fetch(mod_name, moduleMeta);
     });
 
     return manager.Promise.all(loading)

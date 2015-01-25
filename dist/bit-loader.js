@@ -338,7 +338,7 @@
    *
    * @returns {Promise} - Promise that will resolve to a Module instance
    */
-  Loader.prototype.load = function(name) {
+  Loader.prototype.load = function(name, parentMeta) {
     var loader  = this,
         manager = this.manager;
 
@@ -353,7 +353,7 @@
       return Promise.resolve(loader.getModule(name));
     }
 
-    return loader.fetch(name)
+    return loader.fetch(name, parentMeta)
       .then(function moduleFetched(getModuleDelegate) {
         return getModuleDelegate();
       }, Utils.forwardError);
@@ -377,7 +377,7 @@
    *   that can be called to actually compile the module meta to an instance of Module.
    *
    */
-  Loader.prototype.fetch = function(name) {
+  Loader.prototype.fetch = function(name, parentMeta) {
     var loader  = this,
         manager = this.manager;
 
@@ -393,7 +393,7 @@
     // This is where the call to fetch the module meta takes place. Once the
     // module meta is loaded, it is put through the transformation pipeline.
     //
-    var loading = metaFetch(manager, name)
+    var loading = metaFetch(manager, name, parentMeta)
       .then(processModuleMeta, handleError)
       .then(moduleFetched, handleError);
 
@@ -704,7 +704,7 @@ module.exports = new Logger();
     }
 
     var loading = moduleMeta.deps.map(function fetchDependency(mod_name) {
-      return manager.providers.loader.fetch(mod_name);
+      return manager.providers.loader.fetch(mod_name, moduleMeta);
     });
 
     return manager.Promise.all(loading)
@@ -722,9 +722,9 @@ module.exports = new Logger();
       Utils  = require('../utils'),
       logger = Logger.factory("Meta/Fetch");
 
-  function MetaFetch(manager, name) {
+  function MetaFetch(manager, name, parentMeta) {
     logger.log(name);
-    return manager.fetch(name)
+    return manager.fetch(name, parentMeta)
       .then(moduleFetched, Utils.forwardError);
 
     // Once the module meta is fetched, we want to add helper properties
