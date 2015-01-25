@@ -13,7 +13,7 @@
     "loader"
   ],
   "scripts": {
-    "prepublish": "browserify src/bit-loader.js -o dist/bit-loader.js -s bit-loader --dg false",
+    "prepublish": "grunt build",
     "test": "grunt test"
   },
   "repository": {
