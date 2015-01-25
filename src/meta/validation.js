@@ -19,8 +19,6 @@
       throw new TypeError("ModuleMeta must provide have a `compile` interface that creates and returns an instance of Module");
     }
 
-    moduleMeta.deps = moduleMeta.deps || [];
-    moduleMeta.manager = manager;
     return moduleMeta;
   }
 
