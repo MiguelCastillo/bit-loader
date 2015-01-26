@@ -1,7 +1,17 @@
 language: node_js
 node_js:
-  - "0.10"
-
+- '0.10'
 before_install:
-  - npm install -g grunt-cli
-
+- npm install -g grunt-cli
+deploy:
+  provider: releases
+  api_key:
+    secure: Tczk/9mE8bGk9X3Z8VkgWeFEHhCaE/YwwAhLH8Ac7Y6PUo/a2rBnzkBYP2q+z6xLyTnoUYjmOl6KrEsvGfCQrFD0TCDqu+h9BN3rSDoV32vpDnlhBapTXVeaIjcObEKZjZ3HKagMsHrn+z5I8LQR4/VRbDE/uUWlOaex9ZWSm3o=
+  file:
+    - "dist/bit-loader.js"
+    - "dist/bit-loader.min.js"
+  skip_cleanup: true
+  on:
+    repo: MiguelCastillo/bit-loader
+    tags: true
+    all_branches: true
