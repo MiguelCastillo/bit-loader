@@ -4,12 +4,13 @@
   var Promise    = require('spromise'),
       Utils      = require('./utils'),
       Logger     = require('./logger'),
+      Fetch      = require('./fetch'),
       Import     = require('./import'),
       Loader     = require('./loader'),
       Module     = require('./module'),
       Registry   = require('./registry'),
-      Middleware = require('./middleware'),
-      Fetch      = require('./fetch');
+      Middleware = require('./middleware');
+
 
   function Bitloader(options, factories) {
     options   = options   || {};
@@ -27,7 +28,7 @@
       this.plugin(options.plugins);
     }
 
-    // Override any of these constructors if you need specialized implementation
+    // Override any of these factories if you need specialized implementation
     var providers = {
       fetch  : factories.fetch  ? factories.fetch(this)  : new Bitloader.Fetch(this),
       loader : factories.loader ? factories.loader(this) : new Bitloader.Loader(this),
@@ -42,63 +43,111 @@
   }
 
 
+  /**
+   * Clears the context, which means that all cached modules and other pertinent data
+   * will be deleted.
+   */
   Bitloader.prototype.clear = function() {
-    return Registry.clearById(this.context._id);
+    Registry.clearById(this.context._id);
   };
 
 
-  Bitloader.prototype.hasModuleCode = function(name) {
-    return this.context.code.hasOwnProperty(name) || this.providers.loader.isLoaded(name) || this.hasModule(name);
-  };
-
-
-  Bitloader.prototype.getModuleCode = function(name) {
-    if (!this.hasModuleCode(name)) {
-      throw new TypeError("Module `" + name + "` has not yet been loaded");
-    }
-
-    if (this.context.code.hasOwnProperty(name)) {
-      return this.context.code[name];
-    }
-    else {
-      return (this.context.code[name] = this.providers.loader.buildModule(name).code);
-    }
-  };
-
-
-  Bitloader.prototype.setModuleCode = function(name, code) {
-    if (this.hasModuleCode(name)) {
-      throw new TypeError("Module code for `" + name + "` already exists");
-    }
-
-    return (this.context.code[name] = code);
-  };
-
-
-  Bitloader.prototype.hasModule = function(name) {
+  /**
+   * Checks is the module has been fully finalized, which is when the module instance
+   * get stored in the module registry
+   */
+  Bitloader.prototype.isModuleCached = function(name) {
     return this.context.modules.hasOwnProperty(name);
   };
 
 
+  /**
+   * Checks if the module instance is in the module registry
+   */
+  Bitloader.prototype.hasModule = function(name) {
+    return this.isModuleCached(name) || this.providers.loader.isLoaded(name);
+  };
+
+
+  /**
+   * Returns the module instance if one exists.  If the module instance isn't in the
+   * module registry, then a TypeError exception is thrown
+   */
   Bitloader.prototype.getModule = function(name) {
     if (!this.hasModule(name)) {
       throw new TypeError("Module `" + name + "` has not yet been loaded");
+    }
+
+    if (!this.context.modules.hasOwnProperty(name)) {
+      this.context.modules[name] = this.providers.loader.buildModule(name);
     }
 
     return this.context.modules[name];
   };
 
 
-  Bitloader.prototype.setModule = function(name, mod) {
+  /**
+   * Add a module instance to the module registry.  And if the module already exists in
+   * the module registry, then a TypeError exception is thrown.
+   *
+   * @param {Module} mod - Module instance to add to the module registry
+   *
+   * @returns {Module} Module instance added to the registry
+   */
+  Bitloader.prototype.setModule = function(mod) {
+    var name = mod.name;
+
     if (!(mod instanceof(Module))) {
       throw new TypeError("Module `" + name + "` is not an instance of Module");
     }
 
-    if (this.hasModule(name)) {
+    if (this.isModuleCached(name)) {
       throw new TypeError("Module instance `" + name + "` already exists");
     }
 
     return (this.context.modules[name] = mod);
+  };
+
+
+  /**
+   * Returns the module code from the module registry. If the module code has not
+   * yet been fully compiled, then we defer to the loader to build the module and
+   * return the code.
+   *
+   * @param {string} name - The name of the module code to get from the module registry
+   *
+   * @return {generic} The module code.
+   */
+  Bitloader.prototype.getModuleCode = function(name) {
+    if (!this.hasModule(name)) {
+      throw new TypeError("Module `" + name + "` has not yet been loaded");
+    }
+
+    return this.getModule(name).code;
+  };
+
+
+  /**
+   * Sets module code directly in the module registry.
+   *
+   * @param {string} name - The name of the module, which is used by other modules
+   *  that need it as a dependency.
+   * @param {generic} code - The actual code that is returned consuming the module
+   *  as a dependency.
+   *
+   * @returns {generic} The module code.
+   */
+  Bitloader.prototype.setModuleCode = function(name, code) {
+    if (this.hasModule(name)) {
+      throw new TypeError("Module code for `" + name + "` already exists");
+    }
+
+    var mod = new Module({
+      name: name,
+      code: code
+    });
+
+    return this.setModule(mod).code;
   };
 
 

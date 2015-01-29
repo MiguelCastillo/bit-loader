@@ -19,12 +19,13 @@
   var Promise    = require('spromise'),
       Utils      = require('./utils'),
       Logger     = require('./logger'),
+      Fetch      = require('./fetch'),
       Import     = require('./import'),
       Loader     = require('./loader'),
       Module     = require('./module'),
       Registry   = require('./registry'),
-      Middleware = require('./middleware'),
-      Fetch      = require('./fetch');
+      Middleware = require('./middleware');
+
 
   function Bitloader(options, factories) {
     options   = options   || {};
@@ -42,7 +43,7 @@
       this.plugin(options.plugins);
     }
 
-    // Override any of these constructors if you need specialized implementation
+    // Override any of these factories if you need specialized implementation
     var providers = {
       fetch  : factories.fetch  ? factories.fetch(this)  : new Bitloader.Fetch(this),
       loader : factories.loader ? factories.loader(this) : new Bitloader.Loader(this),
@@ -57,63 +58,111 @@
   }
 
 
+  /**
+   * Clears the context, which means that all cached modules and other pertinent data
+   * will be deleted.
+   */
   Bitloader.prototype.clear = function() {
-    return Registry.clearById(this.context._id);
+    Registry.clearById(this.context._id);
   };
 
 
-  Bitloader.prototype.hasModuleCode = function(name) {
-    return this.context.code.hasOwnProperty(name) || this.providers.loader.isLoaded(name) || this.hasModule(name);
-  };
-
-
-  Bitloader.prototype.getModuleCode = function(name) {
-    if (!this.hasModuleCode(name)) {
-      throw new TypeError("Module `" + name + "` has not yet been loaded");
-    }
-
-    if (this.context.code.hasOwnProperty(name)) {
-      return this.context.code[name];
-    }
-    else {
-      return (this.context.code[name] = this.providers.loader.buildModule(name).code);
-    }
-  };
-
-
-  Bitloader.prototype.setModuleCode = function(name, code) {
-    if (this.hasModuleCode(name)) {
-      throw new TypeError("Module code for `" + name + "` already exists");
-    }
-
-    return (this.context.code[name] = code);
-  };
-
-
-  Bitloader.prototype.hasModule = function(name) {
+  /**
+   * Checks is the module has been fully finalized, which is when the module instance
+   * get stored in the module registry
+   */
+  Bitloader.prototype.isModuleCached = function(name) {
     return this.context.modules.hasOwnProperty(name);
   };
 
 
+  /**
+   * Checks if the module instance is in the module registry
+   */
+  Bitloader.prototype.hasModule = function(name) {
+    return this.isModuleCached(name) || this.providers.loader.isLoaded(name);
+  };
+
+
+  /**
+   * Returns the module instance if one exists.  If the module instance isn't in the
+   * module registry, then a TypeError exception is thrown
+   */
   Bitloader.prototype.getModule = function(name) {
     if (!this.hasModule(name)) {
       throw new TypeError("Module `" + name + "` has not yet been loaded");
+    }
+
+    if (!this.context.modules.hasOwnProperty(name)) {
+      this.context.modules[name] = this.providers.loader.buildModule(name);
     }
 
     return this.context.modules[name];
   };
 
 
-  Bitloader.prototype.setModule = function(name, mod) {
+  /**
+   * Add a module instance to the module registry.  And if the module already exists in
+   * the module registry, then a TypeError exception is thrown.
+   *
+   * @param {Module} mod - Module instance to add to the module registry
+   *
+   * @returns {Module} Module instance added to the registry
+   */
+  Bitloader.prototype.setModule = function(mod) {
+    var name = mod.name;
+
     if (!(mod instanceof(Module))) {
       throw new TypeError("Module `" + name + "` is not an instance of Module");
     }
 
-    if (this.hasModule(name)) {
+    if (this.isModuleCached(name)) {
       throw new TypeError("Module instance `" + name + "` already exists");
     }
 
     return (this.context.modules[name] = mod);
+  };
+
+
+  /**
+   * Returns the module code from the module registry. If the module code has not
+   * yet been fully compiled, then we defer to the loader to build the module and
+   * return the code.
+   *
+   * @param {string} name - The name of the module code to get from the module registry
+   *
+   * @return {generic} The module code.
+   */
+  Bitloader.prototype.getModuleCode = function(name) {
+    if (!this.hasModule(name)) {
+      throw new TypeError("Module `" + name + "` has not yet been loaded");
+    }
+
+    return this.getModule(name).code;
+  };
+
+
+  /**
+   * Sets module code directly in the module registry.
+   *
+   * @param {string} name - The name of the module, which is used by other modules
+   *  that need it as a dependency.
+   * @param {generic} code - The actual code that is returned consuming the module
+   *  as a dependency.
+   *
+   * @returns {generic} The module code.
+   */
+  Bitloader.prototype.setModuleCode = function(name, code) {
+    if (this.hasModule(name)) {
+      throw new TypeError("Module code for `" + name + "` already exists");
+    }
+
+    var mod = new Module({
+      name: name,
+      code: code
+    });
+
+    return this.setModule(mod).code;
   };
 
 
@@ -220,7 +269,7 @@
       if (isModuleInOptions(name)) {
         return options.modules[name];
       }
-      else if (manager.hasModuleCode(name)) {
+      else if (manager.isModuleCached(name)) {
         return manager.getModuleCode(name);
       }
       else if (importer.hasModule(name)) {
@@ -366,22 +415,20 @@
    * the transformation is done, all dependencies are fetched.
    *
    * The purpose for this method is to setup the module meta and all its dependencies
-   * so that the module meta can be converted to an instance of Module synchronously,
-   * without having to loaded any resources.
+   * so that the module meta can be converted to an instance of Module synchronously.
    *
    * Use this method if the intent is to preload dependencies without actually compiling
    * module metas to instances of Module.
    *
    * @param {string} name - The name of the module to fetch
    * @returns {Promise} A promise that when resolved will provide a delegate method
-   *   that can be called to actually compile the module meta to an instance of Module.
-   *
+   *   that can be called to compile the module meta to a Module and return it.
    */
   Loader.prototype.fetch = function(name, parentMeta) {
     var loader  = this,
         manager = this.manager;
 
-    if (manager.hasModule(name) || loader.isLoaded(name)) {
+    if (manager.isModuleCached(name) || loader.isLoaded(name)) {
       return Promise.resolve(getModuleDelegate);
     }
 
@@ -389,12 +436,10 @@
       return loader.getLoading(name);
     }
 
-    //
     // This is where the call to fetch the module meta takes place. Once the
     // module meta is loaded, it is put through the transformation pipeline.
-    //
     var loading = metaFetch(manager, name, parentMeta)
-      .then(processModuleMeta, handleError)
+      .then(pipelineModuleMeta, handleError)
       .then(moduleFetched, handleError);
 
     // Set the state of the module meta to pending so that future fetch request
@@ -412,45 +457,70 @@
       return error;
     }
 
-    function processModuleMeta(moduleMeta) {
-      return loader.pipeline
-        .run(manager, moduleMeta)
-        .then(function() {return moduleMeta;}, Utils.forwardError);
+    function pipelineModuleMeta(moduleMeta) {
+      return loader.pipelineModuleMeta(moduleMeta);
     }
 
     function getModuleDelegate() {
-      if (manager.hasModule(name)) {
+      if (manager.isModuleCached(name)) {
         return manager.getModule(name);
       }
-      else {
-        return loader.buildModule(name);
-      }
+
+      return loader.buildModule(name);
     }
   };
 
 
   /**
-   * Converts a module meta to a full Module instance.
+   * Put a module meta object through the pipeline, which includes the transformation
+   * and dependency loading stages.
+   *
+   * @param {object} moduleMeta - Module meta object to run through the pipeline
+   * @returns {Promise} that when fulfilled, the processed module meta object is returned.
+   */
+  Loader.prototype.pipelineModuleMeta = function(moduleMeta) {
+    return this.pipeline
+      .run(this.manager, moduleMeta)
+      .then(function pipelineFinished() {return moduleMeta;}, Utils.forwardError);
+  };
+
+
+  /**
+   * Converts a module meta object to a full Module instance.
+   *
+   * @param {object} moduleMeta - The module meta object to convert to Module instance
+   * @returns {Module} Module instance from the conversion of module meta
+   */
+  Loader.prototype.compileModuleMeta = function(moduleMeta) {
+    var manager = this.manager,
+        mod     = metaCompilation(manager, moduleMeta);
+
+    // Resolve module dependencies and return the Module instance.
+    return moduleLinker(manager, mod);
+  };
+
+
+  /**
+   * Converts a module meta object to a full Module instance.
    *
    * @param {string} name - The name of the module meta to convert to an instance of Module
-   * @return {Module} Module instance from the convertion of module meta
+   * @returns {Module} Module instance from the conversion of module meta
    */
   Loader.prototype.buildModule = function(name) {
-    var manager = this.manager,
-        mod;
+    var moduleMeta;
+    var manager = this.manager;
 
-    if (manager.hasModule(name)) {
-      mod = manager.getModule(name);
+    if (this.isLoaded(name)) {
+      moduleMeta = this.removeModule(name);
     }
-    else if (this.isLoaded(name)) {
-      mod = metaCompilation(manager, this.removeModule(name));
+    else if (manager.isModuleCached(name)) {
+      throw new TypeError("Module `" + name + "` is already loaded, so you can just call `manager.getModule(name)`");
     }
     else {
-      throw new TypeError("Module `" + name + "` is not loaded yet.  Make sure to call `load` or `fetch` prior to calling this method");
+      throw new TypeError("Module `" + name + "` is not loaded yet. Make sure to call `load` or `fetch` prior to calling `linkModuleMeta`");
     }
 
-    // Resolve module dependencies and return the final code.
-    return moduleLinker(manager, mod);
+    return this.compileModuleMeta(moduleMeta);
   };
 
 
@@ -505,17 +575,18 @@
    *
    * @param {string} name - The name of the module meta to set
    * @param {Object} item - The module meta to set
-   * @return {Object} The module meta being set
+   * @returns {Object} The module meta being set
    */
   Loader.prototype.setLoading = function(name, item) {
     return this.modules.setItem(StateTypes.loading, name, item);
   };
 
+
   /**
    * Method to check if a module meta with the given name is already loaded.
    *
    * @param {string} name - The name of the module meta to check.
-   * @param {Boolean}
+   * @returns {Boolean}
    */
   Loader.prototype.isLoaded = function(name) {
     return this.modules.hasItemWithState(StateTypes.loaded, name);
@@ -670,7 +741,7 @@ module.exports = new Logger();
     // that has already been loaded will get ignored.
     for (var item in modules) {
       if (modules.hasOwnProperty(item) && !manager.hasModule(item) && mod.name !== item) {
-        manager.setModule(item, modules[item]);
+        manager.setModule(modules[item]);
       }
     }
 
@@ -1050,18 +1121,15 @@ module.exports = new Logger();
   var Utils = require('./utils');
 
   var Type = {
-    "AMD" : "AMD", //Asynchronous Module Definition
-    "CJS" : "CJS", //CommonJS
-    "IEFF": "IEFF" //Immediately Executed Factory Function
+    "UNKNOWN" : "UNKNOWN",
+    "AMD"     : "AMD",     //Asynchronous Module Definition
+    "CJS"     : "CJS",     //CommonJS
+    "IEFF"    : "IEFF"     //Immediately Executed Factory Function
   };
 
   function Module(options) {
     if (!options) {
       throw new TypeError("Must provide options to create the module");
-    }
-
-    if (!Type[options.type]) {
-      throw new TypeError("Must provide a valid module type. E.g. 'AMD', 'CJS', 'IEFF'.");
     }
 
     if (options.hasOwnProperty("code")) {
@@ -1072,7 +1140,7 @@ module.exports = new Logger();
       this.factory = options.factory;
     }
 
-    this.type     = options.type;
+    this.type     = options.type || Type.UNKNOWN;
     this.name     = options.name;
     this.deps     = options.deps ? options.deps.slice(0) : [];
     this.settings = Utils.extend({}, options);
@@ -1095,8 +1163,8 @@ module.exports = new Logger();
 
       // Get all dependencies to feed them to the module factory
       var deps = mod.deps.map(function resolveDependency(mod_name) {
-        if (manager.hasModuleCode(mod_name)) {
-          return manager.getModuleCode(mod_name);
+        if (manager.isModuleCached(mod_name)) {
+          return manager.getModule(mod_name).code;
         }
 
         return traverseDependencies(manager.getModule(mod_name)).code;
@@ -1106,12 +1174,10 @@ module.exports = new Logger();
         mod.code = mod.factory.apply(root, deps);
       }
 
-      manager.setModuleCode(mod.name, mod.code);
-      manager.setModule(mod.name, mod);
       return mod;
     }
 
-    return traverseDependencies(mod);
+    return manager.setModule(traverseDependencies(mod));
   }
 
   module.exports = ModuleLinker;

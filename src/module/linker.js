@@ -10,8 +10,8 @@
 
       // Get all dependencies to feed them to the module factory
       var deps = mod.deps.map(function resolveDependency(mod_name) {
-        if (manager.hasModuleCode(mod_name)) {
-          return manager.getModuleCode(mod_name);
+        if (manager.isModuleCached(mod_name)) {
+          return manager.getModule(mod_name).code;
         }
 
         return traverseDependencies(manager.getModule(mod_name)).code;
@@ -21,12 +21,10 @@
         mod.code = mod.factory.apply(root, deps);
       }
 
-      manager.setModuleCode(mod.name, mod.code);
-      manager.setModule(mod.name, mod);
       return mod;
     }
 
-    return traverseDependencies(mod);
+    return manager.setModule(traverseDependencies(mod));
   }
 
   module.exports = ModuleLinker;

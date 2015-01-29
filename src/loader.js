@@ -93,22 +93,20 @@
    * the transformation is done, all dependencies are fetched.
    *
    * The purpose for this method is to setup the module meta and all its dependencies
-   * so that the module meta can be converted to an instance of Module synchronously,
-   * without having to loaded any resources.
+   * so that the module meta can be converted to an instance of Module synchronously.
    *
    * Use this method if the intent is to preload dependencies without actually compiling
    * module metas to instances of Module.
    *
    * @param {string} name - The name of the module to fetch
    * @returns {Promise} A promise that when resolved will provide a delegate method
-   *   that can be called to actually compile the module meta to an instance of Module.
-   *
+   *   that can be called to compile the module meta to a Module and return it.
    */
   Loader.prototype.fetch = function(name, parentMeta) {
     var loader  = this,
         manager = this.manager;
 
-    if (manager.hasModule(name) || loader.isLoaded(name)) {
+    if (manager.isModuleCached(name) || loader.isLoaded(name)) {
       return Promise.resolve(getModuleDelegate);
     }
 
@@ -116,12 +114,10 @@
       return loader.getLoading(name);
     }
 
-    //
     // This is where the call to fetch the module meta takes place. Once the
     // module meta is loaded, it is put through the transformation pipeline.
-    //
     var loading = metaFetch(manager, name, parentMeta)
-      .then(processModuleMeta, handleError)
+      .then(pipelineModuleMeta, handleError)
       .then(moduleFetched, handleError);
 
     // Set the state of the module meta to pending so that future fetch request
@@ -139,45 +135,70 @@
       return error;
     }
 
-    function processModuleMeta(moduleMeta) {
-      return loader.pipeline
-        .run(manager, moduleMeta)
-        .then(function() {return moduleMeta;}, Utils.forwardError);
+    function pipelineModuleMeta(moduleMeta) {
+      return loader.pipelineModuleMeta(moduleMeta);
     }
 
     function getModuleDelegate() {
-      if (manager.hasModule(name)) {
+      if (manager.isModuleCached(name)) {
         return manager.getModule(name);
       }
-      else {
-        return loader.buildModule(name);
-      }
+
+      return loader.buildModule(name);
     }
   };
 
 
   /**
-   * Converts a module meta to a full Module instance.
+   * Put a module meta object through the pipeline, which includes the transformation
+   * and dependency loading stages.
+   *
+   * @param {object} moduleMeta - Module meta object to run through the pipeline
+   * @returns {Promise} that when fulfilled, the processed module meta object is returned.
+   */
+  Loader.prototype.pipelineModuleMeta = function(moduleMeta) {
+    return this.pipeline
+      .run(this.manager, moduleMeta)
+      .then(function pipelineFinished() {return moduleMeta;}, Utils.forwardError);
+  };
+
+
+  /**
+   * Converts a module meta object to a full Module instance.
+   *
+   * @param {object} moduleMeta - The module meta object to convert to Module instance
+   * @returns {Module} Module instance from the conversion of module meta
+   */
+  Loader.prototype.compileModuleMeta = function(moduleMeta) {
+    var manager = this.manager,
+        mod     = metaCompilation(manager, moduleMeta);
+
+    // Resolve module dependencies and return the Module instance.
+    return moduleLinker(manager, mod);
+  };
+
+
+  /**
+   * Converts a module meta object to a full Module instance.
    *
    * @param {string} name - The name of the module meta to convert to an instance of Module
-   * @return {Module} Module instance from the convertion of module meta
+   * @returns {Module} Module instance from the conversion of module meta
    */
   Loader.prototype.buildModule = function(name) {
-    var manager = this.manager,
-        mod;
+    var moduleMeta;
+    var manager = this.manager;
 
-    if (manager.hasModule(name)) {
-      mod = manager.getModule(name);
+    if (this.isLoaded(name)) {
+      moduleMeta = this.removeModule(name);
     }
-    else if (this.isLoaded(name)) {
-      mod = metaCompilation(manager, this.removeModule(name));
+    else if (manager.isModuleCached(name)) {
+      throw new TypeError("Module `" + name + "` is already loaded, so you can just call `manager.getModule(name)`");
     }
     else {
-      throw new TypeError("Module `" + name + "` is not loaded yet.  Make sure to call `load` or `fetch` prior to calling this method");
+      throw new TypeError("Module `" + name + "` is not loaded yet. Make sure to call `load` or `fetch` prior to calling `linkModuleMeta`");
     }
 
-    // Resolve module dependencies and return the final code.
-    return moduleLinker(manager, mod);
+    return this.compileModuleMeta(moduleMeta);
   };
 
 
@@ -232,17 +253,18 @@
    *
    * @param {string} name - The name of the module meta to set
    * @param {Object} item - The module meta to set
-   * @return {Object} The module meta being set
+   * @returns {Object} The module meta being set
    */
   Loader.prototype.setLoading = function(name, item) {
     return this.modules.setItem(StateTypes.loading, name, item);
   };
 
+
   /**
    * Method to check if a module meta with the given name is already loaded.
    *
    * @param {string} name - The name of the module meta to check.
-   * @param {Boolean}
+   * @returns {Boolean}
    */
   Loader.prototype.isLoaded = function(name) {
     return this.modules.hasItemWithState(StateTypes.loaded, name);
