@@ -1,7 +1,5 @@
 define(["dist/bit-loader"], function(Bitloader) {
-  var Loader  = Bitloader.Loader,
-      Utils   = Bitloader.Utils,
-      Promise = Bitloader.Promise;
+  var Loader  = Bitloader.Loader;
 
   describe("Loader Suite", function() {
     describe("When loading module that is already loaded in `manager`", function() {

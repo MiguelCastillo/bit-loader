@@ -20,7 +20,7 @@
     // that has already been loaded will get ignored.
     for (var item in modules) {
       if (modules.hasOwnProperty(item) && !manager.hasModule(item) && mod.name !== item) {
-        manager.setModule(item, modules[item]);
+        manager.setModule(modules[item]);
       }
     }
 
