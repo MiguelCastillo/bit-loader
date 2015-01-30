@@ -93,7 +93,7 @@
       throw new TypeError("Module `" + name + "` has not yet been loaded");
     }
 
-    if (!this.context.modules.hasOwnProperty(name)) {
+    if (!this.isModuleCached(name)) {
       this.context.modules[name] = this.providers.loader.buildModule(name);
     }
 
@@ -269,7 +269,7 @@
       if (isModuleInOptions(name)) {
         return options.modules[name];
       }
-      else if (manager.isModuleCached(name)) {
+      else if (manager.hasModule(name)) {
         return manager.getModuleCode(name);
       }
       else if (importer.hasModule(name)) {
@@ -428,7 +428,7 @@
     var loader  = this,
         manager = this.manager;
 
-    if (manager.isModuleCached(name) || loader.isLoaded(name)) {
+    if (manager.hasModule(name) || loader.isLoaded(name)) {
       return Promise.resolve(getModuleDelegate);
     }
 
@@ -462,7 +462,7 @@
     }
 
     function getModuleDelegate() {
-      if (manager.isModuleCached(name)) {
+      if (manager.hasModule(name)) {
         return manager.getModule(name);
       }
 
@@ -1163,8 +1163,8 @@ module.exports = new Logger();
 
       // Get all dependencies to feed them to the module factory
       var deps = mod.deps.map(function resolveDependency(mod_name) {
-        if (manager.isModuleCached(mod_name)) {
-          return manager.getModule(mod_name).code;
+        if (manager.hasModule(mod_name)) {
+          return manager.getModuleCode(mod_name);
         }
 
         return traverseDependencies(manager.getModule(mod_name)).code;

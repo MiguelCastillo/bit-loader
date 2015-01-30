@@ -10,8 +10,8 @@
 
       // Get all dependencies to feed them to the module factory
       var deps = mod.deps.map(function resolveDependency(mod_name) {
-        if (manager.isModuleCached(mod_name)) {
-          return manager.getModule(mod_name).code;
+        if (manager.hasModule(mod_name)) {
+          return manager.getModuleCode(mod_name);
         }
 
         return traverseDependencies(manager.getModule(mod_name)).code;

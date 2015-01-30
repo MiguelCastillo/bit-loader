@@ -106,7 +106,7 @@
     var loader  = this,
         manager = this.manager;
 
-    if (manager.isModuleCached(name) || loader.isLoaded(name)) {
+    if (manager.hasModule(name) || loader.isLoaded(name)) {
       return Promise.resolve(getModuleDelegate);
     }
 
@@ -140,7 +140,7 @@
     }
 
     function getModuleDelegate() {
-      if (manager.isModuleCached(name)) {
+      if (manager.hasModule(name)) {
         return manager.getModule(name);
       }
 

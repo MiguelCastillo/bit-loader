@@ -78,7 +78,7 @@
       throw new TypeError("Module `" + name + "` has not yet been loaded");
     }
 
-    if (!this.context.modules.hasOwnProperty(name)) {
+    if (!this.isModuleCached(name)) {
       this.context.modules[name] = this.providers.loader.buildModule(name);
     }
 
