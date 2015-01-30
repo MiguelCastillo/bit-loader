@@ -82,18 +82,18 @@ define(["dist/bit-loader"], function(Bitloader) {
 
 
     describe("when importing module `yes`", function() {
-      var importer, date, yes, loadStub, isModuleCachedStub, getModuleCodeStub, moduleImportedStub;
+      var importer, date, yes, loadStub, hasModuleStub, getModuleCodeStub, moduleImportedStub;
       beforeEach(function() {
         date = new Date();
         yes = {date: date};
         loadStub = sinon.stub();
         moduleImportedStub = sinon.stub();
-        isModuleCachedStub = sinon.stub().returns(true);
+        hasModuleStub      = sinon.stub().returns(true);
         getModuleCodeStub  = sinon.stub().returns(yes);
 
         importer = new Importer({
           load: loadStub,
-          isModuleCached: isModuleCachedStub,
+          hasModule: hasModuleStub,
           getModuleCode: getModuleCodeStub
         });
 
@@ -110,12 +110,12 @@ define(["dist/bit-loader"], function(Bitloader) {
         expect(moduleImportedStub.calledWithExactly(yes)).to.equal(true);
       });
 
-      it("then `manager.isModuleCached` is called once", function() {
-        expect(isModuleCachedStub.calledOnce).to.equal(true);
+      it("then `manager.hasModule` is called once", function() {
+        expect(hasModuleStub.calledOnce).to.equal(true);
       });
 
       it("then `manager.hasModuleCode` is called with `yes`", function() {
-        expect(isModuleCachedStub.calledWithExactly("yes")).to.equal(true);
+        expect(hasModuleStub.calledWithExactly("yes")).to.equal(true);
       });
 
       it("then `manager.getModuleCode` is called once", function() {
@@ -129,20 +129,20 @@ define(["dist/bit-loader"], function(Bitloader) {
 
 
     describe("when importing modules `no` and `yes`", function() {
-      var importer, date, yes, no, loadStub, isModuleCachedStub, getModuleCodeStub, moduleImportedStub;
+      var importer, date, yes, no, loadStub, hasModuleStub, getModuleCodeStub, moduleImportedStub;
       beforeEach(function() {
         date = new Date();
         yes = {date: date};
         no = {meh: "something else"};
         loadStub = sinon.stub();
         moduleImportedStub = sinon.stub();
-        isModuleCachedStub = sinon.stub().returns(true);
+        hasModuleStub = sinon.stub().returns(true);
         getModuleCodeStub  = sinon.stub();
         getModuleCodeStub.withArgs("no").returns(no);
         getModuleCodeStub.withArgs("yes").returns(yes);
 
         importer = new Importer({
-          isModuleCached: isModuleCachedStub,
+          hasModule: hasModuleStub,
           getModuleCode: getModuleCodeStub
         });
       });
@@ -163,15 +163,15 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
 
         it("then `manager.hasModuleCode` is called twice - once for each module", function() {
-          expect(isModuleCachedStub.calledTwice).to.equal(true);
+          expect(hasModuleStub.calledTwice).to.equal(true);
         });
 
         it("then `manager.hasModuleCode` is called with `yes`", function() {
-          expect(isModuleCachedStub.calledWithExactly("yes")).to.equal(true);
+          expect(hasModuleStub.calledWithExactly("yes")).to.equal(true);
         });
 
         it("then `manager.hasModuleCode` is called with `no`", function() {
-          expect(isModuleCachedStub.calledWithExactly("no")).to.equal(true);
+          expect(hasModuleStub.calledWithExactly("no")).to.equal(true);
         });
 
         it("then `manager.getModuleCode` is called twice - once for each module", function() {
@@ -211,7 +211,7 @@ define(["dist/bit-loader"], function(Bitloader) {
 
     describe("When importing module `yes` using the `load` interface", function() {
       describe("and module defines `code`", function() {
-        var importer, modYes, loadStub, loadDeferred, isModuleCachedStub, moduleImportedStub, getModuleCodeStub, factoryStub, setModuleSpy, removeModuleSpy;
+        var importer, modYes, loadStub, loadDeferred, hasModuleStub, moduleImportedStub, getModuleCodeStub, factoryStub, setModuleSpy, removeModuleSpy;
         beforeEach(function() {
           factoryStub = sinon.stub();
 
@@ -224,13 +224,13 @@ define(["dist/bit-loader"], function(Bitloader) {
 
           loadDeferred       = Promise.resolve(modYes);
           moduleImportedStub = sinon.stub();
-          isModuleCachedStub = sinon.stub().returns(false);
+          hasModuleStub = sinon.stub().returns(false);
           getModuleCodeStub  = sinon.stub().returns(modYes.code);
           loadStub = sinon.stub().returns(loadDeferred);
 
           importer = new Importer({
             load: loadStub,
-            isModuleCached: isModuleCachedStub,
+            hasModule: hasModuleStub,
             getModuleCode: getModuleCodeStub
           });
 

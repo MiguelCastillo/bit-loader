@@ -68,7 +68,7 @@
       if (isModuleInOptions(name)) {
         return options.modules[name];
       }
-      else if (manager.isModuleCached(name)) {
+      else if (manager.hasModule(name)) {
         return manager.getModuleCode(name);
       }
       else if (importer.hasModule(name)) {
