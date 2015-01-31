@@ -50,7 +50,7 @@ This two stage process is very important because it allows us to create Modules 
 
 In order to create something useful, bit loader provides a hook for a `fetch` interface, which defines how source files are read from storage.  This abstraction exists to keep the process of creating Modules separate from the process of *fetching* files from disk, HTTP(s), or whatever else you may fancy.
 
-The fetch interface returns a *module meta* object.  Which is a simple object with a couple of properties and or methods used by bit loader in order to create Modules. The most basic form of module meta is an object with a single property `code`, which is used by bit loader to create an instance of a Module. Alternatively, module meta could have a `compile` method, which bit loader delegates the process of creating the Module instance to. The result from calling `compile` is the instance of Module.
+The fetch interface returns a *module meta* object.  Which is a simple object with a couple of properties and or methods used by bit loader in order to create Modules. The most basic form of module meta is an object with a single property `code`, which is used by bit loader to create an instance of a Module. Alternatively, module meta could have a `compile` method, to which bit loader delegates the process of creating the Module instance. The result from calling `compile` is the instance of Module.
 
 Below is a simple example for creating an instance of bit loader, passing in a fetch interface that returns a module meta with `code`.  More details on module meta below (TODO).
 
@@ -77,8 +77,11 @@ console.log(result);
 #### Fetch example returning a module meta with a method `compile`
 
 ``` javascript
-function fetchFactory(loader) {
+// When fetchFactory is called, the instance of loader is passed in.
+function fetchFactory(/*loader*/) {
   function compile() {
+    // `this` is an augmented meta module object that has access to manager,
+    // which is the instance of loader.
     return new this.manager.Module({code: this.name + " is fetched"});
   }
 
