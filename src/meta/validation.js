@@ -15,7 +15,7 @@
       throw new TypeError("Must provide a ModuleMeta");
     }
 
-    if (typeof(moduleMeta.compile) !== "function") {
+    if (!moduleMeta.hasOwnProperty("code") && typeof(moduleMeta.compile) !== "function") {
       throw new TypeError("ModuleMeta must provide have a `compile` interface that creates and returns an instance of Module");
     }
 

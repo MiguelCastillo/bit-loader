@@ -6,6 +6,7 @@ window.assert = chai.assert;
 mocha.setup("bdd");
 
 require([
+  "test/spec/fetch",
   "test/spec/utils",
   "test/spec/import",
   "test/spec/loader",

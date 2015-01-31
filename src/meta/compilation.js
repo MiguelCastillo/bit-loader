@@ -1,8 +1,18 @@
 (function() {
   "use strict";
 
-  var Logger = require('../logger'),
+  var Module = require('../module'),
+      Logger = require('../logger'),
       logger = Logger.factory("Meta/Compilation");
+
+  function compile(moduleMeta) {
+    if (moduleMeta.hasOwnProperty("code")) {
+      return new Module(moduleMeta);
+    }
+    else if (typeof(moduleMeta.compile) === 'function') {
+      return moduleMeta.compile();
+    }
+  }
 
   /**
    * The compile step is to convert the moduleMeta to an instance of Module. The
@@ -13,7 +23,7 @@
   function MetaCompilation(manager, moduleMeta) {
     logger.log(moduleMeta.name, moduleMeta);
 
-    var mod     = moduleMeta.compile(),
+    var mod     = compile(moduleMeta),
         modules = mod.modules || {};
 
     // Copy modules over to the modules bucket if it does not exist. Anything
