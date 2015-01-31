@@ -876,7 +876,7 @@ module.exports = new Logger();
     }
 
     if (!moduleMeta.hasOwnProperty("code") && typeof(moduleMeta.compile) !== "function") {
-      throw new TypeError("ModuleMeta must provide have a `compile` interface that creates and returns an instance of Module");
+      throw new TypeError("ModuleMeta must provide have a `compile` interface that returns an instance of Module. Or a `code` property, which is used to build an instance of Module.");
     }
 
     return moduleMeta;
