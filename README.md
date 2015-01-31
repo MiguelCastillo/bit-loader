@@ -54,13 +54,14 @@ The fetch interface returns a *module meta* object.  Which is a simple object wi
 
 Below is a simple example for creating an instance of bit loader, passing in a fetch interface that returns a module meta with `code`.  More details on module meta below (TODO).
 
-#### Fetch example returning a `code` property
+#### Fetch example returning a module meta with a property `code`
 
 ``` javascript
 function fetchFactory(loader) {
   return {
     fetch: function(name) {
       // Notice that fetch return a simple object with `code` as a property
+      // This object returned is what we call a module meta
       return {code: name + " is fetched"};
     }
   }
@@ -73,7 +74,7 @@ var reuslt = loader.fetch("like")
 console.log(result);
 ```
 
-#### Fetch example returning a `compile` method
+#### Fetch example returning a module meta with a method `compile`
 
 ``` javascript
 function fetchFactory(loader) {
@@ -83,7 +84,8 @@ function fetchFactory(loader) {
 
   return {
     fetch: function(name) {
-      // Notice that fetch return a simple object with `code` as a property
+      // Notice that fetch return a simple object with `compile` as a method.
+      // This object returned is what we call a module meta
       return {compile: compile};
     }
   }
