@@ -6,12 +6,19 @@
       logger = Logger.factory("Meta/Compilation");
 
   function compile(moduleMeta) {
+    var mod;
+
     if (moduleMeta.hasOwnProperty("code")) {
-      return new Module(moduleMeta);
+      mod = new Module(moduleMeta);
     }
     else if (typeof(moduleMeta.compile) === 'function') {
-      return moduleMeta.compile();
+      mod = moduleMeta.compile();
     }
+
+    // We will coerce the name no matter what name (if one at all) the Module was
+    // created with. This will ensure a consistent state in the loading engine.
+    mod.name = moduleMeta.name;
+    return mod;
   }
 
   /**

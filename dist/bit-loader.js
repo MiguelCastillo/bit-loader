@@ -286,12 +286,16 @@
     }
 
     function loadModule(name) {
-      return manager.load(name).then(getModuleCode, Utils.forwardError);
-    }
+      function getModuleCode(mod) {
+        if (name !== mod.name) {
+          throw new TypeError("Module name must be the same as the name used for loading the Module itself");
+        }
 
-    function getModuleCode(mod) {
-      importer.removeModule(mod.name);
-      return manager.getModuleCode(mod.name);
+        importer.removeModule(mod.name);
+        return manager.getModuleCode(mod.name);
+      }
+
+      return manager.load(name).then(getModuleCode, Utils.forwardError);
     }
   };
 
@@ -727,12 +731,19 @@ module.exports = new Logger();
       logger = Logger.factory("Meta/Compilation");
 
   function compile(moduleMeta) {
+    var mod;
+
     if (moduleMeta.hasOwnProperty("code")) {
-      return new Module(moduleMeta);
+      mod = new Module(moduleMeta);
     }
     else if (typeof(moduleMeta.compile) === 'function') {
-      return moduleMeta.compile();
+      mod = moduleMeta.compile();
     }
+
+    // We will coerce the name no matter what name (if one at all) the Module was
+    // created with. This will ensure a consistent state in the loading engine.
+    mod.name = moduleMeta.name;
+    return mod;
   }
 
   /**

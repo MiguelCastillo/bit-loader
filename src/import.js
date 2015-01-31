@@ -85,12 +85,16 @@
     }
 
     function loadModule(name) {
-      return manager.load(name).then(getModuleCode, Utils.forwardError);
-    }
+      function getModuleCode(mod) {
+        if (name !== mod.name) {
+          throw new TypeError("Module name must be the same as the name used for loading the Module itself");
+        }
 
-    function getModuleCode(mod) {
-      importer.removeModule(mod.name);
-      return manager.getModuleCode(mod.name);
+        importer.removeModule(mod.name);
+        return manager.getModuleCode(mod.name);
+      }
+
+      return manager.load(name).then(getModuleCode, Utils.forwardError);
     }
   };
 
