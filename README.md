@@ -60,8 +60,8 @@ Below is a simple example for creating an instance of bit loader, passing in a f
 function fetchFactory(loader) {
   return {
     fetch: function(name) {
-      // Notice that fetch return a simple object with `code` as a property
-      // This object returned is what we call a module meta
+      // Notice that fetch returns a simple object with a `code` property.
+      // This object returned is what we call a module meta object.
       return {code: name + " is fetched"};
     }
   }
@@ -87,8 +87,8 @@ function fetchFactory(/*loader*/) {
 
   return {
     fetch: function(name) {
-      // Notice that fetch return a simple object with `compile` as a method.
-      // This object returned is what we call a module meta
+      // Notice that fetch returns a simple object with a `compile` method.
+      // This object returned is what we call a module meta object.
       return {compile: compile};
     }
   }
@@ -101,7 +101,7 @@ var reuslt = loader.fetch("like")
 console.log(result);
 ```
 
-But that's just the first building block in the puzzle.  As we will see later, when you call `load` or `import`, then you are start to see more relevant capabilities of module loading.
+But that's just the first building block in the puzzle.  As we will see later, when you call `load` or `import` is when you are start to see more relevant capabilities of module loading.
 
 [bit imports](https://github.com/MiguelCastillo/bit-imports) implements the `fetch` interface, which is a good reference implementation to see a fully functional module loader implementaion leveraging bit loader capabilities.
 
