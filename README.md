@@ -116,8 +116,8 @@ But that's just the first building block in the puzzle.  As we will see later, w
 
 ## Architecture (TODO)
 
+#### Loader Base diagram
+<img src="https://raw.githubusercontent.com/MiguelCastillo/bit-loader/master/img/Loader.png" title="Loader diagram" style="width:50%;height:50%;"></img>
+
 #### Load diagram
-
-![Loader diagram](https://raw.githubusercontent.com/MiguelCastillo/bit-loader/master/img/Loader.png)
-
-![Load diagram](https://raw.githubusercontent.com/MiguelCastillo/bit-loader/master/img/Loader-Load.png)
+<img src="https://raw.githubusercontent.com/MiguelCastillo/bit-loader/master/img/Loader-Load.png" title="Load diagram" style="width:50%;height:50%"></img>
