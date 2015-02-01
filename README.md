@@ -115,3 +115,7 @@ But that's just the first building block in the puzzle.  As we will see later, w
 ### Module Meta (TODO)
 
 ## Architecture (TODO)
+
+#### Load diagram
+
+![Load diagram](https://raw.githubusercontent.com/MiguelCastillo/bit-loader/master/img/Loader-Load.png)
