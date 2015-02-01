@@ -12,7 +12,9 @@
   function MetaTransform(manager, moduleMeta) {
     logger.log(moduleMeta.name, moduleMeta);
     return manager.transform.runAll(moduleMeta)
-      .then(function() {return moduleMeta;}, manager.Utils.forwardError);
+      .then(function() {
+        return moduleMeta;
+      }, manager.Utils.forwardError);
   }
 
   module.exports = MetaTransform;

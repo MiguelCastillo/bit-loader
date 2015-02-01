@@ -406,7 +406,8 @@
       return Promise.resolve(loader.getModule(name));
     }
 
-    return loader.fetch(name, parentMeta)
+    return loader
+      .fetch(name, parentMeta)
       .then(function moduleFetched(getModuleDelegate) {
         return getModuleDelegate();
       }, Utils.forwardError);
@@ -476,6 +477,31 @@
 
 
   /**
+   * Utility helper that runs a module meta object through the transformation workflow.
+   * The module meta object passed *must* have a string source property, which is what
+   * the transformation workflow primarily operates against.
+   *
+   * @param {object} moduleMeta - Module meta object with require `source` property that
+   *  is processed by the transformation pipeline.
+   *
+   * @returns {Promise} That when resolved, the fully tranformed module meta is returned.
+   *
+   */
+  Loader.prototype.transform = function(moduleMeta) {
+    if (!moduleMeta) {
+      throw new TypeError("Must provide a module meta object");
+    }
+
+    if (typeof(moduleMeta.source) !== "string") {
+      throw new TypeError("Must provide a source string property with the content to transform");
+    }
+
+    moduleMeta.deps = moduleMeta.deps || [];
+    return metaTransform(this.manager, moduleMeta);
+  };
+
+
+  /**
    * Put a module meta object through the pipeline, which includes the transformation
    * and dependency loading stages.
    *
@@ -485,7 +511,9 @@
   Loader.prototype.pipelineModuleMeta = function(moduleMeta) {
     return this.pipeline
       .run(this.manager, moduleMeta)
-      .then(function pipelineFinished() {return moduleMeta;}, Utils.forwardError);
+      .then(function pipelineFinished() {
+        return moduleMeta;
+      }, Utils.forwardError);
   };
 
 
@@ -851,7 +879,9 @@ module.exports = new Logger();
   function MetaTransform(manager, moduleMeta) {
     logger.log(moduleMeta.name, moduleMeta);
     return manager.transform.runAll(moduleMeta)
-      .then(function() {return moduleMeta;}, manager.Utils.forwardError);
+      .then(function() {
+        return moduleMeta;
+      }, manager.Utils.forwardError);
   }
 
   module.exports = MetaTransform;
