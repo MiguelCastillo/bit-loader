@@ -119,5 +119,8 @@ But that's just the first building block in the puzzle.  As we will see later, w
 #### Loader Base diagram
 <img src="https://raw.githubusercontent.com/MiguelCastillo/bit-loader/master/img/Loader.png" alt="Loader diagram" height="600px"></img>
 
-#### Load diagram
-<img src="https://raw.githubusercontent.com/MiguelCastillo/bit-loader/master/img/Loader-Load.png" alt="Load diagram" height="600px"></img>
+#### Fetch diagram
+<img src="https://raw.githubusercontent.com/MiguelCastillo/bit-loader/master/img/Loader-Fetch.png" alt="Fetch diagram" height="600px"></img>
+
+#### Pipeline diagram
+<img src="https://raw.githubusercontent.com/MiguelCastillo/bit-loader/master/img/Loader-Pipeline.png" alt="Pipeline diagram" height="600px"></img>
