@@ -106,7 +106,7 @@
     var loader  = this,
         manager = this.manager;
 
-    if (manager.hasModule(name) || loader.isLoaded(name)) {
+    if (manager.hasModule(name)) {
       return Promise.resolve(getModuleDelegate);
     }
 
