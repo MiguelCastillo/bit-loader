@@ -7,7 +7,6 @@
       StatefulItems    = require('./stateful-items'),
       moduleLinker     = require('./module/linker'),
       metaFetch        = require('./meta/fetch'),
-      metaValidation   = require('./meta/validation'),
       metaTransform    = require('./meta/transform'),
       metaDependencies = require('./meta/dependencies'),
       metaCompilation  = require('./meta/compilation');
@@ -37,7 +36,7 @@
     }
 
     this.manager  = manager;
-    this.pipeline = new Pipeline([metaValidation, metaTransform, metaDependencies]);
+    this.pipeline = new Pipeline([metaTransform, metaDependencies]);
     this.modules  = new StatefulItems();
   }
 

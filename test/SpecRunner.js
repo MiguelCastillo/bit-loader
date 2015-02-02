@@ -12,6 +12,7 @@ require([
   "test/spec/loader",
   "test/spec/registry",
   "test/spec/middleware",
+  "test/spec/module",
   "test/spec/bit-loader"
 ], function() {
   mocha.run();
