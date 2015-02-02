@@ -14,6 +14,8 @@
     // Once the module meta is fetched, we want to add helper properties
     // to it to facilitate further processing.
     function moduleFetched(moduleMeta) {
+      manager.Module.MetaValidation(moduleMeta);
+
       if (!moduleMeta.name) {
         moduleMeta.name = name;
       }

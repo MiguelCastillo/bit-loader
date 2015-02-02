@@ -10,6 +10,7 @@
     "IEFF"    : "IEFF"     //Immediately Executed Factory Function
   };
 
+
   function Module(options) {
     if (!options) {
       throw new TypeError("Must provide options to create the module");
@@ -29,6 +30,29 @@
     this.settings = Utils.extend({}, options);
   }
 
+
+  function MetaValidation(options) {
+    if (!options) {
+      throw new TypeError("Must provide options");
+    }
+
+    if (!MetaValidation.hasCode(options) && !MetaValidation.canCompile(options)) {
+      throw new TypeError("ModuleMeta must provide a `source` string and `compile` interface, or `code`.");
+    }
+  }
+
+
+  MetaValidation.hasCode = function(options) {
+    return options.hasOwnProperty("code");
+  };
+
+
+  MetaValidation.canCompile = function(options) {
+    return typeof(options.source) === "string" && typeof(options.compile) === "function";
+  };
+
+
+  Module.MetaValidation = MetaValidation;
   Module.Type = Type;
   module.exports = Module;
 })();
