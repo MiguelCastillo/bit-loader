@@ -138,11 +138,13 @@ Module instances are the final poduct of the loader workflow.
 
 Module meta objects are plain ole JavaScript object that serve as an intermediate representation of a Module.  A module meta has a couple of properties and or methods used by bit loader in order to create, or delegate the process of creating Modules.
 
+#### Processed Module Meta
 The most basic form of module meta is called 'processed' module meta, which is an object with a property `code` that is used by bit loader itself to create an instance of a Module. `code` is what a Module represents; it is analogous to the result of calling `require` in `AMD` and `CJS`.
 
+#### Unprocessed Module Meta
 Alternatively, we have 'unprocessed' module meta objects with a `source` string property and a `compile` method.  When bit loader detects these two properties, the process of creating Module instances is delegated to the `compile` interface. In other words, bit loader will call `compile` which returns an instance of Module.
 
-One important distinction between the two is that bit loader will push 'unprocessed' module meta objects through the transformation workflow; 'processed' meta object skip that step entirely. The reason for this is that `source` is the raw text that will eventually be converted to `code`; `code` is the what `source` becomes by calling [eval](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval), or something equivalent.  We want to put `source` through the transformation workflow to do fancy things like converting it from coffeescript to JavaScript, before it is `eval`ed to `code`.  Then `code` is what a Module instance actually represents.
+One important distinction between the two is that bit loader will push 'unprocessed' module meta objects through the transformation workflow; 'processed' meta object skip that step entirely. The reason for this is that `source` is the raw text that will eventually be converted to `code`; `code` is the what `source` becomes by calling [eval](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval), or  equivalent code execution mechanism.  We want to put `source` through the transformation workflow to do fancy things like converting it from coffeescript to JavaScript, before it is `eval`ed to `code`.  Then `code` is what a Module instance actually represents.
 
 ## Architecture (TODO)
 
