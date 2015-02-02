@@ -48,7 +48,7 @@ This two stage process is very important because it allows us to create Modules 
 
 ### Fetch
 
-In order to create something useful, bit loader provides a hook for a `fetch` interface, which defines how source files are read from storage.  This abstraction exists to keep the process of creating Modules separate from the process of *fetching* files from disk, HTTP(s), or whatever else you may fancy.
+In order to create something useful, bit loader provides a hook for the `fetch` interface, which defines how source files are read from storage.  This abstraction exists to keep the process of creating Modules separate from the process of *fetching* files from disk, HTTP(s), or whatever else you may fancy.
 
 The fetch interface returns a *module meta* object.  Which is a simple object with a couple of properties and or methods used by bit loader in order to create Modules. The most basic form of module meta is an object with a single property `code`, which is used by bit loader to create an instance of a Module. Alternatively, module meta could have a `compile` method, to which bit loader delegates the process of creating the Module instance. The result from calling `compile` is the instance of Module.
 
@@ -88,8 +88,10 @@ function fetchFactory(/*loader*/) {
   return {
     fetch: function(name) {
       // Notice that fetch returns a simple object with a `compile` method.
+      // When a `compile` method is provided, a `source` property of type
+      // script must also be proivded.
       // This object returned is what we call a module meta object.
-      return {compile: compile};
+      return {compile: compile, source: ""};
     }
   }
 }
@@ -108,11 +110,19 @@ But that's just the first building block in the puzzle.  As we will see later, w
 
 ### Load (TODO)
 
+Interface that fetches source, puts the module meta through the transformation workflow, and then returns a Module instance.
+
 ### Import (TODO)
+
+Helper method that loads Module(s) using the `load` interface.
 
 ### Module (TODO)
 
+Module instances are the final poduct of the loader workflow.
+
 ### Module Meta (TODO)
+
+Module Meta is an intermediary object that is processed by the loader workflow in order to generate a Module instance.
 
 ## Architecture (TODO)
 
