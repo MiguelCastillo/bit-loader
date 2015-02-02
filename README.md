@@ -39,7 +39,7 @@ The transformation workflow is [promise](https://developer.mozilla.org/en-US/doc
 
 We have talked all about the transformation workflow, and rightfully so because that's an incredibly important part of bit loader.  But there are other features that are really important as well.
 
-bit loader has a two stage compilation system.  The first stage loads the source files, puts them through the transformation workflow, and then loads all the dependencies. The dependencies will 'recursively' go through stage one until no more dependencies are left to process.  The primary purpose for this stage is to get all necessary source ready for the second stage, which is the linking process.  This is where the final Module instance is created.
+bit loader has a two stage compilation system.  The first stage loads the source files from storage, puts them through the transformation workflow, and then loads all the dependencies. The dependencies will 'recursively' go through this first stage until no more dependencies are left to be processed. No *source* is executed ([eval](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval)) in this stage; it is strictly raw source processing. The primary purpose for this first stage is to get all necessary source ready for the second stage, which is the compilation (linking) stage where the source is converted to *code*. It is in the compilation stage where the Module instances are created. The actual execution (evaluation) of the code to create a Module is *not* done by bit loader, it is left to the implementor of the `fetch` interface. Ssee below in the section for *Fetch generates Module Meta* for a bit more detail on this.
 
 This two stage process is very important because it allows us to create Modules synchronously, even though the loading process is asynchronous, which gives the oportunity to enable support for `CJS`,`AMD`, and `ES6 modules` simultaneously.
 
@@ -48,13 +48,19 @@ This two stage process is very important because it allows us to create Modules 
 
 ### Fetch
 
-In order to create something useful, bit loader provides a hook for the `fetch` interface, which defines how source files are read from storage.  This abstraction exists to keep the process of creating Modules separate from the process of *fetching* files from disk, HTTP(s), or whatever else you may fancy.
+In order to create something useful, bit loader provides a hook for the `fetch` interface, which defines how source files are read from storage. This abstraction exists to keep the process of creating Modules separate from the process of *fetching* files from disk, HTTP(s), or any other transport you may fancy. Bit loader itself does not implement the `fetch` interface as it is intended to be overriden by module loader implementations. Any consumer code using bit loader needs to define a `fetch` provider, which is quite simple and we will see a couple of examples below.
 
-The fetch interface returns a *module meta* object.  Which is a simple object with a couple of properties and or methods used by bit loader in order to create Modules. The most basic form of module meta is an object with a single property `code`, which is used by bit loader to create an instance of a Module. Alternatively, module meta could have a `compile` method, to which bit loader delegates the process of creating the Module instance. The result from calling `compile` is the instance of Module.
+#### Fetch generates Module Meta objects
 
-Below is a simple example for creating an instance of bit loader, passing in a fetch interface that returns a module meta with `code`.  More details on module meta below (TODO).
+> The point of `fetch` is to enable bit loader to get module meta objects that can be compiled to Module instances.
 
-#### Fetch example returning a module meta with a property `code`
+The fetch interface creates *module meta* objects that are returned to the caller (bit loader).  Bit loader will coerce the call to fetch to a promise so that synchronous and asynchronous operations behave the same.  This simply means that if you are implementing a `fetch` provider, feel free to return promises or module meta objects directly.
+
+> When bit loader is handed back a module meta object, it will augment it with *useful* properties that will help during the process of converting the module meta object to an instance of Module.
+
+Below are two examples for creating an instance of bit loader that defines a fetch interface.
+
+#### Fetch example returning a 'processed' module meta; a modue meta object with a property `code`
 
 ``` javascript
 function fetchFactory(loader) {
@@ -74,7 +80,9 @@ var reuslt = loader.fetch("like")
 console.log(result);
 ```
 
-#### Fetch example returning a module meta with a method `compile`
+#### Fetch example returning an 'unprocessed' module meta; a module meta object with a method `compile` and a `source` string property
+
+We want to return a module meta with a `compile` and `source` property when we want bit loader to put this module meta through the transformation workflow.
 
 ``` javascript
 // When fetchFactory is called, the instance of loader is passed in.
@@ -103,7 +111,13 @@ var reuslt = loader.fetch("like")
 console.log(result);
 ```
 
-But that's just the first building block in the puzzle.  As we will see later, when you call `load` or `import` is when you are start to see more relevant capabilities of module loading.
+#### Fetch a bit of visual
+
+<img src="https://raw.githubusercontent.com/MiguelCastillo/bit-loader/master/img/Module-Meta-Transform.png" alt="Loader diagram" height="300px"></img>
+
+#### Fetch is just the beginning
+
+Fetch is just the first building block in the puzzle.  As we will see later, when you call `load` or `import` is when you start to see more relevant capabilities of bit loader.
 
 [bit imports](https://github.com/MiguelCastillo/bit-imports) implements the `fetch` interface, which is a good reference implementation to see a fully functional module loader implementaion leveraging bit loader capabilities.
 
@@ -120,13 +134,19 @@ Helper method that loads Module(s) using the `load` interface.
 
 Module instances are the final poduct of the loader workflow.
 
-### Module Meta (TODO)
+### Module Meta
 
-Module Meta is an intermediary object that is processed by the loader workflow in order to generate a Module instance.
+Module meta objects are plain ole JavaScript object that serve as an intermediate representation of a Module.  A module meta has a couple of properties and or methods used by bit loader in order to create, or delegate the process of creating Modules.
+
+The most basic form of module meta is called 'processed' module meta, which is an object with a property `code` that is used by bit loader itself to create an instance of a Module. `code` is what a Module represents; it is analogous to the result of calling `require` in `AMD` and `CJS`.
+
+Alternatively, we have 'unprocessed' module meta objects with a `source` string property and a `compile` method.  When bit loader detects these two properties, the process of creating Module instances is delegated to the `compile` interface. In other words, bit loader will call `compile` which returns an instance of Module.
+
+One important distinction between the two is that bit loader will push 'unprocessed' module meta objects through the transformation workflow; 'processed' meta object skip that step entirely. The reason for this is that `source` is the raw text that will eventually be converted to `code`; `code` is the what `source` becomes by calling [eval](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval), or something equivalent.  We want to put `source` through the transformation workflow to do fancy things like converting it from coffeescript to JavaScript, before it is `eval`ed to `code`.  Then `code` is what a Module instance actually represents.
 
 ## Architecture (TODO)
 
-#### Loader Base diagram
+#### Loader diagram
 <img src="https://raw.githubusercontent.com/MiguelCastillo/bit-loader/master/img/Loader.png" alt="Loader diagram" height="600px"></img>
 
 #### Fetch diagram
