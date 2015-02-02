@@ -89,7 +89,7 @@ function fetchFactory(/*loader*/) {
     fetch: function(name) {
       // Notice that fetch returns a simple object with a `compile` method.
       // When a `compile` method is provided, a `source` property of type
-      // script must also be proivded.
+      // string must also be proivded.
       // This object returned is what we call a module meta object.
       return {compile: compile, source: ""};
     }
