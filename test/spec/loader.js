@@ -117,5 +117,60 @@ define(["dist/bit-loader"], function(Bitloader) {
       });
     });
 
+
+    describe("When module is loaded with a module meta that has `code` property defined", function() {
+      var yes, loader, pipelineFinishedStub, pipelineAssetStub;
+
+      beforeEach(function() {
+        yes = {code: new Date()};
+        pipelineFinishedStub = sinon.stub();
+        pipelineAssetStub    = sinon.stub();
+
+        var manager = {};
+        loader = new Loader(manager);
+        loader.pipeline.assets[0] = pipelineAssetStub;
+        return loader.pipelineModuleMeta(yes).then(pipelineFinishedStub);
+      });
+
+      it("then the pipeline runs successfully", function() {
+        expect(pipelineFinishedStub.called).to.equal(true);
+      });
+
+      it("then pipeline `done` hanlder is called with module meta", function() {
+        expect(pipelineFinishedStub.calledWithExactly(yes)).to.equal(true);
+      });
+
+      it("then the loader pipeline does not run", function() {
+        expect(pipelineAssetStub.called).to.equal(false);
+      });
+    });
+
+
+    describe("When module is loaded with a module meta that has `compile` and `source` properties", function() {
+      var yes, loader, pipelineFinishedStub, pipelineAssetStub;
+
+      beforeEach(function() {
+        yes = {source: "var somecode;", compile: function() {}};
+        pipelineFinishedStub = sinon.stub();
+        pipelineAssetStub    = sinon.stub();
+
+        var manager = {};
+        loader = new Loader(manager);
+        loader.pipeline.assets = [pipelineAssetStub];
+        return loader.pipelineModuleMeta(yes).then(pipelineFinishedStub);
+      });
+
+      it("then the pipeline runs successfully", function() {
+        expect(pipelineFinishedStub.called).to.equal(true);
+      });
+
+      it("then the pipeline `done` handler is called with module meta", function() {
+        expect(pipelineFinishedStub.calledWithExactly(yes)).to.equal(true);
+      });
+
+      it("then the loader pipeline does run", function() {
+        expect(pipelineAssetStub.called).to.equal(true);
+      });
+    });
   });
 });
