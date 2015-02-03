@@ -7,6 +7,7 @@
       StatefulItems    = require('./stateful-items'),
       moduleLinker     = require('./module/linker'),
       metaFetch        = require('./meta/fetch'),
+      metaValidation   = require('./meta/validation'),
       metaTransform    = require('./meta/transform'),
       metaDependencies = require('./meta/dependencies'),
       metaCompilation  = require('./meta/compilation');
@@ -182,6 +183,10 @@
    * @returns {Promise} that when fulfilled, the processed module meta object is returned.
    */
   Loader.prototype.pipelineModuleMeta = function(moduleMeta) {
+    if (!metaValidation(this.manager, moduleMeta)) {
+      return Promise.resolve(moduleMeta);
+    }
+
     return this.pipeline
       .run(this.manager, moduleMeta)
       .then(function pipelineFinished() {

@@ -184,7 +184,7 @@
   module.exports       = Bitloader;
 })();
 
-},{"./fetch":3,"./import":4,"./loader":5,"./logger":6,"./middleware":11,"./module":12,"./registry":15,"./utils":17,"spromise":1}],3:[function(require,module,exports){
+},{"./fetch":3,"./import":4,"./loader":5,"./logger":6,"./middleware":12,"./module":13,"./registry":16,"./utils":18,"spromise":1}],3:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -323,7 +323,7 @@
   module.exports = Import;
 })();
 
-},{"./stateful-items":16,"./utils":17,"spromise":1}],5:[function(require,module,exports){
+},{"./stateful-items":17,"./utils":18,"spromise":1}],5:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -333,6 +333,7 @@
       StatefulItems    = require('./stateful-items'),
       moduleLinker     = require('./module/linker'),
       metaFetch        = require('./meta/fetch'),
+      metaValidation   = require('./meta/validation'),
       metaTransform    = require('./meta/transform'),
       metaDependencies = require('./meta/dependencies'),
       metaCompilation  = require('./meta/compilation');
@@ -508,6 +509,10 @@
    * @returns {Promise} that when fulfilled, the processed module meta object is returned.
    */
   Loader.prototype.pipelineModuleMeta = function(moduleMeta) {
+    if (!metaValidation(this.manager, moduleMeta)) {
+      return Promise.resolve(moduleMeta);
+    }
+
     return this.pipeline
       .run(this.manager, moduleMeta)
       .then(function pipelineFinished() {
@@ -661,7 +666,7 @@
   module.exports = Loader;
 })();
 
-},{"./meta/compilation":7,"./meta/dependencies":8,"./meta/fetch":9,"./meta/transform":10,"./module/linker":13,"./pipeline":14,"./stateful-items":16,"./utils":17,"spromise":1}],6:[function(require,module,exports){
+},{"./meta/compilation":7,"./meta/dependencies":8,"./meta/fetch":9,"./meta/transform":10,"./meta/validation":11,"./module/linker":14,"./pipeline":15,"./stateful-items":17,"./utils":18,"spromise":1}],6:[function(require,module,exports){
 var _enabled = false,
     _only    = false;
 
@@ -801,7 +806,7 @@ module.exports = new Logger();
   module.exports = MetaCompilation;
 })();
 
-},{"../logger":6,"../module":12}],8:[function(require,module,exports){
+},{"../logger":6,"../module":13}],8:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -865,7 +870,7 @@ module.exports = new Logger();
   module.exports = MetaFetch;
 })();
 
-},{"../logger":6,"../utils":17,"spromise":1}],10:[function(require,module,exports){
+},{"../logger":6,"../utils":18,"spromise":1}],10:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -889,6 +894,21 @@ module.exports = new Logger();
 })();
 
 },{"../logger":6}],11:[function(require,module,exports){
+(function() {
+  "use strict";
+
+  /**
+   * Simple validation hook to make sure the module meta object can be
+   * pushed through the loader pipeline.
+   */
+  function MetaValidation(manager, moduleMeta) {
+    return !moduleMeta.hasOwnProperty("code");
+  }
+
+  module.exports = MetaValidation;
+})();
+
+},{}],12:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -1143,7 +1163,7 @@ module.exports = new Logger();
   module.exports = Middleware;
 })();
 
-},{"./logger":6,"./utils":17,"spromise":1}],12:[function(require,module,exports){
+},{"./logger":6,"./utils":18,"spromise":1}],13:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -1203,7 +1223,7 @@ module.exports = new Logger();
   module.exports = Module;
 })();
 
-},{"./utils":17}],13:[function(require,module,exports){
+},{"./utils":18}],14:[function(require,module,exports){
 (function(root) {
   "use strict";
 
@@ -1236,7 +1256,7 @@ module.exports = new Logger();
   module.exports = ModuleLinker;
 })(typeof(window) !== 'undefined' ? window : this);
 
-},{"../logger":6}],14:[function(require,module,exports){
+},{"../logger":6}],15:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -1266,7 +1286,7 @@ module.exports = new Logger();
   module.exports = Pipeline;
 })();
 
-},{"spromise":1}],15:[function(require,module,exports){
+},{"spromise":1}],16:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -1299,7 +1319,7 @@ module.exports = new Logger();
   module.exports = Registry;
 })();
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -1360,7 +1380,7 @@ module.exports = new Logger();
   module.exports = StatefulItems;
 })();
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 (function() {
   "use strict";
 
