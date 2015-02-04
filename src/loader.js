@@ -76,8 +76,9 @@
     if (manager.hasModule(name)) {
       return Promise.resolve(manager.getModule(name));
     }
-    else if (loader.hasModule(name)) {
-      return Promise.resolve(loader.getModule(name));
+
+    if (loader.isLoading(name)) {
+      return Promise.resolve(loader.getLoading(name));
     }
 
     return loader
@@ -107,7 +108,7 @@
     var loader  = this,
         manager = this.manager;
 
-    if (manager.hasModule(name)) {
+    if (manager.hasModule(name) || loader.isLoaded(name)) {
       return Promise.resolve(getModuleDelegate);
     }
 
@@ -147,6 +148,22 @@
 
       return loader.buildModule(name);
     }
+  };
+
+
+  /**
+   * Interface to register a module meta that can be put compiled to a Module instance
+   */
+  Loader.prototype.register = function(name, deps, factory) {
+    if (this.manager.hasModule(name) || this.hasModule(name)) {
+      throw new TypeError("Module '" + name + "' is already loaded");
+    }
+
+    this.setLoaded(name, {
+      name: name,
+      deps: deps,
+      factory: factory
+    });
   };
 
 
@@ -241,7 +258,7 @@
    * @returns {Boolean}
    */
   Loader.prototype.hasModule = function(name) {
-    this.modules.hasItem(name);
+    return this.modules.hasItem(name);
   };
 
 
@@ -254,7 +271,7 @@
    * @returns {moduleMeta | Promise}
    */
   Loader.prototype.getModule = function(name) {
-    return this.modules.getItem(name);
+    return this.modules.getItem(this.modules.getState(name), name);
   };
 
 

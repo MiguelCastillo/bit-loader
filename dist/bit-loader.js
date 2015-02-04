@@ -45,16 +45,17 @@
 
     // Override any of these factories if you need specialized implementation
     var providers = {
-      fetch  : factories.fetch  ? factories.fetch(this)  : new Bitloader.Fetch(this),
-      loader : factories.loader ? factories.loader(this) : new Bitloader.Loader(this),
-      import : factories.import ? factories.import(this) : new Bitloader.Import(this)
+      fetcher  : factories.fetch  ? factories.fetch(this)  : new Bitloader.Fetch(this),
+      loader   : factories.loader ? factories.loader(this) : new Bitloader.Loader(this),
+      importer : factories.import ? factories.import(this) : new Bitloader.Import(this)
     };
 
     // Expose interfaces
     this.providers = providers;
-    this.fetch     = providers.fetch.fetch.bind(providers.fetch);
+    this.fetch     = providers.fetcher.fetch.bind(providers.fetcher);
     this.load      = providers.loader.load.bind(providers.loader);
-    this.import    = providers.import.import.bind(providers.import);
+    this.register  = providers.loader.register.bind(providers.loader);
+    this.import    = providers.importer.import.bind(providers.importer);
   }
 
 
@@ -64,15 +65,6 @@
    */
   Bitloader.prototype.clear = function() {
     Registry.clearById(this.context._id);
-  };
-
-
-  /**
-   * Checks is the module has been fully finalized, which is when the module instance
-   * get stored in the module registry
-   */
-  Bitloader.prototype.isModuleCached = function(name) {
-    return this.context.modules.hasOwnProperty(name);
   };
 
 
@@ -125,6 +117,24 @@
 
 
   /**
+   * Interface to delete a module from the registry.
+   *
+   * @param {string} name - Name of the module to delete
+   *
+   * @returns {Module} Deleted module
+   */
+  Bitloader.prototype.deleteModule = function(name) {
+    if (this.isModuleCached(name)) {
+      throw new TypeError("Module instance `" + name + "` already exists");
+    }
+
+    var mod = this.context.modules[name];
+    delete this.context.modules[name];
+    return mod;
+  };
+
+
+  /**
    * Returns the module code from the module registry. If the module code has not
    * yet been fully compiled, then we defer to the loader to build the module and
    * return the code.
@@ -163,6 +173,15 @@
     });
 
     return this.setModule(mod).code;
+  };
+
+
+  /**
+   * Checks is the module has been fully finalized, which is when the module instance
+   * get stored in the module registry
+   */
+  Bitloader.prototype.isModuleCached = function(name) {
+    return this.context.modules.hasOwnProperty(name);
   };
 
 
@@ -402,8 +421,9 @@
     if (manager.hasModule(name)) {
       return Promise.resolve(manager.getModule(name));
     }
-    else if (loader.hasModule(name)) {
-      return Promise.resolve(loader.getModule(name));
+
+    if (loader.isLoading(name)) {
+      return Promise.resolve(loader.getLoading(name));
     }
 
     return loader
@@ -433,7 +453,7 @@
     var loader  = this,
         manager = this.manager;
 
-    if (manager.hasModule(name)) {
+    if (manager.hasModule(name) || loader.isLoaded(name)) {
       return Promise.resolve(getModuleDelegate);
     }
 
@@ -473,6 +493,22 @@
 
       return loader.buildModule(name);
     }
+  };
+
+
+  /**
+   * Interface to register a module meta that can be put compiled to a Module instance
+   */
+  Loader.prototype.register = function(name, deps, factory) {
+    if (this.manager.hasModule(name) || this.hasModule(name)) {
+      throw new TypeError("Module '" + name + "' is already loaded");
+    }
+
+    this.setLoaded(name, {
+      name: name,
+      deps: deps,
+      factory: factory
+    });
   };
 
 
@@ -567,7 +603,7 @@
    * @returns {Boolean}
    */
   Loader.prototype.hasModule = function(name) {
-    this.modules.hasItem(name);
+    return this.modules.hasItem(name);
   };
 
 
@@ -580,7 +616,7 @@
    * @returns {moduleMeta | Promise}
    */
   Loader.prototype.getModule = function(name) {
-    return this.modules.getItem(name);
+    return this.modules.getItem(this.modules.getState(name), name);
   };
 
 
@@ -765,7 +801,7 @@ module.exports = new Logger();
   function compile(moduleMeta) {
     var mod;
 
-    if (moduleMeta.hasOwnProperty("code")) {
+    if (moduleMeta.hasOwnProperty("code") || typeof(moduleMeta.factory) === 'function') {
       mod = new Module(moduleMeta);
     }
     else if (typeof(moduleMeta.compile) === 'function') {

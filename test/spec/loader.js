@@ -172,5 +172,60 @@ define(["dist/bit-loader"], function(Bitloader) {
         expect(pipelineAssetStub.called).to.equal(true);
       });
     });
+
+
+    describe("When module meta is registered with the `register` interface", function() {
+      var loader, moduleName, hasModuleStub, setModuleStub, factoryStub, moduleCode;
+
+      beforeEach(function() {
+        moduleName = "module1";
+        moduleCode = function rad() {};
+        setModuleStub = sinon.stub().returnsArg(0);
+        hasModuleStub = sinon.stub().returns(false);
+        factoryStub = sinon.stub().returns(moduleCode);
+
+
+        loader = new Loader({
+          hasModule: hasModuleStub,
+          setModule: setModuleStub
+        });
+
+        loader.register(moduleName, [], factoryStub);
+      });
+
+      it("then module meta is registered", function() {
+        expect(loader.hasModule(moduleName)).to.equal(true);
+      });
+
+      it("then module meta factory is not called", function() {
+        expect(factoryStub.called).to.equal(false);
+      });
+
+      it("then manager `setModule` is not called", function() {
+        expect(setModuleStub.called).to.equal(false);
+      });
+
+
+      describe("when loading registered module meta, the proper Module instance is created", function() {
+        var moduleLoaderStub = sinon.stub();
+        beforeEach(function() {
+          return loader.load(moduleName).then(moduleLoaderStub);
+        });
+
+        it("then module loaded callback is called", function() {
+          expect(moduleLoaderStub.called).to.equal(true);
+        });
+
+        it("then manager `setModule` is called with and instance of module", function() {
+          expect(setModuleStub.args[0][0]).to.be.instanceof(Bitloader.Module);
+        });
+
+        it("then module instance is created", function() {
+          expect(moduleLoaderStub.args[0][0]).to.be.instanceof(Bitloader.Module);
+        });
+      });
+
+    });
+
   });
 });
