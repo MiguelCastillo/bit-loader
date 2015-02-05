@@ -8,7 +8,7 @@
   function compile(moduleMeta) {
     var mod;
 
-    if (moduleMeta.hasOwnProperty("code")) {
+    if (moduleMeta.hasOwnProperty("code") || typeof(moduleMeta.factory) === 'function') {
       mod = new Module(moduleMeta);
     }
     else if (typeof(moduleMeta.compile) === 'function') {

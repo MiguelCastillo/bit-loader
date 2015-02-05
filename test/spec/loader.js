@@ -65,15 +65,15 @@ define(["dist/bit-loader"], function(Bitloader) {
 
 
     describe("When loading module that is loaded in `loader` but not yet compiled to a `Module`", function() {
-      var yes, loader, moduleLoadedStub, hasModuleStub, getModuleStub, loaderHasModuleStub, loaderGetModuleStub, loaderSetModuleStub;
+      var yes, loader, moduleLoadedStub, hasModuleStub, getModuleStub, loaderIsLadedStub, loaderBuildModuleStub, loaderSetModuleStub;
 
       beforeEach(function() {
         yes = {yes: new Date()};
         moduleLoadedStub = sinon.stub();
-        hasModuleStub = sinon.stub().withArgs("yes").returns(false);
+        hasModuleStub = sinon.stub();
         getModuleStub = sinon.stub();
-        loaderHasModuleStub = sinon.stub().withArgs("yes").returns(true);
-        loaderGetModuleStub = sinon.stub().withArgs("yes").returns(yes);
+        loaderIsLadedStub = sinon.stub().withArgs("yes").returns(true);
+        loaderBuildModuleStub = sinon.stub().withArgs("yes").returns(yes);
         loaderSetModuleStub = sinon.stub();
 
         var manager = {
@@ -82,34 +82,34 @@ define(["dist/bit-loader"], function(Bitloader) {
         };
 
         loader = new Loader(manager);
-        loader.hasModule = loaderHasModuleStub;
-        loader.getModule = loaderGetModuleStub;
-        loader.setModule = loaderSetModuleStub;
+        loader.isLoaded    = loaderIsLadedStub;
+        loader.buildModule = loaderBuildModuleStub;
+        loader.setModule   = loaderSetModuleStub;
         return loader.load("yes").then(moduleLoadedStub);
       });
 
       it("then `manager.hasModule` is called with `yes`", function() {
-        expect(hasModuleStub.calledWithExactly("yes")).to.equal(true);
+        expect(hasModuleStub.called).to.equal(false);
       });
 
       it("then `manager.getModule` is not called", function() {
         expect(getModuleStub.called).to.equal(false);
       });
 
-      it("then `loader.hasModule` is called once", function() {
-        expect(loaderHasModuleStub.calledOnce).to.equal(true);
+      it("then `loader.isLoaded` is called once", function() {
+        expect(loaderIsLadedStub.calledOnce).to.equal(true);
       });
 
-      it("then `loader.hasModule` is called with `yes`", function() {
-        expect(loaderHasModuleStub.calledWithExactly("yes")).to.equal(true);
+      it("then `loader.isLoaded` is called with `yes`", function() {
+        expect(loaderIsLadedStub.calledWithExactly("yes")).to.equal(true);
       });
 
-      it("then `loader.getModule` is called once", function() {
-        expect(loaderGetModuleStub.calledOnce).to.equal(true);
+      it("then `loader.buildModule` is called once", function() {
+        expect(loaderBuildModuleStub.calledOnce).to.equal(true);
       });
 
-      it("then `loader.getModule` is called with `yes`", function() {
-        expect(loaderGetModuleStub.calledWithExactly("yes")).to.equal(true);
+      it("then `loader.buildModule` is called with `yes`", function() {
+        expect(loaderBuildModuleStub.calledWithExactly("yes")).to.equal(true);
       });
 
       it("then `loader.setLoading` is not called", function() {
@@ -172,5 +172,60 @@ define(["dist/bit-loader"], function(Bitloader) {
         expect(pipelineAssetStub.called).to.equal(true);
       });
     });
+
+
+    describe("When module meta is registered with the `register` interface", function() {
+      var loader, moduleName, hasModuleStub, setModuleStub, factoryStub, moduleCode;
+
+      beforeEach(function() {
+        moduleName = "module1";
+        moduleCode = function rad() {};
+        setModuleStub = sinon.stub().returnsArg(0);
+        hasModuleStub = sinon.stub().returns(false);
+        factoryStub = sinon.stub().returns(moduleCode);
+
+
+        loader = new Loader({
+          hasModule: hasModuleStub,
+          setModule: setModuleStub
+        });
+
+        loader.register(moduleName, [], factoryStub);
+      });
+
+      it("then module meta is registered", function() {
+        expect(loader.hasModule(moduleName)).to.equal(true);
+      });
+
+      it("then module meta factory is not called", function() {
+        expect(factoryStub.called).to.equal(false);
+      });
+
+      it("then manager `setModule` is not called", function() {
+        expect(setModuleStub.called).to.equal(false);
+      });
+
+
+      describe("when loading registered module meta, the proper Module instance is created", function() {
+        var moduleLoaderStub = sinon.stub();
+        beforeEach(function() {
+          return loader.load(moduleName).then(moduleLoaderStub);
+        });
+
+        it("then module loaded callback is called", function() {
+          expect(moduleLoaderStub.called).to.equal(true);
+        });
+
+        it("then manager `setModule` is called with and instance of module", function() {
+          expect(setModuleStub.args[0][0]).to.be.instanceof(Bitloader.Module);
+        });
+
+        it("then module instance is created", function() {
+          expect(moduleLoaderStub.args[0][0]).to.be.instanceof(Bitloader.Module);
+        });
+      });
+
+    });
+
   });
 });
