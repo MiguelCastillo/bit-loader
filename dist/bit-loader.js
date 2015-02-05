@@ -418,6 +418,10 @@
       return Promise.reject(new TypeError("Must provide the name of the module to load"));
     }
 
+    if (loader.isLoaded(name)) {
+      return Promise.resolve(loader.buildModule(name));
+    }
+
     if (manager.hasModule(name)) {
       return Promise.resolve(manager.getModule(name));
     }
@@ -453,7 +457,7 @@
     var loader  = this,
         manager = this.manager;
 
-    if (manager.hasModule(name) || loader.isLoaded(name)) {
+    if (loader.isLoaded(name) || manager.hasModule(name)) {
       return Promise.resolve(getModuleDelegate);
     }
 
