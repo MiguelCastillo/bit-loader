@@ -48,7 +48,7 @@
 
 
   MetaValidation.canCompile = function(options) {
-    return typeof(options.source) === "string" && typeof(options.compile) === "function";
+    return typeof(options.compile) === "function";
   };
 
 

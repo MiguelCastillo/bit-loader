@@ -1254,7 +1254,7 @@ module.exports = new Logger();
 
 
   MetaValidation.canCompile = function(options) {
-    return typeof(options.source) === "string" && typeof(options.compile) === "function";
+    return typeof(options.compile) === "function";
   };
 
 
@@ -1342,7 +1342,6 @@ module.exports = new Logger();
 
     return storage[id] || (storage[id] = {
       _id     : id,
-      code    : {},
       modules : {}
     });
   };
