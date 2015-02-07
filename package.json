@@ -1,7 +1,7 @@
 {
   "name": "bit-loader",
   "version": "0.0.14",
-  "description": "Dependency loading and managment micro framework",
+  "description": "Dependency loading and management micro framework",
   "main": "dist/bit-loader.js",
   "directories": {
     "test": "tests"
