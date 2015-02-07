@@ -127,7 +127,7 @@ If you would like to see a fully functionaly implementation of `fetch`, you can 
 
 
 ### Load
-> The purpose for the `load` interface is to return Module instances.
+> The purpose of the `load` interface is to return Module instances.
 
 It does it by wrapping the entire process of calling fetch to get module meta objects, pushing the module meta objects through the transformation and compilation workflow, and then returning the Module instance. There are a few other steps that take place such a interacting with the cache, but they are less relevant.
 
@@ -146,11 +146,11 @@ bitloader.load('modA').then(function(modA) {
 
 
 ### Import
-> The primary purpose for `import` is to return the *evaluated code* from Module instances.
+> The primary purpose of `import` is to return the *evaluated code* from Module instances.
 
 The `import` interface is basically the replacement for `require`, which returns the actual *evaluated code*.  In contrast, `load` returns the entire Module instance.  Internally, `import` will call `load` to do the heavy lifting and `import` simply unwraps the Module instance returning only the `code` property.
 
-`import` can take a single string module name or an array of string module names, and it returns a promise.  When the promise is resolved, all the loaded module(s) as passed back as arguments to the promise callback.
+`import` can take a single string module name or an array of string module names, and it returns a promise.  When the promise is resolved, all the loaded module(s) are passed back as arguments to the promise callback.
 
 ### Sample code for importing a pair of modules
 ``` javascript
@@ -163,13 +163,15 @@ bitlaoder.import(["modA", "modB"].then(function(modA, modB) {
 ```
 
 ### Register
-> Interface to add a module meta object to bit loader.
+> Interface to add a module meta object to loader's cache.
 
-Adding a module meta object is one of the steps that happens when `load` is called.  But `register` is just skipping the entire step of fetching and transforming the source files, making the module meta readily available for the compilation workflow.
+When a module meta object is registered, importing it will cause the module meta to completely skip the fetching and transformation workflow steps, making the module meta readily available for the compilation workflow.
+
+The first parameter is the name of the module to register, the second parameter is an array of dependency names, and third is called `factory` function.  The `factory` function is called with all the dependencies defined in the second parameter in order to return the actual Module `code`.
 
 ```javascript
 var bitloader = new Bitloader();
-bitlaoder.register("modA", [], function() {
+bitlaoder.register("modA", ["modB"], function(modB) {
   return "Anything";
 });
 
@@ -210,7 +212,7 @@ A Module instance is an object that represents the *evaluated code*. A Module in
 A module meta object has a couple of properties and or methods used by bit loader in order to create, or delegate the process of creating Modules, and they are explained below.
 
 #### Processed Module Meta
-The most basic form of module meta is called 'processed' module meta, which is an object with a property `code` that is used by bit loader itself to create an instance of a Module. `code` is what a Module represents; it is the *stuff* that calling `require` in `AMD` and `CJS` returns.
+The most basic form of module meta is called 'processed' module meta, which is an object with a property `code` that is used by bit loader itself to create an instance of a Module. `code` is what a Module represents; it is the *stuff* that calling `require` in `AMD` and `CJS` return.
 
 > Module meta objects with a `code` property *do not* go through the transformation workflow.
 
