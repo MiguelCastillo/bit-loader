@@ -25,6 +25,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       });
     });
 
+
     describe("When creating a ModuleMeta with an empty options object", function() {
       var metaSpy;
 
@@ -47,70 +48,23 @@ define(["dist/bit-loader"], function(Bitloader) {
       });
     });
 
-    describe("When creating a ModuleMeta with options with only `source`", function() {
-      var metaSpy;
-
-      beforeEach(function() {
-        metaSpy = sinon.spy(Module.MetaValidation);
-
-        try {
-          metaSpy({source: "some source"});
-        }
-        catch(ex) {
-        }
-      });
-
-      it("then an exception is thrown", function() {
-        expect(metaSpy.threw("TypeError")).to.equal(true);
-      });
-
-      it("then exception stating that `compile` or `code` must be provided", function() {
-        expect(metaSpy.exceptions[0].message).to.equal("ModuleMeta must provide a `source` string and `compile` interface, or `code`.");
-      });
-    });
 
     describe("When creating a ModuleMeta with options with only `compile`", function() {
-      var metaSpy;
+      var metaSpy, moduleMeta;
 
       beforeEach(function() {
+        moduleMeta = {compile: function() {}};
         metaSpy = sinon.spy(Module.MetaValidation);
 
         try {
-          metaSpy({compile: function() {}});
+          metaSpy(moduleMeta);
         }
         catch(ex) {
         }
       });
 
-      it("then an exception is thrown", function() {
-        expect(metaSpy.threw("TypeError")).to.equal(true);
-      });
-
-      it("then exception stating that `compile` or `code` must be provided", function() {
-        expect(metaSpy.exceptions[0].message).to.equal("ModuleMeta must provide a `source` string and `compile` interface, or `code`.");
-      });
-    });
-
-
-    describe("When creating a ModuleMeta with a `source` property and `compile` a string", function() {
-      var metaSpy;
-
-      beforeEach(function() {
-        metaSpy = sinon.spy(Module.MetaValidation);
-
-        try {
-          metaSpy({source: "function x(){}", compile: "some string"});
-        }
-        catch(ex) {
-        }
-      });
-
-      it("then an exception is thrown", function() {
-        expect(metaSpy.threw("TypeError")).to.equal(true);
-      });
-
-      it("then exception stating that `compile` or `code` must be provided", function() {
-        expect(metaSpy.exceptions[0].message).to.equal("ModuleMeta must provide a `source` string and `compile` interface, or `code`.");
+      it("then ModuleMeta `compile` is a function", function() {
+        expect(moduleMeta.compile).to.be.a("function");
       });
     });
 

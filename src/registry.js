@@ -13,7 +13,6 @@
 
     return storage[id] || (storage[id] = {
       _id     : id,
-      code    : {},
       modules : {}
     });
   };
