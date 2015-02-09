@@ -238,7 +238,7 @@
         }
 
         if (!cancelled && !curr.__pending) {
-          logger.log("transformation", curr.name);
+          logger.log("transformation", curr.name, data);
           return curr.handler.apply(curr, data);
         }
       }, function(err) {
