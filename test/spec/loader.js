@@ -70,7 +70,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       beforeEach(function() {
         yes = {yes: new Date()};
         moduleLoadedStub = sinon.stub();
-        hasModuleStub = sinon.stub();
+        hasModuleStub = sinon.stub().returns(false);
         getModuleStub = sinon.stub();
         loaderIsLadedStub = sinon.stub().withArgs("yes").returns(true);
         loaderBuildModuleStub = sinon.stub().withArgs("yes").returns(yes);
@@ -89,7 +89,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       });
 
       it("then `manager.hasModule` is called with `yes`", function() {
-        expect(hasModuleStub.called).to.equal(false);
+        expect(hasModuleStub.called).to.equal(true);
       });
 
       it("then `manager.getModule` is not called", function() {
@@ -174,22 +174,19 @@ define(["dist/bit-loader"], function(Bitloader) {
     });
 
 
-    describe("When module meta is registered with the `register` interface", function() {
+    describe("When module meta is registered with the `register` interface with no dependencies", function() {
       var loader, moduleName, hasModuleStub, setModuleStub, factoryStub, moduleCode;
 
       beforeEach(function() {
         moduleName = "module1";
         moduleCode = function rad() {};
-        setModuleStub = sinon.stub().returnsArg(0);
-        hasModuleStub = sinon.stub().returns(false);
-        factoryStub = sinon.stub().returns(moduleCode);
+        factoryStub   = sinon.stub().returns(moduleCode);
 
+        var manager = new Bitloader();
+        hasModuleStub = sinon.spy(manager, "hasModule");
+        setModuleStub = sinon.spy(manager, "setModule");
 
-        loader = new Loader({
-          hasModule: hasModuleStub,
-          setModule: setModuleStub
-        });
-
+        loader = manager.providers.loader;
         loader.register(moduleName, [], factoryStub);
       });
 
@@ -227,5 +224,74 @@ define(["dist/bit-loader"], function(Bitloader) {
 
     });
 
+
+    describe("When module meta is registered with the `register` interface with dependencies", function() {
+      var loader, moduleName, hasModuleStub, setModuleStub, getModuleStub, factoryStub, fetchStub, moduleCode, deep1Module;
+
+      beforeEach(function() {
+        moduleName    = "module1";
+        moduleCode    = function rad() {};
+        deep1Module   = {"code":{"deep1": "Some value"}};
+        fetchStub     = sinon.stub();
+        factoryStub   = sinon.stub().returns(moduleCode);
+
+        fetchStub.withArgs(moduleName).throws(new TypeError("Registered Module must NOT be fetched"));
+        fetchStub.withArgs("js/deep1").returns(deep1Module);
+
+        var manager = new Bitloader();
+        manager.fetch = fetchStub;
+        getModuleStub = sinon.spy(manager, "getModule");
+        setModuleStub = sinon.spy(manager, "setModule");
+        hasModuleStub = sinon.spy(manager, "hasModule");
+
+        loader = manager.providers.loader;
+        loader.register(moduleName, ["js/deep1"], factoryStub);
+      });
+
+      it("then module meta is registered", function() {
+        expect(loader.isPending(moduleName)).to.equal(true);
+      });
+
+      it("then module meta factory is not called", function() {
+        expect(factoryStub.called).to.equal(false);
+      });
+
+      it("then manager `hasModule` is called", function() {
+        expect(hasModuleStub.called).to.equal(true);
+      });
+
+      it("then manager `setModule` is not called", function() {
+        expect(setModuleStub.called).to.equal(false);
+      });
+
+      it("then manager `fetch` is not called", function() {
+        expect(fetchStub.called).to.equal(false);
+      });
+
+
+      describe("when loading registered module meta, the proper Module instance is created", function() {
+        var moduleLoaderStub = sinon.spy();
+        beforeEach(function() {
+          return loader.load(moduleName).then(moduleLoaderStub);
+        });
+
+        it("then module loaded callback is called", function() {
+          expect(moduleLoaderStub.called).to.equal(true);
+        });
+
+        it("then module instance is created", function() {
+          expect(moduleLoaderStub.args[0][0]).to.be.instanceof(Bitloader.Module);
+        });
+
+        it("then manager `setModule` is called with and instance of module", function() {
+          expect(setModuleStub.args[0][0]).to.be.instanceof(Bitloader.Module);
+        });
+
+        it("then module factory is called with module `deep1`", function() {
+          expect(factoryStub.calledWithExactly(deep1Module.code)).to.equal(true);
+        });
+      });
+
+    });
   });
 });

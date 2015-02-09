@@ -54,18 +54,25 @@
 
       // Load modules
       Promise
-        .all(importer.getModules(names, options))
+        .all(importer._getModules(names, options))
         .then(modulesLoaded, handleError);
     });
   };
 
-  // Load modules wherever they are found...
-  Import.prototype.getModules = function(names, options) {
+
+  /**
+   * Loops through the array of names, loading whatever has not yet been loaded,
+   * and returning what has already been loaded.
+   *
+   * @param {Array<string>} names - Array of module names
+   * @param {Object} options
+   */
+  Import.prototype._getModules = function(names, options) {
     var importer = this,
         manager  = this.manager;
 
     return names.map(function getModule(name) {
-      if (isModuleInOptions(name)) {
+      if (hasModule(options.modules, name)) {
         return options.modules[name];
       }
       else if (manager.hasModule(name)) {
@@ -76,28 +83,41 @@
       }
 
       // Workflow for loading a module that has not yet been loaded
-      return importer.setModule(name, loadModule(name));
+      return importer.setModule(name, importer._loadModule(name));
     });
-
-
-    function isModuleInOptions(name) {
-      return options.modules && options.modules.hasOwnProperty(name);
-    }
-
-    function loadModule(name) {
-      function getModuleCode(mod) {
-        if (name !== mod.name) {
-          throw new TypeError("Module name must be the same as the name used for loading the Module itself");
-        }
-
-        importer.removeModule(mod.name);
-        return manager.getModuleCode(mod.name);
-      }
-
-      return manager.load(name).then(getModuleCode, Utils.forwardError);
-    }
   };
 
+
+  /**
+   * Load module
+   */
+  Import.prototype._loadModule = function(name) {
+    return this.manager
+      .load(name)
+      .then(this._moduleLoaded(name), Utils.forwardError);
+  };
+
+
+  /**
+   * Handler for when modules are loaded.
+   */
+  Import.prototype._moduleLoaded = function(name) {
+    var importer = this;
+
+    return function getCode(mod) {
+      if (name !== mod.name) {
+        throw new TypeError("Module name must be the same as the name used for loading the Module itself");
+      }
+
+      importer.removeModule(mod.name);
+      return importer.manager.getModuleCode(mod.name);
+    };
+  };
+
+
+  function hasModule(target, name) {
+    return target && target.hasOwnProperty(name);
+  }
 
   Import.prototype.hasModule = function(name) {
     return this.modules.hasItemWithState(StateTypes.loading, name);
