@@ -374,14 +374,14 @@
   Import.prototype._loadModule = function(name) {
     return this.manager
       .load(name)
-      .then(this._moduleLoaded(name), Utils.forwardError);
+      .then(this._getModuleCode(name), Utils.forwardError);
   };
 
 
   /**
    * Handler for when modules are loaded.
    */
-  Import.prototype._moduleLoaded = function(name) {
+  Import.prototype._getModuleCode = function(name) {
     var importer = this;
 
     return function getCode(mod) {
@@ -427,6 +427,7 @@
   "use strict";
 
   var Promise          = require('spromise'),
+      Module           = require('./module'),
       Utils            = require('./utils'),
       Pipeline         = require('./pipeline'),
       StatefulItems    = require('./stateful-items'),
@@ -488,15 +489,16 @@
    * the given name isn't loaded, then we fetch it.  The fetch call returns a promise, which
    * when resolved returns a moduleMeta. The moduleMeta is an intermediate object that contains
    * the module source from fetch and a compile method used for converting the source to an
-   * instance of Module. The purporse for moduleMeta is to allow a tranformation pipeline to process
-   * the raw source before compiling it to the final product. The transformation pipeline allows us
-   * to do things like convert coffeescript to javascript.
+   * instance of Module. The purporse for moduleMeta is to allow a tranformation pipeline to
+   * process the raw source before building the final product - a Module instance. The
+   * transformation pipeline allows us to do things like convert coffeescript to javascript.
    *
    * Primary workflow:
    * fetch     -> module name {string}
    * transform -> module meta {compile:fn, source:string}
    * load deps -> module meta {compile:fn, source:string}
-   * compile
+   * compile moduleMeta
+   * link module
    *
    * @param {string} name - The name of the module to load.
    *
@@ -515,23 +517,30 @@
     }
 
     if (loader.isLoaded(name)) {
-      return Promise.resolve(loader.buildModule(name));
+      return Promise.resolve(build());
     }
 
     return loader
       .fetch(name, parentMeta)
-      .then(function moduleMetaFetched(getModuleDelegate) {
-        if (loader.isPending(name)) {
-          console.log("isPending", name);
-          return loader.loadPending(name)
-            .then(function() {
-              return getModuleDelegate();
-            });
-        }
-        else {
-          return getModuleDelegate();
-        }
-      }, Utils.forwardError);
+      .then(build, Utils.forwardError);
+
+
+    function build() {
+      var mod;
+      if (loader.isLoaded(name)) {
+        mod = loader.compileModuleMeta(name);
+      }
+
+      // Right here is where we are handling when a module being loaded calls System.register
+      // register itself.
+      if (loader.isPending(name)) {
+        return loader.loadPending(name).then(function loadedPendingModuleMeta(moduleMeta) {
+          return loader.linkModule(new Module(moduleMeta));
+        }, Utils.forwareError);
+      }
+
+      return loader.linkModule(mod);
+    }
   };
 
 
@@ -548,7 +557,7 @@
    *
    * @param {string} name - The name of the module to fetch
    * @returns {Promise} A promise that when resolved will provide a delegate method
-   *   that can be called to compile the module meta to a Module and return it.
+   *   that can be called to build a Module instance
    */
   Loader.prototype.fetch = function(name, parentMeta) {
     var loader  = this,
@@ -568,7 +577,7 @@
     }
 
     function getModuleDelegate() {
-      return manager.hasModule(name) ? manager.getModule(name) : loader.buildModule(name);
+      return manager.getModule(name);
     }
 
     var loading = loader.isPending(name) ? loader.loadPending(name) : loader.fetchModuleMeta(name, parentMeta);
@@ -673,13 +682,13 @@
 
 
   /**
-   * Converts a module meta object to a full Module instance.
+   * Convert a module meta object into a proper Module instance.
    *
-   * @param {string} name - The name of the module meta to convert to an instance of Module.
+   * @param {string} name - Name of the module meta object to be converted.
    *
-   * @returns {Module} Module instance from the conversion of module meta
+   * @returns {Module}
    */
-  Loader.prototype.buildModule = function(name) {
+  Loader.prototype.compileModuleMeta = function(name) {
     var moduleMeta;
     var manager = this.manager;
 
@@ -694,20 +703,51 @@
     }
 
     // Compile module meta to create a Module instance
-    var mod = metaCompilation(manager, moduleMeta);
+    return metaCompilation(manager, moduleMeta);
+  };
+
+
+  /**
+   * Finalizes a Module instance by pulling in all the dependencies and calling the module
+   * factory method if available.  This is the very last stage of the Module building process
+   *
+   * @param {Module} mod - Module instance to link
+   *
+   * @returns {Module} Instance all linked
+   */
+  Loader.prototype.linkModule = function(mod) {
+    if (!(mod instanceof(Module))) {
+      throw new TypeError("Module `" + name + "` is not an instance of Module");
+    }
 
     ////
-    // This is the sweet spot when compilation and dynamic module registration meet.
-    // TODO: Determine if it is a valid use case for System.register to register
-    // the module that is being loaded. I don't think it is because the module is
-    // already being loaded and it is already passed the registration stage.
+    // This is the sweet spot when synchronous build process and dynamic module registration meet.
+    //
+    // Module registration/import are async operations. Build process is sync.  So the challenge
+    // is to make sure these two don't cross paths.  We solve this problem by making sure we
+    // only process pending module meta objects in async module loading interfaces such as
+    // `import`, because that interface is asynchronous.  We want async operations to run early
+    // and finish all they work.  And then ONLY run sync operations so that calls like `require`
+    // can behave synchronously.
     ////
     if (this.isPending(name)) {
       console.warn("Module '" + name + "' is being dynamically registered while being loaded.", "You don't need to call 'System.register' when the module is already being loaded.");
     }
 
     // Run the Module instance through the module linker
-    return moduleLinker(manager, mod);
+    return moduleLinker(this.manager, mod);
+  };
+
+
+  /**
+   * Converts a module meta object to a full Module instance.
+   *
+   * @param {string} name - The name of the module meta to convert to an instance of Module.
+   *
+   * @returns {Module} Module instance from the conversion of module meta
+   */
+  Loader.prototype.buildModule = function(name) {
+    return this.linkModule(this.compileModuleMeta(name));
   };
 
 
@@ -897,7 +937,7 @@
   module.exports = Loader;
 })();
 
-},{"./meta/compilation":8,"./meta/dependencies":9,"./meta/fetch":10,"./meta/transform":11,"./meta/validation":12,"./module/linker":15,"./pipeline":16,"./stateful-items":18,"./utils":19,"spromise":1}],7:[function(require,module,exports){
+},{"./meta/compilation":8,"./meta/dependencies":9,"./meta/fetch":10,"./meta/transform":11,"./meta/validation":12,"./module":14,"./module/linker":15,"./pipeline":16,"./stateful-items":18,"./utils":19,"spromise":1}],7:[function(require,module,exports){
 var _enabled = false,
     _only    = false;
 

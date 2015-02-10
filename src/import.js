@@ -94,14 +94,14 @@
   Import.prototype._loadModule = function(name) {
     return this.manager
       .load(name)
-      .then(this._moduleLoaded(name), Utils.forwardError);
+      .then(this._getModuleCode(name), Utils.forwardError);
   };
 
 
   /**
    * Handler for when modules are loaded.
    */
-  Import.prototype._moduleLoaded = function(name) {
+  Import.prototype._getModuleCode = function(name) {
     var importer = this;
 
     return function getCode(mod) {
