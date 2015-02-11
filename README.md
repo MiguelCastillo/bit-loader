@@ -224,6 +224,32 @@ Alternatively, we have 'unprocessed' module meta objects, which are also plain o
 #### Differences?
 One important distinction between the two is that bit loader will push 'unprocessed' module meta objects through the transformation workflow; 'processed' meta object skip that step entirely. The reason for this is that `source` is the raw text (source code) that will eventually be converted to `evaluated code`; `source` becomes `code` by calling [eval](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval) - or whatever other equivalent source execution mechanism you may have.  We want to put `source` through the transformation workflow to do fancy things like converting it from coffeescript to JavaScript. `code` is ultimately what a Module instance actually represents.  It is the *stuff* you get when you call `require` or ES6 `import`.
 
+## Architecture Notes
+
+#### Import workflow
+* import
+* fetch
+  * resolve name, which creates moduleMeta
+  * set moduleMeta source
+  * set moduleMeta compile interface
+  * return moduleMeta
+* transform
+  * run custom transforms
+  * parse out dependencies
+* fetch dependencies from transformation step
+* async build
+
+#### Sync build
+* sync build
+  * compile (evaluate moduleMeta.source) to create module
+  * link module calling factory with dependencies and assign result to module.code
+
+#### Async build
+* async build
+  * compile (evaluate moduleMeta.source) to create module
+  * check if the compilation step caused a System.register
+* load dependencies
+* link module calling factory with dependencies and assign result to module.code
 
 ## Reference diagrams
 
