@@ -520,53 +520,12 @@
 
 
   /**
-   * Interface to register a module meta that can be put compiled to a Module instance
-   */
-  Loader.prototype.register = function(name, deps, factory) {
-    if (this.manager.hasModule(name) || this.hasModule(name)) {
-      throw new TypeError("Module '" + name + "' is already loaded");
-    }
-
-    this.setPending(name, {
-      name    : name,
-      deps    : deps,
-      factory : factory
-    });
-  };
-
-
-  /**
-   * Utility helper that runs a module meta object through the transformation workflow.
-   * The module meta object passed *must* have a string source property, which is what
-   * the transformation workflow primarily operates against.
-   *
-   * @param {object} moduleMeta - Module meta object with require `source` property that
-   *  is processed by the transformation pipeline.
-   *
-   * @returns {Promise} That when resolved, the fully tranformed module meta is returned.
-   *
-   */
-  Loader.prototype.transform = function(moduleMeta) {
-    if (!moduleMeta) {
-      throw new TypeError("Must provide a module meta object");
-    }
-
-    if (typeof(moduleMeta.source) !== "string") {
-      throw new TypeError("Must provide a source string property with the content to transform");
-    }
-
-    moduleMeta.deps = moduleMeta.deps || [];
-    return metaTransform(this.manager, moduleMeta);
-  };
-
-
-  /**
    * Calls the fetch provider to get a module meta object, and then puts it through
-   * the module meta pipeline and then processes all the dependencies
+   * the module meta pipeline
    *
    * @param {string} name - Module name for which to build the module meta for
    * @param {Object} parentMeta - Is the module meta object that is requesting the fetch
-   *   transaction.  This is generally seens when processing sub dependencies.
+   *   transaction, which is important when processing sub dependencies.
    *
    * @returns {Promise} When resolved, a module meta that has gone through the pipeline
    *   is returned.
@@ -692,36 +651,40 @@
     var mod;
 
     if (this.isLoaded(name)) {
-      mod = loader.compileModuleMeta(name);
+      mod = this.compileModuleMeta(name);
     }
     else if (this.manager.hasModule(name)) {
-      return Promise.resolve(loader.manager.getModule(name));
+      return Promise.resolve(this.manager.getModule(name));
     }
     else if (!this.isPending(name)) {
-      throw new TypeError("Module `" + name + "` must be in the loaded or pending state to be asynchronously built");
+      return Promise.reject(new TypeError("Module `" + name + "` must be in the loaded or pending state to be asynchronously built"));
+    }
+
+    if (!this.isPending(name)) {
+      return Promise.resolve(this.linkModule(mod));
     }
 
     // Right here is where we are handling when a module being loaded calls System.register
     // to register itself.
-    if (this.isPending(name)) {
-      return this.loadDependencies(name)
-        .then(buildDependencies, Utils.forwardError)
-        .then(linkModuleMeta, Utils.forwardError);
-    }
-    else {
-      // Link module instance
-      return Promise.resolve(this.linkModule(mod));
-    }
+    return metaDependencies(loader.manager, loader.removeModule(name))
+      .then(buildDependencies, Utils.forwardError)
+      .then(linkModuleMeta, Utils.forwardError);
 
+
+
+    //
+    // Helper methods
+    //
 
     function buildDependencies(moduleMeta) {
       var pending = moduleMeta.deps.map(function buildDependency(moduleName) {
         return loader.asyncBuildModule(moduleName);
       });
 
-      return Promise.all(pending).then(function dependenciesBuilt() {
-        return moduleMeta;
-      });
+      return Promise.all(pending)
+        .then(function dependenciesBuilt() {
+          return moduleMeta;
+        });
     }
 
     function linkModuleMeta(moduleMeta) {
@@ -731,29 +694,43 @@
 
 
   /**
-   * Method to make sure all dependencies are loaded for the named module meta object.
-   * This is so that the module meta object can be moved to the loaded state, at which
-   * point it is deemed compilable.
-   *
-   * @param {string} name - Name of the module meta object to process
-   *
-   * @returns {Promise} That when resolved, it returns the module meta object, and
-   *   also guarantees that all dependencies are loaded and ready to go.
+   * Interface to register a module meta that can be put compiled to a Module instance
    */
-  Loader.prototype.loadDependencies = function(name) {
-    var moduleMeta;
-
-    if (this.isPending(name)) {
-      moduleMeta = this.removeModule(name);
-    }
-    else if (this.manager.isModuleCached(name)) {
-      throw new TypeError("Module `" + name + "` is already loaded, so you can just call `manager.getModule(name)`");
-    }
-    else {
-      throw new TypeError("Module meta `" + name + "` is not in a pending state");
+  Loader.prototype.register = function(name, deps, factory) {
+    if (this.manager.hasModule(name) || this.hasModule(name)) {
+      throw new TypeError("Module '" + name + "' is already loaded");
     }
 
-    return metaDependencies(this.manager, moduleMeta);
+    this.setPending(name, {
+      name    : name,
+      deps    : deps,
+      factory : factory
+    });
+  };
+
+
+  /**
+   * Utility helper that runs a module meta object through the transformation workflow.
+   * The module meta object passed *must* have a string source property, which is what
+   * the transformation workflow primarily operates against.
+   *
+   * @param {object} moduleMeta - Module meta object with require `source` property that
+   *  is processed by the transformation pipeline.
+   *
+   * @returns {Promise} That when resolved, the fully tranformed module meta is returned.
+   *
+   */
+  Loader.prototype.transform = function(moduleMeta) {
+    if (!moduleMeta) {
+      return Promise.reject(new TypeError("Must provide a module meta object"));
+    }
+
+    if (typeof(moduleMeta.source) !== "string") {
+      throw Promise.reject(new TypeError("Must provide a source string property with the content to transform"));
+    }
+
+    moduleMeta.deps = moduleMeta.deps || [];
+    return metaTransform(this.manager, moduleMeta);
   };
 
 
