@@ -11,10 +11,13 @@
    */
   function MetaTransform(manager, moduleMeta) {
     logger.log(moduleMeta.name, moduleMeta);
+
     return manager.transform.runAll(moduleMeta)
-      .then(function() {
-        return moduleMeta;
-      }, manager.Utils.forwardError);
+      .then(transformationFinished, manager.Utils.forwardError);
+
+    function transformationFinished() {
+      return moduleMeta;
+    }
   }
 
   module.exports = MetaTransform;

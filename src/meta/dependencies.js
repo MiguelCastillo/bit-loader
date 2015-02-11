@@ -23,7 +23,11 @@
     });
 
     return manager.Promise.all(loading)
-      .then(function dependenciesFetched() {return moduleMeta;}, manager.Utils.forwardError);
+      .then(dependenciesFetched, manager.Utils.forwardError);
+
+    function dependenciesFetched() {
+      return moduleMeta;
+    }
   }
 
   module.exports = MetaDependencies;
