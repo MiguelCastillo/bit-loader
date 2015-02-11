@@ -2,7 +2,7 @@
   "use strict";
 
   var Promise = require('spromise'),
-      Module  = require('../Module'),
+      Module  = require('../module'),
       Logger  = require('../logger'),
       Utils   = require('../utils'),
       logger  = Logger.factory("Meta/Fetch");
