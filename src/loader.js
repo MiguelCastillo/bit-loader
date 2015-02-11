@@ -335,7 +335,7 @@
     // register itself.
     if (loader.isPending(name)) {
       return loader.loadPending(name)
-        .then(loadedPendingModuleMeta, Utils.forwareError);
+        .then(loadedPendingModuleMeta, Utils.forwardError);
     }
 
     return loader.linkModule(mod);
