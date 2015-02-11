@@ -15,14 +15,14 @@
 
   /**
    * - Loaded means that the module meta is all processed and it is ready to be
-   *  compiled into a Module instance
+   *  built into a Module instance. Only for SYNC processing.
    *
    * - Pending means that the module meta is already loaded, but it needs it's
    *  dependencies processed, which might lead to further loading of module meta
-   *  objects
+   *  objects. Only for ASYNC processing.
    *
-   * - Loading means that the module meta is currently being processed so that
-   *  it can be moved to the Loaded state.
+   * - Loading means that the module meta is currently being loaded. Only for ASYNC
+   *  processing.
    */
   var StateTypes = {
     loaded:  "loaded",
@@ -91,30 +91,16 @@
       return Promise.resolve(manager.getModule(name));
     }
 
-    if (loader.isLoaded(name)) {
-      return Promise.resolve(build());
+    if (loader.isLoaded(name) || loader.isPending(name)) {
+      return Promise.resolve(loadedPendingModuleMeta());
     }
 
     return loader
       .fetch(name, parentMeta)
-      .then(build, Utils.forwardError);
+      .then(loadedPendingModuleMeta, Utils.forwardError);
 
-
-    function build() {
-      var mod;
-      if (loader.isLoaded(name)) {
-        mod = loader.compileModuleMeta(name);
-      }
-
-      // Right here is where we are handling when a module being loaded calls System.register
-      // register itself.
-      if (loader.isPending(name)) {
-        return loader.loadPending(name).then(function loadedPendingModuleMeta(moduleMeta) {
-          return loader.linkModule(new Module(moduleMeta));
-        }, Utils.forwareError);
-      }
-
-      return loader.linkModule(mod);
+    function loadedPendingModuleMeta() {
+      return loader.asyncBuildModule(name);
     }
   };
 
@@ -155,8 +141,10 @@
       return manager.getModule(name);
     }
 
-    var loading = loader.isPending(name) ? loader.loadPending(name) : loader.fetchModuleMeta(name, parentMeta);
-    return loader.setLoading(name, loading.then(moduleMetaReady, handleError));
+    var loading = loader
+      .fetchModuleMeta(name, parentMeta)
+      .then(moduleMetaReady, handleError);
+    return loader.setLoading(name, loading);
   };
 
 
@@ -323,6 +311,38 @@
    */
   Loader.prototype.buildModule = function(name) {
     return this.linkModule(this.compileModuleMeta(name));
+  };
+
+
+  /**
+   * Build module handling any async Module registration.  What this means is that if a module
+   * is being loaded and it calls System.register to register itself, then it needs to be handled
+   * as an async step because that could be loading other dependencies.
+   *
+   * @param {string} name - Name of the target Module
+   *
+   * @returns {Promise}
+   */
+  Loader.prototype.asyncBuildModule = function(name) {
+    var loader = this;
+    var mod;
+
+    if (loader.isLoaded(name)) {
+      mod = loader.compileModuleMeta(name);
+    }
+
+    // Right here is where we are handling when a module being loaded calls System.register
+    // register itself.
+    if (loader.isPending(name)) {
+      return loader.loadPending(name)
+        .then(loadedPendingModuleMeta, Utils.forwareError);
+    }
+
+    return loader.linkModule(mod);
+
+    function loadedPendingModuleMeta(moduleMeta) {
+      return loader.linkModule(new Module(moduleMeta));
+    }
   };
 
 
