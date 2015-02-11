@@ -132,6 +132,17 @@
       return loader.getLoading(name);
     }
 
+    var loading = loader
+      .fetchModuleMeta(name, parentMeta)
+      .then(moduleMetaReady, handleError);
+
+    return loader.setLoading(name, loading);
+
+
+    //
+    // Helper methods
+    //
+
     function moduleMetaReady(moduleMeta) {
       loader.setLoaded(name, moduleMeta);
       return getModuleDelegate;
@@ -140,12 +151,6 @@
     function getModuleDelegate() {
       return manager.getModule(name);
     }
-
-    var loading = loader
-      .fetchModuleMeta(name, parentMeta)
-      .then(moduleMetaReady, handleError);
-
-    return loader.setLoading(name, loading);
   };
 
 
@@ -207,7 +212,7 @@
     // This is where the call to fetch the module meta takes place. Once the
     // module meta is loaded, it is put through the transformation pipeline.
     return metaFetch(this.manager, name, parentMeta)
-      .then(pipelineModuleMeta, handleError);
+      .then(pipelineModuleMeta, Utils.forwardError);
 
     function pipelineModuleMeta(moduleMeta) {
       return loader.pipelineModuleMeta(moduleMeta);
@@ -321,26 +326,26 @@
     var loader = this;
     var mod;
 
-    if (loader.isLoaded(name)) {
+    if (this.isLoaded(name)) {
       mod = loader.compileModuleMeta(name);
     }
-    else if (loader.manager.hasModule(name)) {
+    else if (this.manager.hasModule(name)) {
       return Promise.resolve(loader.manager.getModule(name));
     }
-    else if (!loader.isPending(name)) {
+    else if (!this.isPending(name)) {
       throw new TypeError("Module `" + name + "` must be in the loaded or pending state to be asynchronously built");
     }
 
     // Right here is where we are handling when a module being loaded calls System.register
     // to register itself.
-    if (loader.isPending(name)) {
-      return loader.loadDependencies(name)
+    if (this.isPending(name)) {
+      return this.loadDependencies(name)
         .then(buildDependencies, Utils.forwardError)
         .then(linkModuleMeta, Utils.forwardError);
     }
     else {
       // Link module instance
-      return Promise.resolve(loader.linkModule(mod));
+      return Promise.resolve(this.linkModule(mod));
     }
 
 
@@ -410,6 +415,18 @@
    */
   Loader.prototype.getModule = function(name) {
     return this.modules.getItem(this.modules.getState(name), name);
+  };
+
+
+  /**
+   * Return the state of the module.
+   *
+   * @param {string} name - Name of the module for which to get the state
+   *
+   * @returns {StateTypes} State of the Module.
+   */
+  Loader.prototype.getModuleState = function(name) {
+    return this.modules.getState(name);
   };
 
 
