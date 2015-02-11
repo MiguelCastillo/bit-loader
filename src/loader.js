@@ -92,14 +92,14 @@
     }
 
     if (loader.isLoaded(name) || loader.isPending(name)) {
-      return Promise.resolve(loadedPendingModuleMeta());
+      return Promise.resolve(buildModule());
     }
 
     return loader
       .fetch(name, parentMeta)
-      .then(loadedPendingModuleMeta, Utils.forwardError);
+      .then(buildModule, Utils.forwardError);
 
-    function loadedPendingModuleMeta() {
+    function buildModule() {
       return loader.asyncBuildModule(name);
     }
   };
@@ -144,6 +144,7 @@
     var loading = loader
       .fetchModuleMeta(name, parentMeta)
       .then(moduleMetaReady, handleError);
+
     return loader.setLoading(name, loading);
   };
 
@@ -156,18 +157,11 @@
       throw new TypeError("Module '" + name + "' is already loaded");
     }
 
-    var moduleMeta = {
+    this.setPending(name, {
       name    : name,
       deps    : deps,
       factory : factory
-    };
-
-    if (deps.length) {
-      this.setPending(name, moduleMeta);
-    }
-    else {
-      this.setLoaded(name, moduleMeta);
-    }
+    });
   };
 
 
@@ -330,17 +324,37 @@
     if (loader.isLoaded(name)) {
       mod = loader.compileModuleMeta(name);
     }
-
-    // Right here is where we are handling when a module being loaded calls System.register
-    // register itself.
-    if (loader.isPending(name)) {
-      return loader.loadPending(name)
-        .then(loadedPendingModuleMeta, Utils.forwardError);
+    else if (loader.manager.hasModule(name)) {
+      return Promise.resolve(loader.manager.getModule(name));
+    }
+    else if (!loader.isPending(name)) {
+      throw new TypeError("Module `" + name + "` must be in the loaded or pending state to be asynchronously built");
     }
 
-    return loader.linkModule(mod);
+    // Right here is where we are handling when a module being loaded calls System.register
+    // to register itself.
+    if (loader.isPending(name)) {
+      return loader.loadDependencies(name)
+        .then(buildDependencies, Utils.forwardError)
+        .then(linkModuleMeta, Utils.forwardError);
+    }
+    else {
+      // Link module instance
+      return Promise.resolve(loader.linkModule(mod));
+    }
 
-    function loadedPendingModuleMeta(moduleMeta) {
+
+    function buildDependencies(moduleMeta) {
+      var pending = moduleMeta.deps.map(function buildDependency(moduleName) {
+        return loader.asyncBuildModule(moduleName);
+      });
+
+      return Promise.all(pending).then(function dependenciesBuilt() {
+        return moduleMeta;
+      });
+    }
+
+    function linkModuleMeta(moduleMeta) {
       return loader.linkModule(new Module(moduleMeta));
     }
   };
@@ -356,7 +370,7 @@
    * @returns {Promise} That when resolved, it returns the module meta object, and
    *   also guarantees that all dependencies are loaded and ready to go.
    */
-  Loader.prototype.loadPending = function(name) {
+  Loader.prototype.loadDependencies = function(name) {
     var moduleMeta;
 
     if (this.isPending(name)) {
