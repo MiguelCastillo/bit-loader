@@ -109,8 +109,8 @@
    * @returns {Module} Deleted module
    */
   Bitloader.prototype.deleteModule = function(name) {
-    if (this.isModuleCached(name)) {
-      throw new TypeError("Module instance `" + name + "` already exists");
+    if (!this.isModuleCached(name)) {
+      throw new TypeError("Module instance `" + name + "` does not exists");
     }
 
     var mod = this.context.modules[name];
