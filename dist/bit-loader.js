@@ -482,15 +482,14 @@
    * module metas to instances of Module.
    *
    * @param {string} name - The name of the module to fetch
-   * @returns {Promise} A promise that when resolved will provide a delegate method
-   *   that can be called to build a Module instance
+   * @returns {Promise}
    */
   Loader.prototype.fetch = function(name, parentMeta) {
     var loader  = this,
         manager = this.manager;
 
     if (manager.hasModule(name)) {
-      return Promise.resolve(getModuleDelegate);
+      return Promise.resolve();
     }
 
     if (loader.isLoading(name)) {
@@ -503,18 +502,8 @@
 
     return loader.setLoading(name, loading);
 
-
-    //
-    // Helper methods
-    //
-
     function moduleMetaReady(moduleMeta) {
       loader.setLoaded(name, moduleMeta);
-      return getModuleDelegate;
-    }
-
-    function getModuleDelegate() {
-      return manager.getModule(name);
     }
   };
 
@@ -660,16 +649,17 @@
       return Promise.reject(new TypeError("Module `" + name + "` must be in the loaded or pending state to be asynchronously built"));
     }
 
+    // If the module evaluation didn't register a new module, then we return whatever
+    // was produced.
     if (!this.isPending(name)) {
       return Promise.resolve(this.linkModule(mod));
     }
 
-    // Right here is where we are handling when a module being loaded calls System.register
-    // to register itself.
+    // Right here is where we handle dynamic registration of modules while are being loaded.
+    // E.g. System.register to register a module that's being loaded
     return metaDependencies(loader.manager, loader.removeModule(name))
       .then(buildDependencies, Utils.forwardError)
       .then(linkModuleMeta, Utils.forwardError);
-
 
 
     //
