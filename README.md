@@ -58,7 +58,7 @@ We have talked all about the transformation workflow, and rightfully so because 
 
 The build workflow basically compiles (evaluates) source in order to create a module, which then goes through a linking step. In the linking step, all the module dependencies are built (if not already), and if the module has a `factory` interface then it is called with all the corresponding dependencies. The act of calling the `factory` interface is the the *module execution* step, and the result is the final module code that is consumed by the host application.
 
-If the module meta object that is being built has a `compile` interface, the actual compilation (evaluation) of the transformed source is delegated to that `compile` interface.  If the meta module does not have a `compile` interface, then bit-loader will expect to use the module meta `code` property.
+If the module meta object that is being built has a `compile` interface, the actual compilation (evaluation) of the transformed source is delegated to that `compile` interface.  If the meta module does not have a `compile` interface, then bit loader will expect to use the module meta `code` property.
 
 
 ## Key parts and hooks
@@ -241,17 +241,19 @@ One important distinction between the two is that bit loader will push 'unproces
 * fetch dependencies from transformation step
 * async build
 
-#### Sync build
-* sync build
-  * compile (evaluate moduleMeta.source) to create module
-  * link module calling factory with dependencies and assign result to module.code
+#### Sync build - Used when a module is executing
+* compile (evaluate moduleMeta.source) to create module
+* link module
+  * call factory with dependencies
+  * assign factory result to module.code
 
-#### Async build
-* async build
-  * compile (evaluate moduleMeta.source) to create module
-  * check if the compilation step caused a System.register
-* load dependencies
-* link module calling factory with dependencies and assign result to module.code
+#### Async build - Used when loading a module (`System.import`)
+* compile (evaluate moduleMeta.source) to create module
+* check if the compilation step caused a System.register
+  * load dependencies from System.register call
+* link module
+  * call factory with dependencies
+  * assign factory result to module.code
 
 ## Reference diagrams
 
