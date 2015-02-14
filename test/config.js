@@ -1,4 +1,6 @@
+/* jshint -W098 */
 var require = (function() {
+/* jshint +W098 */
   var importer = Bitimports.config({
     "baseUrl": "../",
     "paths": {
@@ -13,8 +15,8 @@ var require = (function() {
     "transforms": [{
       name: "ignore",
       handler: ignore,
-      ignore:["chai", "dist/bit-loader"]
-    }],
+      ignore: ["chai", "dist/bit-loader"]
+    }]
   });
 
   /**
@@ -27,4 +29,4 @@ var require = (function() {
 
   Bitimports.Logger.enableAll();
   return importer.require;
-})();
+}());
