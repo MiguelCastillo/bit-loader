@@ -226,6 +226,10 @@ Alternatively, we have 'unprocessed' module meta objects, which are also plain o
 #### Differences?
 One important distinction between the two is that bit loader will push 'unprocessed' module meta objects through the transformation workflow; 'processed' meta object skip that step entirely. The reason for this is that `source` is the raw text (source code) that will eventually be converted to `evaluated code`; `source` becomes `code` by calling [eval](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval) - or whatever other equivalent source evaluation mechanism you may have.  We want to put `source` through the transformation workflow to do fancy things like converting it from coffeescript to JavaScript. `code` is ultimately what a module actually represents.  It is the *stuff* you get when you call `require` or ES6 `import`.
 
+## Examples
+There are several examples that can be executed in node.  The examples are meant to illustrate how you can use bit loader.  Please see the example directory.
+
+
 ## Architecture Notes
 
 #### Import workflow
