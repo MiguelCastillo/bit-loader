@@ -1,5 +1,5 @@
 ## bit-loader [![Build Status](https://travis-ci.org/MiguelCastillo/bit-loader.svg?branch=master)](https://travis-ci.org/MiguelCastillo/bit-loader) [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/MiguelCastillo/bit-loader?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-> Module loading and dependency management micro framework designed to run in the browser.
+> Module loading and dependency management micro framework designed to run in the browser and nodejs.
 
 ## Overview
 bit loader is a micro framework that provides hooks for loading source files, which get put through a processing pipeline that ultimately creates modules.
