@@ -18,7 +18,7 @@ So what does a *transform* that transpiles coffeescript look like? Probably like
 #### coffeescript transform
 ```javascript
 function compileCoffeescript(moduleMeta) {
-  moduleMode.source = coffeescript.compile(moduleMeta.source);
+  moduleMeta.source = coffeescript.compile(moduleMeta.source);
 }
 ```
 
@@ -31,7 +31,7 @@ var bitloader = Bitloader({
 });
 
 function compileCoffeescript(moduleMeta) {
-  moduleMode.source = coffeescript.compile(moduleMeta.source);
+  moduleMeta.source = coffeescript.compile(moduleMeta.source);
 }
 ```
 
@@ -43,7 +43,7 @@ var bitloader = Bitloader();
 bitloader.transform.use(addStrict);
 
 function addStrict(moduleMeta) {
-  moduleMode.source = "'use strict;'\n" + moduleMode.source;
+  moduleMeta.source = "'use strict;'\n" + moduleMeta.source;
 }
 ```
 
@@ -101,7 +101,7 @@ function fetchFactory(/*loader*/) {
   function compile() {
     // `this` is an augmented meta module object that has access to manager,
     // which is the instance of loader.
-    return new this.manager.Module({code: this.name + " is fetched"});
+    return new this.manager.Module({code: this.name + " is compiled"});
   }
 
   return {
