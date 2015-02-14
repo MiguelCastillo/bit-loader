@@ -7,13 +7,6 @@
   "browser": true,
   "globals":{
     "module": true,
-    "exports": true,
-    "require": true,
-    "define": true,
-    "$": true,
-    "window": true,
-    "_": true,
-    "setTimeout": true,
-    "setInterval": true
+    "require": true
   }
 }

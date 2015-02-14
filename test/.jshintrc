@@ -5,12 +5,10 @@
   "indent":2,
   "devel":true,
   "globals":{
+    "define": true,
     "require": true,
     "Bitimports": true,
-    "define": true,
-    "$": true,
     "window": true,
-    "_": true,
     "describe": true,
     "it": true,
     "expect": true,
