@@ -10,6 +10,8 @@ The second stage of the pipeline is a *build* workflow. Once all your source fil
 
 > The combination of an *asynchronous* fetch and transform workflow with a *synchronous* build workflow allow us to support `CJS`,`AMD`, and `ES6 modules` simultaneously.
 
+> In order to load source files from disk or remote servers, you need to configure a fetch provider.  It is very simple to do.  Please read the [fetch](https://github.com/MiguelCastillo/bit-loader#fetch) section for details, and checkout the example directory.
+
 ### Transformation workflow
 The primary purpose of the transformation workflow is to provide *an easy* way to configure a set of processors that your source files go through before they are converted to modules.  These processors are called *transform*s, and they are methods that take in a module meta object as their only parameter.  The module meta objects will have a `source` property, which is generally what the *transform*s operate on.
 
