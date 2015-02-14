@@ -303,7 +303,14 @@
       }
 
       // Workflow for loading a module that has not yet been loaded
-      return importer.setModule(name, importer._loadModule(name));
+      return new Promise(function(resolve, reject) {
+        importer.setModule(name, importer._loadModule(name))
+          .then(function success(val) {
+            resolve(val);
+          }, function failed(err) {
+            reject(err);
+          });
+      });
     });
   };
 
@@ -592,7 +599,7 @@
    */
   Loader.prototype.linkModule = function(mod) {
     if (!(mod instanceof(Module))) {
-      throw new TypeError("Module `" + name + "` is not an instance of Module");
+      throw new TypeError("Module `" + mod.name + "` is not an instance of Module");
     }
 
     ////
@@ -605,8 +612,8 @@
     // and finish all they work.  And then ONLY run sync operations so that calls like `require`
     // can behave synchronously.
     ////
-    if (this.isPending(name)) {
-      console.warn("Module '" + name + "' is being dynamically registered while being loaded.", "You don't need to call 'System.register' when the module is already being loaded.");
+    if (this.isPending(mod.name)) {
+      console.warn("Module '" + mod.name + "' is being dynamically registered while being loaded.", "You don't need to call 'System.register' when the module is already being loaded.");
     }
 
     // Run the Module instance through the module linker

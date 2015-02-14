@@ -83,7 +83,14 @@
       }
 
       // Workflow for loading a module that has not yet been loaded
-      return importer.setModule(name, importer._loadModule(name));
+      return new Promise(function(resolve, reject) {
+        importer.setModule(name, importer._loadModule(name))
+          .then(function success(val) {
+            resolve(val);
+          }, function failed(err) {
+            reject(err);
+          });
+      });
     });
   };
 
