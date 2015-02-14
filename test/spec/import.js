@@ -278,5 +278,21 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
       });
     });
+
+    describe("When registering a module whose factory does not return anything", function() {
+      var loader, importDoneStub;
+
+      beforeEach(function() {
+        importDoneStub = sinon.stub();
+        loader = new Bitloader();
+        loader.register("modA", [], function() {});
+        return loader.import("modA").then(importDoneStub);
+      });
+
+      it("then import callback is called with `undefined`", function() {
+        expect(importDoneStub.calledWithExactly(undefined)).to.equal(true);
+      });
+
+    });
   });
 });
