@@ -7,12 +7,12 @@ loader.import(["like1", "like2"]).then(function(r1, r2) {
 
 
 // When fetchFactory is called, the instance of loader is passed in.
-function fetchFactory(/*loader*/) {
+function fetchFactory(loader) {
   function compile() {
     console.log("compile '" + this.name + "'");
     // `this` is an augmented meta module object that has access to manager,
     // which is the instance of loader.
-    return new this.manager.Module({code: this.name + " is compiled"});
+    return new loader.Module({code: this.name + " is compiled"});
   }
 
   return {
