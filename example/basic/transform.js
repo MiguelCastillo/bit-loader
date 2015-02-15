@@ -9,7 +9,12 @@ loader.import(["like1", "like2"]).then(function(r1, r2) {
 });
 
 
-// When fetchFactory is called, the instance of loader is passed in.
+/**
+ * FetchFactory provides a fetch interface that is used by bit loader
+ * to load files from storage.
+ *
+ * @param {Bitloader} loader - bit loader instance
+ */
 function fetchFactory(loader) {
   // Compile is called with the module meta as the context.
   function compile() {
