@@ -129,7 +129,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         var manager = {};
         loader = new Loader(manager);
         loader.pipeline.assets[0] = pipelineAssetStub;
-        return loader.pipelineModuleMeta(yes).then(pipelineFinishedStub);
+        return loader._pipelineModuleMeta(yes).then(pipelineFinishedStub);
       });
 
       it("then the pipeline runs successfully", function() {
@@ -157,7 +157,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         var manager = {};
         loader = new Loader(manager);
         loader.pipeline.assets = [pipelineAssetStub];
-        return loader.pipelineModuleMeta(yes).then(pipelineFinishedStub);
+        return loader._pipelineModuleMeta(yes).then(pipelineFinishedStub);
       });
 
       it("then the pipeline runs successfully", function() {

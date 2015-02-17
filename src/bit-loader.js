@@ -12,6 +12,11 @@
       Middleware = require('./middleware');
 
 
+  /**
+   * @class
+   *
+   * Facade for relevant interfaces to register and import modules
+   */
   function Bitloader(options, factories) {
     options   = options   || {};
     factories = factories || {};
@@ -35,7 +40,7 @@
       importer : factories.import ? factories.import(this) : new Bitloader.Import(this)
     };
 
-    // Expose interfaces
+    // Public Interface
     this.providers = providers;
     this.fetch     = providers.fetcher.fetch.bind(providers.fetcher);
     this.load      = providers.loader.load.bind(providers.loader);
@@ -71,7 +76,7 @@
     }
 
     if (!this.isModuleCached(name)) {
-      this.context.modules[name] = this.providers.loader.buildModule(name);
+      this.context.modules[name] = this.providers.loader.syncBuildModule(name);
     }
 
     return this.context.modules[name];
@@ -91,6 +96,10 @@
 
     if (!(mod instanceof(Module))) {
       throw new TypeError("Module `" + name + "` is not an instance of Module");
+    }
+
+    if (!name || typeof(name) !== 'string') {
+      throw new TypeError("Module must have a name");
     }
 
     if (this.isModuleCached(name)) {
@@ -187,3 +196,4 @@
   Bitloader.Logger     = Logger;
   module.exports       = Bitloader;
 })();
+

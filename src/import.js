@@ -7,7 +7,7 @@
 
 
   var StateTypes = {
-    loading: "loading"
+    LOADING: "loading"
   };
 
 
@@ -26,7 +26,7 @@
 
 
   /**
-   * Import is the interface to load a Module
+   * Import is the method to load a Module
    *
    * @param {Array<string> | string} names - module(s) to import
    *
@@ -127,17 +127,17 @@
   }
 
   Import.prototype.hasModule = function(name) {
-    return this.modules.hasItemWithState(StateTypes.loading, name);
+    return this.modules.hasItemWithState(StateTypes.LOADING, name);
   };
 
 
   Import.prototype.getModule = function(name) {
-    return this.modules.getItem(StateTypes.loading, name);
+    return this.modules.getItem(StateTypes.LOADING, name);
   };
 
 
   Import.prototype.setModule = function(name, item) {
-    return this.modules.setItem(StateTypes.loading, name, item);
+    return this.modules.setItem(StateTypes.LOADING, name, item);
   };
 
 

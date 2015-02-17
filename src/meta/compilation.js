@@ -15,23 +15,22 @@
     logger.log(moduleMeta.name, moduleMeta);
 
     var mod;
-    if (moduleMeta.hasOwnProperty("code") || typeof(moduleMeta.factory) === 'function') {
-      mod = new Module(moduleMeta);
-    }
-    else if (typeof(moduleMeta.compile) === 'function') {
+    if (Module.Meta.canCompile(moduleMeta)) {
       mod = moduleMeta.compile();
     }
-    else {
-      throw new TypeError("Unable to create Module instance due to invalid module meta object");
+    else if (Module.Meta.isCompiled(moduleMeta)) {
+      mod = new Module(moduleMeta);
     }
 
-    // We will coerce the name no matter what name (if one at all) the Module was
-    // created with. This will ensure a consistent state in the loading engine.
-    mod.name = moduleMeta.name;
+    if (mod) {
+      // We will coerce the name no matter what name (if one at all) the Module was
+      // created with. This will ensure a consistent state in the loading engine.
+      mod.name = moduleMeta.name;
 
-    // Set the mod.meta for convenience
-    mod.meta = moduleMeta;
-    return mod;
+      // Set the mod.meta for convenience
+      mod.meta = moduleMeta;
+      return mod;
+    }
   }
 
   module.exports = MetaCompilation;
