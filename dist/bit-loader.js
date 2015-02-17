@@ -26,6 +26,15 @@
       Registry   = require('./registry'),
       Middleware = require('./middleware');
 
+  var registryId = 0;
+  function getRegistryId() {
+    return 'bitloader-' + registryId++;
+  }
+
+  var ModuleState = {
+    LOADED: "loaded"
+  };
+
 
   /**
    * @class
@@ -36,7 +45,7 @@
     options   = options   || {};
     factories = factories || {};
 
-    this.context   = Registry.getById();
+    this.context   = Registry.getById(getRegistryId());
     this.transform = Middleware.factory(this);
     this.plugin    = Middleware.factory(this);
 
@@ -69,7 +78,7 @@
    * will be deleted.
    */
   Bitloader.prototype.clear = function() {
-    Registry.clearById(this.context._id);
+    this.context.clear();
   };
 
 
@@ -77,7 +86,7 @@
    * Checks if the module instance is in the module registry
    */
   Bitloader.prototype.hasModule = function(name) {
-    return this.isModuleCached(name) || this.providers.loader.isLoaded(name);
+    return this.context.hasModule(name) || this.providers.loader.isLoaded(name);
   };
 
 
@@ -90,11 +99,11 @@
       throw new TypeError("Module `" + name + "` has not yet been loaded");
     }
 
-    if (!this.isModuleCached(name)) {
-      this.context.modules[name] = this.providers.loader.syncBuildModule(name);
+    if (!this.context.hasModule(name)) {
+      return this.context.setModule(ModuleState.LOADED, name, this.providers.loader.syncBuildModule(name));
     }
 
-    return this.context.modules[name];
+    return this.context.getModule(name);
   };
 
 
@@ -117,11 +126,11 @@
       throw new TypeError("Module must have a name");
     }
 
-    if (this.isModuleCached(name)) {
+    if (this.context.hasModule(name)) {
       throw new TypeError("Module instance `" + name + "` already exists");
     }
 
-    return (this.context.modules[name] = mod);
+    return this.context.setModule(ModuleState.LOADED, name, mod);
   };
 
 
@@ -133,13 +142,11 @@
    * @returns {Module} Deleted module
    */
   Bitloader.prototype.deleteModule = function(name) {
-    if (!this.isModuleCached(name)) {
+    if (!this.context.hasModule(name)) {
       throw new TypeError("Module instance `" + name + "` does not exists");
     }
 
-    var mod = this.context.modules[name];
-    delete this.context.modules[name];
-    return mod;
+    return this.context.deleteModule(name);
   };
 
 
@@ -190,7 +197,7 @@
    * get stored in the module registry
    */
   Bitloader.prototype.isModuleCached = function(name) {
-    return this.context.modules.hasOwnProperty(name);
+    return this.context.hasModule(name);
   };
 
 
@@ -212,7 +219,6 @@
   module.exports       = Bitloader;
 })();
 
-
 },{"./fetch":3,"./import":4,"./loader":5,"./logger":6,"./middleware":11,"./module":12,"./registry":15,"./utils":17,"spromise":1}],3:[function(require,module,exports){
 (function() {
   "use strict";
@@ -231,12 +237,17 @@
 (function() {
   "use strict";
 
-  var Promise       = require('spromise'),
-      StatefulItems = require('./stateful-items'),
-      Utils         = require('./utils');
+  var Promise  = require('spromise'),
+      Registry = require('./registry'),
+      Utils    = require('./utils');
+
+  var registryId = 0;
+  function getRegistryId() {
+    return 'import-' + registryId++;
+  }
 
 
-  var StateTypes = {
+  var ModuleState = {
     LOADING: "loading"
   };
 
@@ -251,7 +262,7 @@
     }
 
     this.manager = manager;
-    this.modules = new StatefulItems();
+    this.context = Registry.getById(getRegistryId());
   }
 
 
@@ -346,7 +357,7 @@
         throw new TypeError("Module name must be the same as the name used for loading the Module itself");
       }
 
-      importer.removeModule(mod.name);
+      importer.deleteModule(mod.name);
       return importer.manager.getModuleCode(mod.name);
     };
   };
@@ -357,29 +368,26 @@
   }
 
   Import.prototype.hasModule = function(name) {
-    return this.modules.hasItemWithState(StateTypes.LOADING, name);
+    return this.context.hasModuleWithState(ModuleState.LOADING, name);
   };
-
 
   Import.prototype.getModule = function(name) {
-    return this.modules.getItem(StateTypes.LOADING, name);
+    return this.context.getModuleWithState(ModuleState.LOADING, name);
   };
-
 
   Import.prototype.setModule = function(name, item) {
-    return this.modules.setItem(StateTypes.LOADING, name, item);
+    return this.context.setModule(ModuleState.LOADING, name, item);
   };
 
-
-  Import.prototype.removeModule = function(name) {
-    return this.modules.removeItem(name);
+  Import.prototype.deleteModule = function(name) {
+    return this.context.deleteModule(name);
   };
-
 
   module.exports = Import;
 })();
 
-},{"./stateful-items":16,"./utils":17,"spromise":1}],5:[function(require,module,exports){
+
+},{"./registry":15,"./utils":17,"spromise":1}],5:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -387,12 +395,19 @@
       Module           = require('./module'),
       Utils            = require('./utils'),
       Pipeline         = require('./pipeline'),
-      StatefulItems    = require('./stateful-items'),
+      Registry         = require('./registry'),
       moduleLinker     = require('./module/linker'),
       metaFetch        = require('./meta/fetch'),
       metaTransform    = require('./meta/transform'),
       metaDependencies = require('./meta/dependencies'),
       metaCompilation  = require('./meta/compilation');
+
+
+  var registryId = 0;
+  function getRegistryId() {
+    return 'loader-' + registryId++;
+  }
+
 
   /**
    * - Loaded means that the module meta is all processed and it is ready to be
@@ -405,7 +420,7 @@
    * - Loading means that the module meta is currently being loaded. Only for ASYNC
    *  processing.
    */
-  var StateTypes = {
+  var ModuleState = {
     LOADING: "loading",
     LOADED:  "loaded",
     PENDING: "pending"
@@ -431,8 +446,8 @@
     }
 
     this.manager  = manager;
+    this.context  = Registry.getById(getRegistryId());
     this.pipeline = new Pipeline([metaTransform, metaDependencies]);
-    this.modules  = new StatefulItems();
   }
 
 
@@ -579,7 +594,7 @@
 
     // Right here is where we handle dynamic registration of modules while are being loaded.
     // E.g. System.register to register a module that's being loaded
-    return metaDependencies(loader.manager, loader.removeModule(name))
+    return metaDependencies(loader.manager, loader.deleteModule(name))
       .then(buildDependencies, Utils.forwardError)
       .then(linkModuleMeta, Utils.forwardError);
 
@@ -608,7 +623,7 @@
   /**
    * Interface to register a module meta that can be put compiled to a Module instance
    */
-  Loader.prototype.register = function(name, deps, factory) {
+  Loader.prototype.register = function(name, deps, factory, type) {
     if (this.manager.hasModule(name) || this.hasModule(name)) {
       throw new TypeError("Module '" + name + "' is already loaded");
     }
@@ -616,7 +631,8 @@
     this.setPending(name, {
       name    : name,
       deps    : deps,
-      factory : factory
+      factory : factory,
+      type    : type
     });
   };
 
@@ -706,7 +722,7 @@
     var manager = this.manager;
 
     if (this.isLoaded(name)) {
-      moduleMeta = this.removeModule(name);
+      moduleMeta = this.deleteModule(name);
     }
     else if (this.manager.isModuleCached(name)) {
       throw new TypeError("Module `" + name + "` is already loaded, so you can just call `manager.getModule(name)`");
@@ -760,7 +776,7 @@
    * @returns {Boolean}
    */
   Loader.prototype.hasModule = function(name) {
-    return this.modules.hasItem(name);
+    return this.context.hasModule(name);
   };
 
 
@@ -774,19 +790,7 @@
    * @returns {object | Promise}
    */
   Loader.prototype.getModule = function(name) {
-    return this.modules.getItem(this.modules.getState(name), name);
-  };
-
-
-  /**
-   * Return the state of the module.
-   *
-   * @param {string} name - Name of the module for which to get the state
-   *
-   * @returns {StateTypes} State of the Module.
-   */
-  Loader.prototype.getModuleState = function(name) {
-    return this.modules.getState(name);
+    return this.context.getModule(name);
   };
 
 
@@ -798,7 +802,7 @@
    * @returns {Boolean} - true if the module name is being loaded, false otherwise.
    */
   Loader.prototype.isLoading = function(name) {
-    return this.modules.hasItemWithState(StateTypes.LOADING, name);
+    return this.context.hasModuleWithState(ModuleState.LOADING, name);
   };
 
 
@@ -810,7 +814,7 @@
    * @returns {Promise}
    */
   Loader.prototype.getLoading = function(name) {
-    return this.modules.getItem(StateTypes.LOADING, name);
+    return this.context.getModuleWithState(ModuleState.LOADING, name);
   };
 
 
@@ -823,7 +827,7 @@
    * @returns {Object} The module meta being set
    */
   Loader.prototype.setLoading = function(name, item) {
-    return this.modules.setItem(StateTypes.LOADING, name, item);
+    return this.context.setModule(ModuleState.LOADING, name, item);
   };
 
 
@@ -837,7 +841,7 @@
    * @returns {Boolean}
    */
   Loader.prototype.isPending = function(name) {
-    return this.modules.hasItemWithState(StateTypes.PENDING, name);
+    return this.context.hasModuleWithState(ModuleState.PENDING, name);
   };
 
 
@@ -849,7 +853,7 @@
    * @returns {Object} Module meta object
    */
   Loader.prototype.getPending = function(name) {
-    return this.modules.getItem(StateTypes.PENDING, name);
+    return this.context.getModuleWithState(ModuleState.PENDING, name);
   };
 
 
@@ -862,7 +866,7 @@
    * @returns {Object} Module meta being set
    */
   Loader.prototype.setPending = function(name, item) {
-    return this.modules.setItem(StateTypes.PENDING, name, item);
+    return this.context.setModule(ModuleState.PENDING, name, item);
   };
 
 
@@ -874,7 +878,7 @@
    * @returns {Boolean}
    */
   Loader.prototype.isLoaded = function(name) {
-    return this.modules.hasItemWithState(StateTypes.LOADED, name);
+    return this.context.hasModuleWithState(ModuleState.LOADED, name);
   };
 
 
@@ -886,7 +890,7 @@
    * @returns {Object} The loaded module meta
    */
   Loader.prototype.getLoaded = function(name) {
-    return this.modules.getItem(StateTypes.LOADED, name);
+    return this.context.getModuleWithState(ModuleState.LOADED, name);
   };
 
 
@@ -899,7 +903,7 @@
    * @returns {Object} The module meta being set
    */
   Loader.prototype.setLoaded = function(name, item) {
-    return this.modules.setItem(StateTypes.LOADED, name, item);
+    return this.context.setModule(ModuleState.LOADED, name, item);
   };
 
 
@@ -910,8 +914,8 @@
    *
    * @returns {Object} The module meta being removed
    */
-  Loader.prototype.removeModule = function(name) {
-    return this.modules.removeItem(name);
+  Loader.prototype.deleteModule = function(name) {
+    return this.context.deleteModule(name);
   };
 
 
@@ -923,7 +927,7 @@
   module.exports = Loader;
 })();
 
-},{"./meta/compilation":7,"./meta/dependencies":8,"./meta/fetch":9,"./meta/transform":10,"./module":12,"./module/linker":13,"./pipeline":14,"./stateful-items":16,"./utils":17,"spromise":1}],6:[function(require,module,exports){
+},{"./meta/compilation":7,"./meta/dependencies":8,"./meta/fetch":9,"./meta/transform":10,"./module":12,"./module/linker":13,"./pipeline":14,"./registry":15,"./utils":17,"spromise":1}],6:[function(require,module,exports){
 var _enabled = false,
     _only    = false;
 
@@ -1536,36 +1540,94 @@ module.exports = new Logger();
 (function() {
   "use strict";
 
+  var StatefulItems = require('./stateful-items');
   var storage = {};
 
-  function Registry() {
+  var registryId = 0;
+  function getRegistryId() {
+    return 'generic-' + registryId++;
   }
 
+
+  /**
+   * Module registry
+   */
+  function Registry(options) {
+    options = options || {};
+    this._id     = options.id || getRegistryId();
+    this.modules = options.modules || new StatefulItems();
+  }
+
+
+  Registry.prototype.clear = function() {
+    if (storage.hasOwnProperty(this._id)) {
+      delete storage[this._id];
+    }
+    return this;
+  };
+
+
+  Registry.prototype.hasModule = function(name) {
+    return this.modules.hasItem(name);
+  };
+
+
+  Registry.prototype.getModule = function(name) {
+    return this.modules.getItem(name);
+  };
+
+
+  Registry.prototype.deleteModule = function(name) {
+    return this.modules.removeItem(name);
+  };
+
+
+  Registry.prototype.setModule = function(state, name, item) {
+    return this.modules.setItem(state, name, item);
+  };
+
+
+  Registry.prototype.getModuleState = function(name) {
+    return this.modules.getState(name);
+  };
+
+
+  Registry.prototype.hasModuleWithState = function(state, name) {
+    return this.modules.hasItemWithState(state, name);
+  };
+
+
+  Registry.prototype.getModuleWithState = function(state, name) {
+    return this.modules.getItemWithState(state, name);
+  };
+
+
+  /**
+   * Factory method that creates Registries with an id
+   */
   Registry.getById = function(id) {
     if (!id) {
-      id = (new Date()).getTime().toString();
+      id = getRegistryId();
     }
 
-    return storage[id] || (storage[id] = {
-      _id     : id,
-      code    : {},
-      modules : {}
-    });
+    return storage[id] || (storage[id] = new Registry({id: id}));
   };
 
+
+  /**
+   * Destroys Registries by id.
+   */
   Registry.clearById = function(id) {
-    var _item;
     if (storage.hasOwnProperty(id)) {
-      _item = storage[id];
-      delete storage[id];
+      return storage[id].clear();
     }
-    return _item;
   };
+
 
   module.exports = Registry;
 })();
 
-},{}],16:[function(require,module,exports){
+},{"./stateful-items":16}],16:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -1593,12 +1655,7 @@ module.exports = new Logger();
   };
 
 
-  StatefulItems.prototype.hasItem = function(name) {
-    return this.items.hasOwnProperty(name);
-  };
-
-
-  StatefulItems.prototype.getItem = function(state, name) {
+  StatefulItems.prototype.getItemWithState = function(state, name) {
     if (!this.hasItemWithState(state, name)) {
       throw new TypeError("`" + name + "` is not " + state);
     }
@@ -1607,8 +1664,17 @@ module.exports = new Logger();
   };
 
 
-  StatefulItems.prototype.setItem = function(state, name, item) {
-    return (this.items[name] = {item: item, state: state}).item;
+  StatefulItems.prototype.hasItem = function(name) {
+    return this.items.hasOwnProperty(name);
+  };
+
+
+  StatefulItems.prototype.getItem = function(name) {
+    if (!this.hasItem(name)) {
+      throw new TypeError("`" + name + "` not found");
+    }
+
+    return this.items[name].item;
   };
 
 
@@ -1620,6 +1686,11 @@ module.exports = new Logger();
     var item = this.items[name];
     delete this.items[name];
     return item.item;
+  };
+
+
+  StatefulItems.prototype.setItem = function(state, name, item) {
+    return (this.items[name] = {item: item, state: state}).item;
   };
 
 

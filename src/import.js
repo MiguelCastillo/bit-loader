@@ -1,12 +1,17 @@
 (function() {
   "use strict";
 
-  var Promise       = require('spromise'),
-      StatefulItems = require('./stateful-items'),
-      Utils         = require('./utils');
+  var Promise  = require('spromise'),
+      Registry = require('./registry'),
+      Utils    = require('./utils');
+
+  var registryId = 0;
+  function getRegistryId() {
+    return 'import-' + registryId++;
+  }
 
 
-  var StateTypes = {
+  var ModuleState = {
     LOADING: "loading"
   };
 
@@ -21,7 +26,7 @@
     }
 
     this.manager = manager;
-    this.modules = new StatefulItems();
+    this.context = Registry.getById(getRegistryId());
   }
 
 
@@ -116,7 +121,7 @@
         throw new TypeError("Module name must be the same as the name used for loading the Module itself");
       }
 
-      importer.removeModule(mod.name);
+      importer.deleteModule(mod.name);
       return importer.manager.getModuleCode(mod.name);
     };
   };
@@ -127,24 +132,21 @@
   }
 
   Import.prototype.hasModule = function(name) {
-    return this.modules.hasItemWithState(StateTypes.LOADING, name);
+    return this.context.hasModuleWithState(ModuleState.LOADING, name);
   };
-
 
   Import.prototype.getModule = function(name) {
-    return this.modules.getItem(StateTypes.LOADING, name);
+    return this.context.getModuleWithState(ModuleState.LOADING, name);
   };
-
 
   Import.prototype.setModule = function(name, item) {
-    return this.modules.setItem(StateTypes.LOADING, name, item);
+    return this.context.setModule(ModuleState.LOADING, name, item);
   };
 
-
-  Import.prototype.removeModule = function(name) {
-    return this.modules.removeItem(name);
+  Import.prototype.deleteModule = function(name) {
+    return this.context.deleteModule(name);
   };
-
 
   module.exports = Import;
 })();
+

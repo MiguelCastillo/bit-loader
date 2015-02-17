@@ -5,12 +5,19 @@
       Module           = require('./module'),
       Utils            = require('./utils'),
       Pipeline         = require('./pipeline'),
-      StatefulItems    = require('./stateful-items'),
+      Registry         = require('./registry'),
       moduleLinker     = require('./module/linker'),
       metaFetch        = require('./meta/fetch'),
       metaTransform    = require('./meta/transform'),
       metaDependencies = require('./meta/dependencies'),
       metaCompilation  = require('./meta/compilation');
+
+
+  var registryId = 0;
+  function getRegistryId() {
+    return 'loader-' + registryId++;
+  }
+
 
   /**
    * - Loaded means that the module meta is all processed and it is ready to be
@@ -23,7 +30,7 @@
    * - Loading means that the module meta is currently being loaded. Only for ASYNC
    *  processing.
    */
-  var StateTypes = {
+  var ModuleState = {
     LOADING: "loading",
     LOADED:  "loaded",
     PENDING: "pending"
@@ -49,8 +56,8 @@
     }
 
     this.manager  = manager;
+    this.context  = Registry.getById(getRegistryId());
     this.pipeline = new Pipeline([metaTransform, metaDependencies]);
-    this.modules  = new StatefulItems();
   }
 
 
@@ -197,7 +204,7 @@
 
     // Right here is where we handle dynamic registration of modules while are being loaded.
     // E.g. System.register to register a module that's being loaded
-    return metaDependencies(loader.manager, loader.removeModule(name))
+    return metaDependencies(loader.manager, loader.deleteModule(name))
       .then(buildDependencies, Utils.forwardError)
       .then(linkModuleMeta, Utils.forwardError);
 
@@ -226,7 +233,7 @@
   /**
    * Interface to register a module meta that can be put compiled to a Module instance
    */
-  Loader.prototype.register = function(name, deps, factory) {
+  Loader.prototype.register = function(name, deps, factory, type) {
     if (this.manager.hasModule(name) || this.hasModule(name)) {
       throw new TypeError("Module '" + name + "' is already loaded");
     }
@@ -234,7 +241,8 @@
     this.setPending(name, {
       name    : name,
       deps    : deps,
-      factory : factory
+      factory : factory,
+      type    : type
     });
   };
 
@@ -324,7 +332,7 @@
     var manager = this.manager;
 
     if (this.isLoaded(name)) {
-      moduleMeta = this.removeModule(name);
+      moduleMeta = this.deleteModule(name);
     }
     else if (this.manager.isModuleCached(name)) {
       throw new TypeError("Module `" + name + "` is already loaded, so you can just call `manager.getModule(name)`");
@@ -378,7 +386,7 @@
    * @returns {Boolean}
    */
   Loader.prototype.hasModule = function(name) {
-    return this.modules.hasItem(name);
+    return this.context.hasModule(name);
   };
 
 
@@ -392,19 +400,7 @@
    * @returns {object | Promise}
    */
   Loader.prototype.getModule = function(name) {
-    return this.modules.getItem(this.modules.getState(name), name);
-  };
-
-
-  /**
-   * Return the state of the module.
-   *
-   * @param {string} name - Name of the module for which to get the state
-   *
-   * @returns {StateTypes} State of the Module.
-   */
-  Loader.prototype.getModuleState = function(name) {
-    return this.modules.getState(name);
+    return this.context.getModule(name);
   };
 
 
@@ -416,7 +412,7 @@
    * @returns {Boolean} - true if the module name is being loaded, false otherwise.
    */
   Loader.prototype.isLoading = function(name) {
-    return this.modules.hasItemWithState(StateTypes.LOADING, name);
+    return this.context.hasModuleWithState(ModuleState.LOADING, name);
   };
 
 
@@ -428,7 +424,7 @@
    * @returns {Promise}
    */
   Loader.prototype.getLoading = function(name) {
-    return this.modules.getItem(StateTypes.LOADING, name);
+    return this.context.getModuleWithState(ModuleState.LOADING, name);
   };
 
 
@@ -441,7 +437,7 @@
    * @returns {Object} The module meta being set
    */
   Loader.prototype.setLoading = function(name, item) {
-    return this.modules.setItem(StateTypes.LOADING, name, item);
+    return this.context.setModule(ModuleState.LOADING, name, item);
   };
 
 
@@ -455,7 +451,7 @@
    * @returns {Boolean}
    */
   Loader.prototype.isPending = function(name) {
-    return this.modules.hasItemWithState(StateTypes.PENDING, name);
+    return this.context.hasModuleWithState(ModuleState.PENDING, name);
   };
 
 
@@ -467,7 +463,7 @@
    * @returns {Object} Module meta object
    */
   Loader.prototype.getPending = function(name) {
-    return this.modules.getItem(StateTypes.PENDING, name);
+    return this.context.getModuleWithState(ModuleState.PENDING, name);
   };
 
 
@@ -480,7 +476,7 @@
    * @returns {Object} Module meta being set
    */
   Loader.prototype.setPending = function(name, item) {
-    return this.modules.setItem(StateTypes.PENDING, name, item);
+    return this.context.setModule(ModuleState.PENDING, name, item);
   };
 
 
@@ -492,7 +488,7 @@
    * @returns {Boolean}
    */
   Loader.prototype.isLoaded = function(name) {
-    return this.modules.hasItemWithState(StateTypes.LOADED, name);
+    return this.context.hasModuleWithState(ModuleState.LOADED, name);
   };
 
 
@@ -504,7 +500,7 @@
    * @returns {Object} The loaded module meta
    */
   Loader.prototype.getLoaded = function(name) {
-    return this.modules.getItem(StateTypes.LOADED, name);
+    return this.context.getModuleWithState(ModuleState.LOADED, name);
   };
 
 
@@ -517,7 +513,7 @@
    * @returns {Object} The module meta being set
    */
   Loader.prototype.setLoaded = function(name, item) {
-    return this.modules.setItem(StateTypes.LOADED, name, item);
+    return this.context.setModule(ModuleState.LOADED, name, item);
   };
 
 
@@ -528,8 +524,8 @@
    *
    * @returns {Object} The module meta being removed
    */
-  Loader.prototype.removeModule = function(name) {
-    return this.modules.removeItem(name);
+  Loader.prototype.deleteModule = function(name) {
+    return this.context.deleteModule(name);
   };
 
 

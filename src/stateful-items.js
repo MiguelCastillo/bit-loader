@@ -25,12 +25,7 @@
   };
 
 
-  StatefulItems.prototype.hasItem = function(name) {
-    return this.items.hasOwnProperty(name);
-  };
-
-
-  StatefulItems.prototype.getItem = function(state, name) {
+  StatefulItems.prototype.getItemWithState = function(state, name) {
     if (!this.hasItemWithState(state, name)) {
       throw new TypeError("`" + name + "` is not " + state);
     }
@@ -39,8 +34,17 @@
   };
 
 
-  StatefulItems.prototype.setItem = function(state, name, item) {
-    return (this.items[name] = {item: item, state: state}).item;
+  StatefulItems.prototype.hasItem = function(name) {
+    return this.items.hasOwnProperty(name);
+  };
+
+
+  StatefulItems.prototype.getItem = function(name) {
+    if (!this.hasItem(name)) {
+      throw new TypeError("`" + name + "` not found");
+    }
+
+    return this.items[name].item;
   };
 
 
@@ -52,6 +56,11 @@
     var item = this.items[name];
     delete this.items[name];
     return item.item;
+  };
+
+
+  StatefulItems.prototype.setItem = function(state, name, item) {
+    return (this.items[name] = {item: item, state: state}).item;
   };
 
 
