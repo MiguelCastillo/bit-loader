@@ -11,12 +11,26 @@
       Registry   = require('./registry'),
       Middleware = require('./middleware');
 
+  var registryId = 0;
+  function getRegistryId() {
+    return 'bitloader-' + registryId++;
+  }
 
+  var ModuleState = {
+    LOADED: "loaded"
+  };
+
+
+  /**
+   * @class
+   *
+   * Facade for relevant interfaces to register and import modules
+   */
   function Bitloader(options, factories) {
     options   = options   || {};
     factories = factories || {};
 
-    this.context   = Registry.getById();
+    this.context   = Registry.getById(getRegistryId());
     this.transform = Middleware.factory(this);
     this.plugin    = Middleware.factory(this);
 
@@ -35,7 +49,7 @@
       importer : factories.import ? factories.import(this) : new Bitloader.Import(this)
     };
 
-    // Expose interfaces
+    // Public Interface
     this.providers = providers;
     this.fetch     = providers.fetcher.fetch.bind(providers.fetcher);
     this.load      = providers.loader.load.bind(providers.loader);
@@ -49,7 +63,7 @@
    * will be deleted.
    */
   Bitloader.prototype.clear = function() {
-    Registry.clearById(this.context._id);
+    this.context.clear();
   };
 
 
@@ -57,7 +71,7 @@
    * Checks if the module instance is in the module registry
    */
   Bitloader.prototype.hasModule = function(name) {
-    return this.isModuleCached(name) || this.providers.loader.isLoaded(name);
+    return this.context.hasModule(name) || this.providers.loader.isLoaded(name);
   };
 
 
@@ -70,11 +84,11 @@
       throw new TypeError("Module `" + name + "` has not yet been loaded");
     }
 
-    if (!this.isModuleCached(name)) {
-      this.context.modules[name] = this.providers.loader.buildModule(name);
+    if (!this.context.hasModule(name)) {
+      return this.context.setModule(ModuleState.LOADED, name, this.providers.loader.syncBuildModule(name));
     }
 
-    return this.context.modules[name];
+    return this.context.getModule(name);
   };
 
 
@@ -93,11 +107,15 @@
       throw new TypeError("Module `" + name + "` is not an instance of Module");
     }
 
-    if (this.isModuleCached(name)) {
+    if (!name || typeof(name) !== 'string') {
+      throw new TypeError("Module must have a name");
+    }
+
+    if (this.context.hasModule(name)) {
       throw new TypeError("Module instance `" + name + "` already exists");
     }
 
-    return (this.context.modules[name] = mod);
+    return this.context.setModule(ModuleState.LOADED, name, mod);
   };
 
 
@@ -109,13 +127,11 @@
    * @returns {Module} Deleted module
    */
   Bitloader.prototype.deleteModule = function(name) {
-    if (!this.isModuleCached(name)) {
+    if (!this.context.hasModule(name)) {
       throw new TypeError("Module instance `" + name + "` does not exists");
     }
 
-    var mod = this.context.modules[name];
-    delete this.context.modules[name];
-    return mod;
+    return this.context.deleteModule(name);
   };
 
 
@@ -166,7 +182,7 @@
    * get stored in the module registry
    */
   Bitloader.prototype.isModuleCached = function(name) {
-    return this.context.modules.hasOwnProperty(name);
+    return this.context.hasModule(name);
   };
 
 

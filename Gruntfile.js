@@ -74,7 +74,7 @@ module.exports = function(grunt) {
     uglify: {
       "build": {
         options: {
-          sourceMap: false
+          sourceMap: true
         },
         files: {
           "dist/bit-loader.min.js": ["dist/bit-loader.js"]

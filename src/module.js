@@ -31,28 +31,38 @@
   }
 
 
-  function MetaValidation(options) {
-    if (!options) {
-      throw new TypeError("Must provide options");
-    }
+  function Meta(options) {
+    Meta.validate(options);
+    Utils.extend(this, options);
 
-    if (!MetaValidation.hasCode(options) && !MetaValidation.canCompile(options)) {
-      throw new TypeError("ModuleMeta must provide a `source` string and `compile` interface, or `code`.");
+    if (!options.deps) {
+      this.deps = [];
     }
   }
 
 
-  MetaValidation.hasCode = function(options) {
-    return options.hasOwnProperty("code");
+  Meta.validate = function(options) {
+    if (!options) {
+      throw new TypeError("Must provide options");
+    }
+
+    if (!Meta.isCompiled(options) && !Meta.canCompile(options)) {
+      throw new TypeError("ModuleMeta must provide a `source` string and `compile` interface, or `code`.");
+    }
   };
 
 
-  MetaValidation.canCompile = function(options) {
-    return typeof(options.source) === "string" && typeof(options.compile) === "function";
+  Meta.isCompiled = function(options) {
+    return options.hasOwnProperty("code") || typeof(options.factory) === "function";
   };
 
 
-  Module.MetaValidation = MetaValidation;
+  Meta.canCompile = function(options) {
+    return !Meta.isCompiled(options) && typeof(options.source) === "string" && typeof(options.compile) === "function";
+  };
+
+
+  Module.Meta = Meta;
   Module.Type = Type;
   module.exports = Module;
 })();

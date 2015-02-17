@@ -211,7 +211,7 @@ define(["dist/bit-loader"], function(Bitloader) {
 
     describe("When importing module `yes` using the `load` interface", function() {
       describe("and module defines `code`", function() {
-        var importer, modYes, loadStub, loadDeferred, hasModuleStub, moduleImportedStub, getModuleCodeStub, factoryStub, setModuleSpy, removeModuleSpy;
+        var importer, modYes, loadStub, loadDeferred, hasModuleStub, moduleImportedStub, getModuleCodeStub, factoryStub, setModuleSpy, deleteModuleSpy;
         beforeEach(function() {
           factoryStub = sinon.stub();
 
@@ -235,7 +235,7 @@ define(["dist/bit-loader"], function(Bitloader) {
           });
 
           setModuleSpy = sinon.spy(importer, "setModule");
-          removeModuleSpy = sinon.spy(importer, "removeModule");
+          deleteModuleSpy = sinon.spy(importer, "deleteModule");
 
           return importer.import("yes")
             .then(moduleImportedStub);
@@ -270,11 +270,11 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
 
         it("then removeModule is called once", function() {
-          expect(removeModuleSpy.calledOnce).to.equal(true);
+          expect(deleteModuleSpy.calledOnce).to.equal(true);
         });
 
         it("then removeModule is called with `yes`", function() {
-          expect(removeModuleSpy.calledWithExactly("yes")).to.equal(true);
+          expect(deleteModuleSpy.calledWithExactly("yes")).to.equal(true);
         });
       });
     });

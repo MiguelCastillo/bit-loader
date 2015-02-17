@@ -7,7 +7,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       var metaSpy;
 
       beforeEach(function() {
-        metaSpy = sinon.spy(Module.MetaValidation);
+        metaSpy = sinon.spy(Module.Meta.validate);
 
         try {
           metaSpy();
@@ -29,7 +29,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       var metaSpy;
 
       beforeEach(function() {
-        metaSpy = sinon.spy(Module.MetaValidation);
+        metaSpy = sinon.spy(Module.Meta.validate);
 
         try {
           metaSpy({});
@@ -51,7 +51,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       var metaSpy;
 
       beforeEach(function() {
-        metaSpy = sinon.spy(Module.MetaValidation);
+        metaSpy = sinon.spy(Module.Meta.validate);
 
         try {
           metaSpy({source: "some source"});
@@ -73,7 +73,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       var metaSpy;
 
       beforeEach(function() {
-        metaSpy = sinon.spy(Module.MetaValidation);
+        metaSpy = sinon.spy(Module.Meta.validate);
 
         try {
           metaSpy({compile: function() {}});
@@ -96,7 +96,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       var metaSpy;
 
       beforeEach(function() {
-        metaSpy = sinon.spy(Module.MetaValidation);
+        metaSpy = sinon.spy(Module.Meta.validate);
 
         try {
           metaSpy({source: "function x(){}", compile: "some string"});
@@ -120,7 +120,7 @@ define(["dist/bit-loader"], function(Bitloader) {
 
       beforeEach(function() {
         moduleMeta = {source: "function x(){}", compile: function() {}};
-        metaSpy = sinon.spy(Module.MetaValidation);
+        metaSpy = sinon.spy(Module.Meta.validate);
 
         try {
           metaSpy(moduleMeta);
