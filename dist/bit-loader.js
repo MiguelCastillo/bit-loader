@@ -1110,7 +1110,8 @@ module.exports = new Logger();
     // to it to facilitate further processing.
     function moduleFetched(moduleMeta) {
       if (!(moduleMeta instanceof Module.Meta)) {
-        moduleMeta = new Module.Meta(moduleMeta);
+        Module.Meta.validate(moduleMeta);
+        moduleMeta.deps = moduleMeta.deps || [];
       }
 
       moduleMeta.name = name;
