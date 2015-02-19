@@ -87,7 +87,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         }
 
         function compile() {
-          return new this.manager.Module({code: "this is content of the module"});
+          return new loader.Module({code: "this is content of the module"});
         }
 
         loader = new Bitloader({}, {fetch: fetchFactory});
@@ -107,6 +107,10 @@ define(["dist/bit-loader"], function(Bitloader) {
         it("then result from fetch is module meta", function() {
           expect(result).to.equal(moduleMeta);
         });
+
+        it("then module meta compile is not called", function() {
+          expect(compileStub.called).to.equal(false);
+        });
       });
 
 
@@ -125,6 +129,10 @@ define(["dist/bit-loader"], function(Bitloader) {
         it("then result from fetch is module meta", function() {
           expect(result).to.be.an.instanceof(Bitloader.Module);
         });
+
+        it("then module meta compile is not called", function() {
+          expect(compileStub.called).to.equal(true);
+        });
       });
 
 
@@ -142,6 +150,10 @@ define(["dist/bit-loader"], function(Bitloader) {
 
         it("then result from import is `this is content of the module`", function() {
           expect(result).to.equal('this is content of the module');
+        });
+
+        it("then module meta compile is called", function() {
+          expect(compileStub.called).to.equal(true);
         });
       });
 

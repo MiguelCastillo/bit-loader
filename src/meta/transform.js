@@ -1,7 +1,8 @@
 (function() {
   "use strict";
 
-  var Logger = require('../logger'),
+  var Utils  = require('../utils'),
+      Logger = require('../logger'),
       logger = Logger.factory("Meta/Tranform");
 
   /**
@@ -13,7 +14,7 @@
     logger.log(moduleMeta.name, moduleMeta);
 
     return manager.transform.runAll(moduleMeta)
-      .then(transformationFinished, manager.Utils.forwardError);
+      .then(transformationFinished, Utils.forwardError);
 
     function transformationFinished() {
       return moduleMeta;

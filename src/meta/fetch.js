@@ -3,8 +3,8 @@
 
   var Promise = require('spromise'),
       Module  = require('../module'),
-      Logger  = require('../logger'),
       Utils   = require('../utils'),
+      Logger  = require('../logger'),
       logger  = Logger.factory("Meta/Fetch");
 
   function MetaFetch(manager, name, parentMeta) {
@@ -22,7 +22,6 @@
       }
 
       moduleMeta.name = name;
-      moduleMeta.manager = manager;
       return moduleMeta;
     }
   }

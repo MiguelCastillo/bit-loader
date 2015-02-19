@@ -142,7 +142,7 @@
    *
    * @param {string} name - The name of the module code to get from the module registry
    *
-   * @return {generic} The module code.
+   * @return {object} The module code.
    */
   Bitloader.prototype.getModuleCode = function(name) {
     if (!this.hasModule(name)) {
@@ -154,14 +154,13 @@
 
 
   /**
-   * Sets module code directly in the module registry.
+   * Sets module evaluated code directly in the module registry.
    *
    * @param {string} name - The name of the module, which is used by other modules
    *  that need it as a dependency.
-   * @param {generic} code - The actual code that is returned consuming the module
-   *  as a dependency.
+   * @param {object} code - The evaluated code to be set
    *
-   * @returns {generic} The module code.
+   * @returns {object} The evaluated code.
    */
   Bitloader.prototype.setModuleCode = function(name, code) {
     if (this.hasModule(name)) {

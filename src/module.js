@@ -41,24 +41,29 @@
   }
 
 
-  Meta.validate = function(options) {
-    if (!options) {
+  Meta.validate = function(moduleMeta) {
+    if (!moduleMeta) {
       throw new TypeError("Must provide options");
     }
 
-    if (!Meta.isCompiled(options) && !Meta.canCompile(options)) {
+    if (!Meta.isCompiled(moduleMeta) && !Meta.canCompile(moduleMeta)) {
       throw new TypeError("ModuleMeta must provide a `source` string and `compile` interface, or `code`.");
     }
   };
 
 
-  Meta.isCompiled = function(options) {
-    return options.hasOwnProperty("code") || typeof(options.factory) === "function";
+  Meta.hasDependencies = function(moduleMeta) {
+    return moduleMeta.deps && moduleMeta.deps.length;
   };
 
 
-  Meta.canCompile = function(options) {
-    return !Meta.isCompiled(options) && typeof(options.source) === "string" && typeof(options.compile) === "function";
+  Meta.isCompiled = function(moduleMeta) {
+    return moduleMeta.hasOwnProperty("code") || typeof(moduleMeta.factory) === "function";
+  };
+
+
+  Meta.canCompile = function(moduleMeta) {
+    return !Meta.isCompiled(moduleMeta) && typeof(moduleMeta.source) === "string" && typeof(moduleMeta.compile) === "function";
   };
 
 
