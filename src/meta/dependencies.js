@@ -3,7 +3,7 @@
 
   var Promise = require('spromise'),
       Module  = require('../module'),
-      Utils   = require('../Utils'),
+      Utils   = require('../utils'),
       Logger  = require('../logger'),
       logger  = Logger.factory("Meta/Dependencies");
 
