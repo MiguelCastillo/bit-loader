@@ -532,7 +532,7 @@
 
     var loading = loader
       ._fetchModuleMeta(name, parentMeta)
-      .then(moduleMetaReady, handleError);
+      .then(moduleMetaReady, Utils.printError);
 
     return loader.setLoading(name, loading);
 
@@ -917,11 +917,6 @@
     return this.context.deleteModule(name);
   };
 
-
-  function handleError(error) {
-    Utils.printError(error);
-    return error;
-  }
 
   module.exports = Loader;
 })();
