@@ -7,7 +7,7 @@
   "globals":{
     "define": true,
     "require": true,
-    "Bitimports": true,
+    "bitimports": true,
     "window": true,
     "describe": true,
     "it": true,
