@@ -66,7 +66,7 @@ module.exports = function(grunt) {
         options: {
           browserifyOptions: {
             "detectGlobals": false,
-            "standalone": "Bitloader"
+            "standalone": "bitloader"
           }
         }
       }
