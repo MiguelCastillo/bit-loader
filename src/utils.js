@@ -117,6 +117,11 @@
   }
 
 
+  function notImplemented() {
+    throw new TypeError("Not implemented");
+  }
+
+
   module.exports = {
     isNull: isNull,
     isArray: isArray,
@@ -131,6 +136,7 @@
     extend: extend,
     merge: merge,
     printError: printError,
-    forwardError: forwardError
+    forwardError: forwardError,
+    notImplemented: notImplemented
   };
 })();

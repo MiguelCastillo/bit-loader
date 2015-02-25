@@ -1416,7 +1416,7 @@ module.exports = new Logger();
     "UNKNOWN" : "UNKNOWN",
     "AMD"     : "AMD",     //Asynchronous Module Definition
     "CJS"     : "CJS",     //CommonJS
-    "IEFF"    : "IEFF"     //Immediately Executed Factory Function
+    "IIFE"    : "IIFE"     //Immediately-Invoked Function Expression
   };
 
 
@@ -1825,6 +1825,11 @@ module.exports = new Logger();
   }
 
 
+  function notImplemented() {
+    throw new TypeError("Not implemented");
+  }
+
+
   module.exports = {
     isNull: isNull,
     isArray: isArray,
@@ -1839,7 +1844,8 @@ module.exports = new Logger();
     extend: extend,
     merge: merge,
     printError: printError,
-    forwardError: forwardError
+    forwardError: forwardError,
+    notImplemented: notImplemented
   };
 })();
 

@@ -7,7 +7,7 @@
     "UNKNOWN" : "UNKNOWN",
     "AMD"     : "AMD",     //Asynchronous Module Definition
     "CJS"     : "CJS",     //CommonJS
-    "IEFF"    : "IEFF"     //Immediately Executed Factory Function
+    "IIFE"    : "IIFE"     //Immediately-Invoked Function Expression
   };
 
 
