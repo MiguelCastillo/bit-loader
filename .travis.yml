@@ -10,6 +10,7 @@ deploy:
   file:
     - "dist/bit-loader.js"
     - "dist/bit-loader.min.js"
+    - "dist/bit-loader.min.js.map"
   skip_cleanup: true
   on:
     repo: MiguelCastillo/bit-loader
