@@ -58,24 +58,24 @@ We have talked all about the transformation workflow, and rightfully so because 
 ### Build
 >The build (compile + linking) stage is where the *transformed source* is converted to *evaluated code*, which is what a module ultimately represents.
 
-The build workflow basically compiles (evaluates) source in order to create a module, which then goes through a linking step. In the linking step, all the module dependencies are built (if not already), and if the module has a `factory` interface then it is called with all the corresponding dependencies. The act of calling the `factory` interface is the the *module execution* step, and the result is the final module code that is consumed by the host application.
+The build workflow basically compiles (evaluates) source in order to create a module, which then goes through a linking step. In the linking step, all the module dependencies are built (if not already), and if the module has a `factory` method then it is called with all the corresponding dependencies. The act of calling the `factory` method is the the *module execution* step, and the result is the final module code that is consumed by the host application.
 
-If the module meta object that is being built has a `compile` interface, the actual compilation (evaluation) of the transformed source is delegated to that `compile` interface.  If the meta module does not have a `compile` interface, then bit loader will expect to use the module meta `code` property.
+If the module meta object that is being built has a `compile` method, the actual compilation (evaluation) of the transformed source is delegated to that `compile` method.  If the meta module does not have a `compile` method, then bit loader will expect to use the module meta `code` property.
 
 
 ## Key parts and hooks
 
 ### Fetch
-In order to create something useful, bit loader provides a hook for the `fetch` interface, which defines how source files are read from storage. This abstraction exists to keep the process of creating modules separate from the process of *fetching* files from storage - disk, HTTP(s), or any other transport you may fancy. Bit loader itself does not implement the `fetch` interface as it is intended to be provided by module loader implementations.
+In order to create something useful, bit loader provides a hook for the `fetch` method, which defines how source files are read from storage. This abstraction exists to keep the process of creating modules separate from the process of *fetching* files from storage - disk, HTTP(s), or any other transport you may fancy. Bit loader itself does not implement the `fetch` method as it is intended to be provided by module loader implementations.
 
 #### Fetch generates module Meta objects
 > The point of `fetch` is to create module meta objects that bit loader can transform to build modules.
 
-When bit loader calls the fetch interface to get module meta objects, it wraps the call in a promise so that synchronous and asynchronous operations behave consistently.  This simply means that if you are implementing a `fetch` provider, feel free to return promises or module meta objects directly.
+When bit loader calls the fetch method to get module meta objects, it wraps the call in a promise so that synchronous and asynchronous operations behave consistently.  This simply means that if you are implementing a `fetch` provider, feel free to return promises or module meta objects directly.
 
 Once bit loader gets a module meta object from fetch, it will augment it with *useful* properties and methods that will help during the process of converting the module meta object to an instance of module.
 
-Below are two examples for creating an instance of bit loader that defines a fetch interface.
+Below are two examples for creating an instance of bit loader that defines a fetch method.
 
 #### Fetch example returning a 'processed' module meta; a modue meta object with a property `code`
 ``` javascript
@@ -131,7 +131,7 @@ If you would like to see a fully functionaly implementation of `fetch`, you can 
 
 
 ### Load
-> The purpose of the `load` interface is to return modules.
+> The purpose of the `load` method is to return modules.
 
 It does it by wrapping the entire process of calling fetch to get module meta objects, pushing the module meta objects through the transformation and build  workflow, and then returning the module. There are a few other steps that take place such a interacting with the cache, but they are less relevant.
 
@@ -152,7 +152,7 @@ bitloader.load('modA').then(function(modA) {
 ### Import
 > The primary purpose of `import` is to return the *evaluated code* from modules.
 
-The `import` interface is basically the replacement for `require`, which returns the actual *evaluated code*.  In contrast, `load` returns the entire module.  Internally, `import` will call `load` to do the heavy lifting and `import` simply unwraps the module returning only the `code` property.
+The `import` method is basically the replacement for `require`, which returns the actual *evaluated code*.  In contrast, `load` returns the entire module.  Internally, `import` will call `load` to do the heavy lifting and `import` simply unwraps the module returning only the `code` property.
 
 `import` can take a single string module name or an array of string module names, and it returns a promise.  When the promise is resolved, all the loaded module(s) are passed back as arguments to the promise callback.
 
@@ -167,7 +167,7 @@ bitlaoder.import(["modA", "modB"].then(function(modA, modB) {
 ```
 
 ### Register
-> Interface to add a module meta object to loader's cache.
+> Method to add a module that can be imported via the `import` interface.
 
 When a module meta object is registered, importing it will cause the module meta to completely skip the fetch and transformation steps, making the module meta readily available for the build workflow to create modules.
 
@@ -221,7 +221,7 @@ The most basic form of module meta is called 'processed' module meta, which is a
 > Module meta objects with a `code` property *do not* go through the transformation workflow.
 
 #### Unprocessed Module Meta
-Alternatively, we have 'unprocessed' module meta objects, which are also plain ole JavaScript objects with a `source` string property and a `compile` method.  When bit loader detects these two properties, the process of creating modules is delegated to the `compile` interface. In other words, bit loader will call `compile` which returns a module. An important feature of 'unprocessed' module meta objects is that bit loader puts them through the transformation workflow.
+Alternatively, we have 'unprocessed' module meta objects, which are also plain ole JavaScript objects with a `source` string property and a `compile` method.  When bit loader detects these two properties, the process of creating modules is delegated to the `compile` method. In other words, bit loader will call `compile` which returns a module. An important feature of 'unprocessed' module meta objects is that bit loader puts them through the transformation workflow.
 
 > Module meta objects with a `compile` and `source` properties go through the transformation workflow.
 
@@ -239,7 +239,7 @@ There are several examples that can be executed in node.  The examples are meant
 * fetch
   * resolve name, which creates moduleMeta
   * set moduleMeta source
-  * set moduleMeta compile interface
+  * set moduleMeta compile method
   * return moduleMeta
 * transform
   * run custom transforms
