@@ -185,10 +185,11 @@
   };
 
 
-  Bitloader.prototype.Promise = Promise;
-  Bitloader.prototype.Module  = Module;
-  Bitloader.prototype.Utils   = Utils;
-  Bitloader.prototype.Logger  = Logger;
+  Bitloader.prototype.Promise    = Promise;
+  Bitloader.prototype.Module     = Module;
+  Bitloader.prototype.Utils      = Utils;
+  Bitloader.prototype.Logger     = Logger;
+  Bitloader.prototype.Middleware = Middleware;
 
   // Expose constructors and utilities
   Bitloader.Promise    = Promise;

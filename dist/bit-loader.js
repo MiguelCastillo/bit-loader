@@ -200,10 +200,11 @@
   };
 
 
-  Bitloader.prototype.Promise = Promise;
-  Bitloader.prototype.Module  = Module;
-  Bitloader.prototype.Utils   = Utils;
-  Bitloader.prototype.Logger  = Logger;
+  Bitloader.prototype.Promise    = Promise;
+  Bitloader.prototype.Module     = Module;
+  Bitloader.prototype.Utils      = Utils;
+  Bitloader.prototype.Logger     = Logger;
+  Bitloader.prototype.Middleware = Middleware;
 
   // Expose constructors and utilities
   Bitloader.Promise    = Promise;
@@ -922,92 +923,243 @@
 })();
 
 },{"./meta/compilation":7,"./meta/dependencies":8,"./meta/fetch":9,"./meta/transform":10,"./module":12,"./module/linker":13,"./pipeline":14,"./registry":15,"./utils":17,"spromise":1}],6:[function(require,module,exports){
-var _enabled = false,
-    _only    = false;
+(function() {
+  "use strict";
 
-function getDate() {
-  return (new Date()).getTime();
-}
+  var _enabled = false;
+  var _only    = false;
+  var noop     = function noop() {};
 
-function Logger(name) {
-  this.name = name;
-  this._enabled = true;
-}
 
-Logger.prototype.factory = function(name) {
-  return new Logger(name);
-};
-
-Logger.prototype.log = function() {
-  if (!this.isEnabled()) {
-    return;
+  /**
+   * @class
+   * Logger instance with a name
+   *
+   * @param {string} name - Name of the logger
+   */
+  function Logger(name, options) {
+    options = options || {};
+    this.name     = name;
+    this._enabled = true;
+    this._target  = ensureTarget(options._target);
   }
 
-  console.log.apply(console, [getDate(), this.name].concat(arguments));
-};
 
-Logger.prototype.dir = function() {
-  if (!this.isEnabled()) {
-    return;
+  /**
+   * Helper factory method to create named loggers
+   */
+  Logger.prototype.factory = function(name, options) {
+    return new Logger(name, options);
+  };
+
+
+  /**
+   * Method to log a message.
+   *
+   * Verifies that logger is enabled. If it is enabled, then the message(s) are
+   * logged. Otherwise ignored.
+   */
+  Logger.prototype.log = function() {
+    if (!this.isEnabled()) {
+      return;
+    }
+
+    this._target.log.apply(this._target, [getDate(), this.name].concat(arguments));
+  };
+
+
+  /**
+   * Method to log JSON.
+   *
+   * Verifies that the logger is enabled. If it is enabled, then the input JSON
+   * is logged.  Otherwise ignored.
+   */
+  Logger.prototype.dir = function() {
+    if (!this.isEnabled()) {
+      return;
+    }
+
+    this._target.dir.apply(this._target, arguments);
+  };
+
+
+  /**
+   * Method to log errors.
+   *
+   * Verifies that the logger is enabled. If it is enabled, then the error(s)
+   * are logged.  Otherwise ignored.
+   */
+  Logger.prototype.error = function() {
+    if (!this.isEnabled()) {
+      return;
+    }
+
+    this._target.error.apply(this._target, arguments);
+  };
+
+
+  /**
+   * Checks if the logger can write messages.
+   *
+   * @returns {boolean}
+   */
+  Logger.prototype.isEnabled = function() {
+    return this._enabled && _enabled && (!_only || _only === this.name);
+  };
+
+
+  /**
+   * Method to enable the logger intance. If loggers have been disabled
+   * globally then this flag will not have an immediate effect, until
+   * loggers are globally enabled.
+   */
+  Logger.prototype.enable = function() {
+    this._enabled = true;
+  };
+
+
+  /**
+   * Method to disable the logger instance. Like {@link Logger#enable},
+   * this setting does not have an immediate effect if loggers are globally
+   * disabled.
+   */
+  Logger.prototype.disable = function() {
+    this._enabled = false;
+  };
+
+
+  /**
+   * Method to make sure only this logger logs messages. If another logger is
+   * set to only, then the request is silently ignored.
+   */
+  Logger.prototype.only = function() {
+    if (!Logger._only) {
+      Logger._only = this.name;
+    }
+  };
+
+
+  /**
+   * Method to remove the logger from the `only` state to allow other loggers
+   * set themselves as only.
+   */
+  Logger.prototype.all = function() {
+    Logger._only = null;
+  };
+
+
+  /**
+   * Disables loggers globally.
+   */
+  Logger.prototype.disableAll = function() {
+    Logger.disable();
+  };
+
+
+  /**
+   * Enables loggers globally.
+   */
+  Logger.prototype.enableAll = function() {
+    Logger.enable();
+  };
+
+
+  // Expose the constructor to be able to create new instances from an
+  // existing instance.
+  Logger.prototype.Logger = Logger;
+
+
+  /**
+   * Underlying method to enable all logger instances
+   *
+   * @private
+   */
+  Logger.enable  = function() {
+    _enabled = true;
+  };
+
+
+  /**
+   * Underlying method to disable all logger instances
+   *
+   * @private
+   */
+  Logger.disable = function() {
+    _enabled = false;
+  };
+
+
+  /**
+   * Underlying method to set the `only` logger instance that can log message
+   *
+   * @private
+   */
+  Logger.only = function(name) {
+    _only = name;
+  };
+
+
+  /**
+   * Underlying method to remove the `only` logger instance that can log
+   * message
+   *
+   * @private
+   */
+  Logger.all = function() {
+    _only = null;
+  };
+
+
+  /**
+   * Returns a valid console interface with three methods:
+   * - log, which logs raw text messages.
+   * - error, which logs errors including exceptions.
+   * - dir, which logs JSON
+   *
+   * @returns {{log: function, error: function, dir: function}}
+   */
+  function getConsole() {
+    var _result;
+    if (typeof(console) !== 'undefined') {
+      _result = {log: console.log, error: console.error, dir: console.dir};
+    }
+    else {
+      _result = {log: noop, error: noop, dir: noop};
+    }
   }
 
-  console.dir.apply(console, arguments);
-};
 
-Logger.prototype.error = function() {
-  if (!this.isEnabled()) {
-    return;
+  /**
+   * Method that fills in the target object to make sure we have a valid target
+   * we are writing to.
+   */
+  function ensureTarget(target) {
+    if (!target) {
+      return getConsole();
+    }
+
+    target.log   = target.log   || noop;
+    target.error = target.error || noop;
+    target.dir   = target.dir   || noop;
+    return target;
   }
 
-  console.error.apply(console, arguments);
-};
 
-Logger.prototype.isEnabled = function() {
-  return this._enabled && _enabled && (!_only || _only === this.name);
-};
-
-Logger.prototype.enable = function() {
-  this._enabled = true;
-};
-
-Logger.prototype.disable = function() {
-  this._enabled = false;
-};
-
-Logger.prototype.only = function() {
-  Logger._only = this.name;
-};
-
-Logger.prototype.all = function() {
-  Logger._only = null;
-};
-
-Logger.prototype.disableAll = function() {
-  Logger.disable();
-};
-
-Logger.prototype.enableAll = function() {
-  Logger.enable();
-};
+  /**
+   * Helper method to get timestamps for logged message
+   *
+   * @private
+   */
+  function getDate() {
+    return (new Date()).getTime();
+  }
 
 
-// Expose the constructor to be able to create new instances from an
-// existing instance.
-Logger.prototype.Logger = Logger;
-Logger._enabled = typeof(console) !== 'undefined';
-Logger.enable  = function() {
-  _enabled = true;
-};
-
-Logger.disable = function() {
-  _enabled = false;
-};
-
-Logger.only = function(name) {
-  _only = name;
-};
-
-module.exports = new Logger();
+  /**
+   * Default logger instance available
+   */
+  module.exports = new Logger();
+}());
 
 },{}],7:[function(require,module,exports){
 (function() {
@@ -1235,6 +1387,8 @@ module.exports = new Logger();
         }
       }
     }
+
+    return this;
   };
 
 
@@ -1268,7 +1422,7 @@ module.exports = new Logger();
     var handlers = [];
 
     for (i = 0, length = names.length; i < length; i++) {
-      handlers.push(this.named[names[i]]);
+      handlers.push(this.getProvider(names[i]));
     }
 
     return _runProviders(handlers, Array.prototype.slice.call(arguments, 1));
@@ -1283,6 +1437,21 @@ module.exports = new Logger();
    */
   Middleware.prototype.runAll = function() {
     return _runProviders(this.providers, arguments);
+  };
+
+
+  /**
+   * Gets the middleware provider by name.  It also handles when the middlware
+   * handler does not exist.
+   *
+   * @returns {Provider}
+   */
+  Middleware.prototype.getProvider = function(name) {
+    if (!this.named.hasOwnProperty(name)) {
+      throw new TypeError("Middleware provider '" + name + "' does not exist");
+    }
+
+    return this.named[name];
   };
 
 
@@ -1399,7 +1568,7 @@ module.exports = new Logger();
 
 
   module.exports = Middleware;
-})();
+}());
 
 },{"./logger":6,"./utils":17,"spromise":1}],12:[function(require,module,exports){
 (function() {

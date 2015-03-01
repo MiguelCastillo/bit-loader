@@ -86,6 +86,8 @@
         }
       }
     }
+
+    return this;
   };
 
 
@@ -119,7 +121,7 @@
     var handlers = [];
 
     for (i = 0, length = names.length; i < length; i++) {
-      handlers.push(this.named[names[i]]);
+      handlers.push(this.getProvider(names[i]));
     }
 
     return _runProviders(handlers, Array.prototype.slice.call(arguments, 1));
@@ -134,6 +136,21 @@
    */
   Middleware.prototype.runAll = function() {
     return _runProviders(this.providers, arguments);
+  };
+
+
+  /**
+   * Gets the middleware provider by name.  It also handles when the middlware
+   * handler does not exist.
+   *
+   * @returns {Provider}
+   */
+  Middleware.prototype.getProvider = function(name) {
+    if (!this.named.hasOwnProperty(name)) {
+      throw new TypeError("Middleware provider '" + name + "' does not exist");
+    }
+
+    return this.named[name];
   };
 
 
@@ -250,4 +267,4 @@
 
 
   module.exports = Middleware;
-})();
+}());
