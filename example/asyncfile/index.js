@@ -56,15 +56,18 @@ function fetchFactory(loader) {
 }
 
 
-// Read file from storage.  You can very easily replace this with a routine that
-// loads data using XHR.
+/**
+ * Read file from storage.  You can very easily replace this with a routine that
+ * loads data using XHR.
+ */
 function readFile(fileName) {
   return new Bitloader.Promise(function(resolve, reject) {
     var filecontent = '';
     var stream = fs.createReadStream(__dirname + '/' + fileName);
+    stream.setEncoding('utf8');
 
     stream.on('readable', function() {
-      filecontent += '' + stream.read();
+      filecontent += stream.read();
     });
 
     stream.on('end', function() {
@@ -74,3 +77,6 @@ function readFile(fileName) {
     stream.on('error', reject);
   });
 }
+
+
+module.exports = loader;
