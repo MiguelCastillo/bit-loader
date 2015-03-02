@@ -94,5 +94,5 @@ module.exports = function(grunt) {
   grunt.registerTask("build", ["jshint:all", "browserify:build", "uglify:build"]);
   grunt.registerTask("server", ["connect:keepalive"]);
   grunt.registerTask("test", ["connect:test", "mocha:test"]);
-  grunt.registerTask("livereload", ["concurrent:test"]);
+  grunt.registerTask("dev", ["concurrent:test"]);
 };
