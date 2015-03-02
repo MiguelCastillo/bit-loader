@@ -1121,11 +1121,12 @@
   function getConsole() {
     var _result;
     if (typeof(console) !== 'undefined') {
-      _result = {log: console.log, error: console.error, dir: console.dir};
+      _result = console;
     }
     else {
       _result = {log: noop, error: noop, dir: noop};
     }
+    return _result;
   }
 
 
