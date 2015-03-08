@@ -1,7 +1,7 @@
 (function() {
   "use strict";
 
-  var Promise  = require('spromise'),
+  var Promise  = require('./promise'),
       Registry = require('./registry'),
       Utils    = require('./utils');
 
@@ -17,7 +17,7 @@
 
 
   /**
-   * Module importer.  Primary function is to load Module instances and resolving
+   * Module importer. Primary function is to load Module instances and resolving
    * their dependencies in order to make the Module fully consumable.
    */
   function Import(manager) {
@@ -37,31 +37,17 @@
    *
    * @returns {Promise}
    */
-  Import.prototype.import = function(names, options) {
+  Import.prototype.import = function(name, options) {
     options = options || {};
     var importer = this;
 
-    // Coerce string to array to simplify input processing
-    if (typeof(names) === "string") {
-      names = [names];
+    if (typeof(name) === "string") {
+      return Promise.resolve(importer._getModule(name, options));
     }
 
-    return new Promise(function deferredModuleImport(resolve, reject) {
-      // Callback when modules are loaded
-      function modulesLoaded(modules) {
-        resolve.apply((void 0), modules);
-      }
-
-      // Callback if there was an error loading the modules
-      function handleError(error) {
-        reject.call((void 0), Utils.printError(error));
-      }
-
-      // Load modules
-      Promise
-        .all(importer._getModules(names, options))
-        .then(modulesLoaded, handleError);
-    });
+    return Promise.all(name.map(function getModuleByName(name) {
+      return importer._getModule(name, options);
+    }));
   };
 
 
@@ -72,30 +58,29 @@
    * @param {Array<string>} names - Array of module names
    * @param {Object} options
    */
-  Import.prototype._getModules = function(names, options) {
+  Import.prototype._getModule = function(name, options) {
     var importer = this,
         manager  = this.manager;
 
-    return names.map(function getModule(name) {
-      if (hasModule(options.modules, name)) {
-        return options.modules[name];
-      }
-      else if (manager.hasModule(name)) {
-        return manager.getModuleCode(name);
-      }
-      else if (importer.hasModule(name)) {
-        return importer.getModule(name);
-      }
+    if (hasModule(options.modules, name)) {
+      return options.modules[name];
+    }
+    else if (manager.hasModule(name)) {
+      return manager.getModuleCode(name);
+    }
+    else if (importer.hasModule(name)) {
+      return importer.getModule(name);
+    }
 
-      // Workflow for loading a module that has not yet been loaded
-      return new Promise(function(resolve, reject) {
-        importer.setModule(name, importer._loadModule(name))
-          .then(function success(val) {
-            resolve(val);
-          }, function failed(err) {
-            reject(err);
-          });
-      });
+    // Wrap in a separate promise to handle this:
+    // https://github.com/MiguelCastillo/spromise/issues/35
+    return new Promise(function deferredModuleResolver(resolve, reject) {
+      importer.setModule(name, importer._loadModule(name))
+        .then(function moduleSuccess(result) {
+          resolve(result);
+        }, function moduleError(error) {
+          reject(error);
+        });
     });
   };
 
@@ -118,7 +103,7 @@
 
     return function getCode(mod) {
       if (name !== mod.name) {
-        throw new TypeError("Module name must be the same as the name used for loading the Module itself");
+        return Promise.reject(new TypeError("Module name must be the same as the name used for loading the Module itself"));
       }
 
       importer.deleteModule(mod.name);

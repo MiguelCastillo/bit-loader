@@ -1,7 +1,7 @@
 (function() {
   "use strict";
 
-  var Promise = require('spromise'),
+  var Promise = require('../promise'),
       Module  = require('../module'),
       Utils   = require('../utils'),
       Logger  = require('../logger'),
@@ -16,7 +16,7 @@
     // Once the module meta is fetched, we want to add helper properties
     // to it to facilitate further processing.
     function moduleFetched(moduleMeta) {
-      if (!(moduleMeta instanceof Module.Meta)) {
+      if (!(moduleMeta instanceof(Module.Meta))) {
         Module.Meta.validate(moduleMeta);
         moduleMeta.deps = moduleMeta.deps || [];
       }

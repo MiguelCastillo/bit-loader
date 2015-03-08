@@ -1,7 +1,7 @@
 (function() {
   "use strict";
 
-  var Promise = require('spromise'),
+  var Promise = require('./promise'),
       Logger  = require('./logger'),
       Utils   = require('./utils');
 
@@ -249,16 +249,18 @@
     var cancelled = false;
 
     return providers.reduce(function(prev, curr) {
-      return prev.then(function(next) {
+      return prev.then(function middlewareSequenceNext(next) {
         if (next === false) {
           cancelled = true;
         }
 
         if (!cancelled && !curr.__pending) {
-          logger.log("transformation", curr.name, data);
-          return curr.handler.apply(curr, data);
+          logger.log("transformation [start]", curr.name);
+          var result = curr.handler.apply(curr, data);
+          logger.log("transformation [end]", curr.name);
+          return result;
         }
-      }, function(err) {
+      }, function middlewareSequenceError(err) {
         cancelled = true;
         return err;
       });
