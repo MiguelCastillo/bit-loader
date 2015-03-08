@@ -2,21 +2,646 @@
 /**
  * spromise Copyright (c) 2014 Miguel Castillo.
  * Licensed under MIT
- *
- * https://github.com/MiguelCastillo/spromise
  */
 
+(function() {
+  "use strict";
+
+  var Promise = require("./promise"),
+      async   = require("./async");
+
+  function _result(input, args, context) {
+    if (typeof(input) === "function") {
+      return input.apply(context, args||[]);
+    }
+    return input;
+  }
+
+  function All(values) {
+    values = values || [];
+
+    // The input is the queue of items that need to be resolved.
+    var resolutions = [],
+        promise     = Promise.defer(),
+        context     = this,
+        remaining   = values.length;
+
+    if (!values.length) {
+      return promise.resolve(values);
+    }
+
+    // Check everytime a new resolved promise occurs if we are done processing all
+    // the dependent promises.  If they are all done, then resolve the when promise
+    function checkPending() {
+      remaining--;
+      if (!remaining) {
+        promise.resolve.call(context, resolutions);
+      }
+    }
+
+    // Wrap the resolution to keep track of the proper index in the closure
+    function resolve(index) {
+      return function() {
+        resolutions[index] = arguments.length === 1 ? arguments[0] : arguments;
+        checkPending();
+      };
+    }
+
+    function processQueue() {
+      var i, item, length;
+      for (i = 0, length = remaining; i < length; i++) {
+        item = values[i];
+        if (item && typeof item.then === "function") {
+          item.then(resolve(i), promise.reject);
+        }
+        else {
+          resolutions[i] = _result(item);
+          checkPending();
+        }
+      }
+    }
+
+    // Process the promises and callbacks
+    async(processQueue);
+    return promise;
+  }
+
+  module.exports = All;
+}());
+
+
+},{"./async":2,"./promise":3}],2:[function(require,module,exports){
 /**
  * spromise Copyright (c) 2014 Miguel Castillo.
  * Licensed under MIT
  */
 
-(function(e,t){typeof require=="function"&&typeof exports=="object"&&typeof module=="object"?module.exports=t():typeof define=="function"&&define.amd?define(t):e.spromise=t()})(this,function(){var e,t;return function(){function i(e){return typeof e.factory=="function"?t(e.deps,e.factory):e.factory}function s(e,t){var n,s,o,u,a=[];for(n=0,s=e.length;n<s;n++){o=e[n],u=r[o]||t[o];if(!u)throw new TypeError("Module "+o+" has not yet been loaded");r[o]?(u.hasOwnProperty("code")||(u.code=i(u)),a[n]=u.code):a[n]=u}return a}var n=this,r={};t=function o(e,t){var i,u,a={};return a.require=o,a.exports={},a.module={exports:a.exports},typeof e=="string"&&(i=e,e=[e]),e.length&&(e=s(e.slice(0),a)),typeof t=="function"?u=t.apply(n,e):u=r[i]?r[i].code:t,u===void 0?a.module.exports:u},e=function(t,n,i){r[t]={name:t,deps:n,factory:i}}}.call(this),e("src/samdy",function(){}),e("src/async",["require","exports","module"],function(e,t,n){function i(e){r(e)}var r;i.delay=function(e,t,n){setTimeout(e.apply.bind(e,this,n||[]),t)},typeof process=="object"&&typeof process.nextTick=="function"?r=process.nextTick:typeof setImmediate=="function"?r=setImmediate:r=function(e){setTimeout(e,0)},i.nextTick=r,n.exports=i}),e("src/promise",["require","exports","module","src/async"],function(e,t,n){function o(e,t){t=t||new u;var n=this;n.then=function(e,n){return t.then(e,n)},n.resolve=function(){return t.transition(i.resolved,arguments,this),n},n.reject=function(){return t.transition(i.rejected,arguments,this),n},n.promise={then:n.then,always:n.always,done:n.done,"catch":n.fail,fail:n.fail,notify:n.notify,state:n.state,constructor:o},n.promise.promise=n.promise,n.then.stateManager=t,e&&e.call(n,n.resolve,n.reject)}function u(e){this.state=i.pending,e&&e.state&&this.transition(e.state,e.value,e.context)}function a(e){this.promise=e.promise}function l(e){c.debug&&(console.error(e),e&&e.stack&&console.log(e.stack))}function c(e){return new o(e)}var r=e("src/async"),i={pending:0,resolved:1,rejected:2,always:3,notify:4},s=["pending","resolved","rejected"];o.prototype.done=function(e){return this.then.stateManager.enqueue(i.resolved,e),this.promise},o.prototype.catch=o.prototype.fail=function(e){return this.then.stateManager.enqueue(i.rejected,e),this.promise},o.prototype.finally=o.prototype.always=function(e){return this.then.stateManager.enqueue(i.always,e),this.promise},o.prototype.notify=function(e){return this.then.stateManager.enqueue(i.notify,e),this.promise},o.prototype.state=function(){return s[this.then.stateManager.state]},o.prototype.isPending=function(){return this.then.stateManager.state===i.pending},o.prototype.isResolved=function(){return this.then.stateManager.state===i.resolved},o.prototype.isRejected=function(){return this.then.stateManager.state===i.resolved},o.prototype.delay=function(t){var n=this;return new o(function(e,i){n.then(function(){r.delay(e.bind(this),t,arguments)},i.bind(this))})},u.prototype.enqueue=function(e,t){function r(){n.state===e||i.always===e?t.apply(n.context,n.value):i.notify===e&&t.call(n.context,n.state,n.value)}this.state?f.asyncTask(r):(this.queue||(this.queue=[])).push(r);var n=this},u.prototype.transition=function(e,t,n){if(this.state)return;this.state=e,this.context=n,this.value=t;var r=this.queue;r&&(this.queue=null,f.asyncQueue(r))},u.prototype.then=function(e,t){var n=this;e=e&&typeof e=="function"?e:null,t=t&&typeof t=="function"?t:null;if(!e&&n.state===i.resolved||!t&&n.state===i.rejected)return new o(null,n);var r=new o;return n.enqueue(i.notify,function(s,o){var f=s===i.resolved?e||t:t||e;f&&(o=u.runHandler(s,o,this,r,f)),o!==!1&&(new a({promise:r})).finalize(s,o,this)}),r},u.runHandler=function(e,t,n,r,i){try{t=i.apply(n,t)}catch(s){return l(s),r.reject.call(n,s),!1}return t===undefined?[]:[t]},a.prototype.finalize=function(e,t,n){var r=this,s=this.promise,u,a;if(t.length){u=t[0];if(u===s)a=s.reject.call(n,new TypeError("Resolution input must not be the promise being resolved"));else if(u&&u.constructor===o)a=u.notify(function(t,n){r.finalize(t,n,this)});else if(u!==undefined&&u!==null)switch(typeof u){case"object":case"function":a=this.runThenable(u,n)}}a||(e===i.resolved?s.resolve.apply(n,t):s.reject.apply(n,t))},a.prototype.runThenable=function(e,t){var n=this,r=!1;try{var s=e.then;if(typeof s=="function")return s.call(e,function(){r||(r=!0,n.finalize(i.resolved,arguments,this))},function(){r||(r=!0,n.promise.reject.apply(this,arguments))}),!0}catch(o){return r||n.promise.reject.call(t,o),!0}return!1};var f={_asyncQueue:[],asyncTask:function(e){f._asyncQueue.push(e)===1&&r(f.taskRunner(f._asyncQueue))},asyncQueue:function(e){e.length===1?f.asyncTask(e[0]):f.asyncTask(f.taskRunner(e))},taskRunner:function(e){return function(){var n;while(n=e[0])f._runTask(n),e.shift()}},_runTask:function(e){try{e()}catch(t){l(t)}}};c.prototype=o.prototype,c.defer=function(){return new o},c.reject=function(){return new o(null,new u({context:this,value:arguments,state:i.rejected}))},c.resolve=c.thenable=function(e){if(e){if(e.constructor===o)return e;if(typeof e.then=="function")return new o(e.then)}return new o(null,new u({context:this,value:arguments,state:i.resolved}))},c.delay=function(t){var n=Array.prototype.slice(arguments,1);return new o(function(e){r.delay(e.bind(this),t,n)})},c.states=i,c.debug=!1,n.exports=c}),e("src/all",["require","exports","module","src/promise","src/async"],function(e,t,n){function s(e,t,n){return typeof e=="function"?e.apply(n,t||[]):e}function o(e){function a(){u--,u||n.resolve.call(o,t)}function f(e){return function(){t[e]=arguments.length===1?arguments[0]:arguments,a()}}function l(){var r,i,o;for(r=0,o=u;r<o;r++)i=e[r],i&&typeof i.then=="function"?i.then(f(r),n.reject):(t[r]=s(i),a())}e=e||[];var t=[],n=r.defer(),o=this,u=e.length;return e.length?(i(l),n):n.resolve(e)}var r=e("src/promise"),i=e("src/async");n.exports=o}),e("src/when",["require","exports","module","src/promise","src/all"],function(e,t,n){function s(){var e=this,t=arguments;return new r(function(n,r){i.call(e,t).then(function(t){n.apply(e,t)},function(t){r.call(e,t)})})}var r=e("src/promise"),i=e("src/all");n.exports=s}),e("src/race",["require","exports","module","src/promise"],function(e,t,n){function i(e){return e?new r(function(t,n){function o(){s||(s=!0,t.apply(this,arguments))}function u(){s||(s=!0,n.apply(this,arguments))}var r,i,s=!1;for(r=0,i=e.length;r<i;r++)e[r].then(o,u)}):r.resolve()}var r=e("src/promise");n.exports=i}),e("src/spromise",["require","exports","module","src/promise","src/async","src/when","src/all","src/race"],function(e,t,n){var r=e("src/promise");r.aync=e("src/async"),r.when=e("src/when"),r.all=e("src/all"),r.race=e("src/race"),n.exports=r}),t("src/spromise")});
-},{}],2:[function(require,module,exports){
+/*global process, setImmediate*/
+(function() {
+  "use strict";
+
+  var nextTick;
+
+  function Async(cb) {
+    nextTick(cb);
+  }
+
+  Async.delay = function(callback, timeout, args) {
+    setTimeout(callback.apply.bind(callback, this, args || []), timeout);
+  };
+
+
+  /**
+   * Find the prefered method for queue callbacks in the event loop
+   */
+
+  if (typeof(process) === "object" && typeof(process.nextTick) === "function") {
+    nextTick = process.nextTick;
+  }
+  else if (typeof(setImmediate) === "function") {
+    nextTick = setImmediate;
+  }
+  else {
+    nextTick = function(cb) {
+      setTimeout(cb, 0);
+    };
+  }
+
+  Async.nextTick = nextTick;
+  module.exports = Async;
+}());
+
+},{}],3:[function(require,module,exports){
+/**
+ * spromise Copyright (c) 2014 Miguel Castillo.
+ * Licensed under MIT
+ */
+
+(function() {
+  "use strict";
+
+  var async = require("./async");
+
+  var states = {
+    "pending"  : 0,
+    "resolved" : 1,
+    "rejected" : 2,
+    "always"   : 3,
+    "notify"   : 4
+  };
+
+  var strStates = [
+    "pending",
+    "resolved",
+    "rejected"
+  ];
+
+  /**
+   * Small Promise
+   */
+  function Promise(resolver, stateManager) {
+    stateManager = stateManager || new StateManager();
+    var target = this;
+
+    target.then = function(onResolved, onRejected) {
+      return stateManager.then(onResolved, onRejected);
+    };
+
+    target.resolve = function() {
+      stateManager.transition(states.resolved, arguments, this);
+      return target;
+    };
+
+    target.reject = function() {
+      stateManager.transition(states.rejected, arguments, this);
+      return target;
+    };
+
+    // Read only access point for the promise.
+    target.promise = {
+      then   : target.then,
+      always : target.always,
+      done   : target.done,
+      catch  : target.fail,
+      fail   : target.fail,
+      notify : target.notify,
+      state  : target.state,
+      constructor : Promise // Helper to detect spromise instances
+    };
+
+    target.promise.promise = target.promise;
+    target.then.stateManager = stateManager;
+
+    if (resolver) {
+      resolver.call(target, target.resolve, target.reject);
+    }
+  }
+
+  Promise.prototype.done = function(cb) {
+    this.then.stateManager.enqueue(states.resolved, cb);
+    return this.promise;
+  };
+
+  Promise.prototype.catch = Promise.prototype.fail = function(cb) {
+    this.then.stateManager.enqueue(states.rejected, cb);
+    return this.promise;
+  };
+
+  Promise.prototype.finally = Promise.prototype.always = function(cb) {
+    this.then.stateManager.enqueue(states.always, cb);
+    return this.promise;
+  };
+
+  Promise.prototype.notify = function(cb) {
+    this.then.stateManager.enqueue(states.notify, cb);
+    return this.promise;
+  };
+
+  Promise.prototype.state = function() {
+    return strStates[this.then.stateManager.state];
+  };
+
+  Promise.prototype.isPending = function() {
+    return this.then.stateManager.state === states.pending;
+  };
+
+  Promise.prototype.isResolved = function() {
+    return this.then.stateManager.state === states.resolved;
+  };
+
+  Promise.prototype.isRejected = function() {
+    return this.then.stateManager.state === states.resolved;
+  };
+
+  Promise.prototype.delay = function delay(ms) {
+    var _self = this;
+    return new Promise(function(resolve, reject) {
+      _self.then(function() {
+        async.delay(resolve.bind(this), ms, arguments);
+      }, reject.bind(this));
+    });
+  };
+
+  /**
+   * Provides a set of interfaces to manage callback queues and the resolution state
+   * of the promises.
+   */
+  function StateManager(options) {
+    // Initial state is pending
+    this.state = states.pending;
+
+    // If a state is passed in, then we go ahead and initialize the state manager with it
+    if (options && options.state) {
+      this.transition(options.state, options.value, options.context);
+    }
+  }
+
+  /**
+   * Figure out if the promise is pending/resolved/rejected and do the appropriate
+   * action with the callback based on that.
+   */
+  StateManager.prototype.enqueue = function (state, cb) {
+    if (!this.state) {
+      (this.queue || (this.queue = [])).push(TaskAction);
+    }
+    else {
+      // If the promise has already been resolved and its queue has been processed, then
+      // we need to schedule the new task for processing ASAP by putting in the asyncQueue
+      TaskManager.asyncTask(TaskAction);
+    }
+
+    var stateManager = this;
+    function TaskAction() {
+      if (stateManager.state === state || states.always === state) {
+        cb.apply(stateManager.context, stateManager.value);
+      }
+      else if (states.notify === state) {
+        cb.call(stateManager.context, stateManager.state, stateManager.value);
+      }
+    }
+  };
+
+  /**
+   * Transitions the state of the promise from pending to either resolved or
+   * rejected.  If the promise has already been resolved or rejected, then
+   * this is a noop.
+   */
+  StateManager.prototype.transition = function (state, value, context) {
+    if (this.state) {
+      return;
+    }
+
+    this.state   = state;
+    this.context = context;
+    this.value   = value;
+
+    var queue = this.queue;
+    if (queue) {
+      this.queue = null;
+      TaskManager.asyncQueue(queue);
+    }
+  };
+
+  // 2.2.7: https://promisesaplus.com/#point-40
+  StateManager.prototype.then = function(onResolved, onRejected) {
+    var stateManager = this;
+
+    // Make sure onResolved and onRejected are functions, or null otherwise
+    onResolved = (onResolved && typeof(onResolved) === "function") ? onResolved : null;
+    onRejected = (onRejected && typeof(onRejected) === "function") ? onRejected : null;
+
+    // 2.2.7.3 and 2.2.7.4: https://promisesaplus.com/#point-43
+    // If there are no onResolved or onRejected callbacks and the promise
+    // is already resolved, we just return a new promise and copy the state
+    if ((!onResolved && stateManager.state === states.resolved) ||
+        (!onRejected && stateManager.state === states.rejected)) {
+      return new Promise(null, stateManager);
+    }
+
+    var promise = new Promise();
+    stateManager.enqueue(states.notify, function NotifyAction(state, value) {
+      var handler = (state === states.resolved) ? (onResolved || onRejected) : (onRejected || onResolved);
+      if (handler) {
+        value = StateManager.runHandler(state, value, this, promise, handler);
+      }
+
+      if (value !== false) {
+        (new Resolution({promise: promise})).finalize(state, value, this);
+      }
+    });
+    return promise;
+  };
+
+
+  StateManager.runHandler = function(state, value, context, promise, handler) {
+    // Try catch in case calling the handler throws an exception
+    try {
+      value = handler.apply(context, value);
+    }
+    catch(ex) {
+      printDebug(ex);
+      promise.reject.call(context, ex);
+      return false;
+    }
+
+    return value === undefined ? [] : [value];
+  };
+
+
+  /**
+   * Thenable resolution
+   */
+  function Resolution(options) {
+    this.promise = options.promise;
+  }
+
+  /**
+   * Promise resolution procedure
+   *
+   * @param {states} state - Is the state of the promise resolution (resolved/rejected)
+   * @param {array} value - Is value of the resolved promise
+   * @param {context} context - Is that context used when calling resolved/rejected
+   */
+  Resolution.prototype.finalize = function(state, value, context) {
+    var resolution = this,
+        promise    = this.promise,
+        input, pending;
+
+    if (value.length) {
+      input = value[0];
+
+      // 2.3.1 https://promisesaplus.com/#point-48
+      if (input === promise) {
+        pending = promise.reject.call(context, new TypeError("Resolution input must not be the promise being resolved"));
+      }
+
+      // 2.3.2 https://promisesaplus.com/#point-49
+      // if the incoming promise is an instance of spromise, we adopt its state
+      else if (input && input.constructor === Promise) {
+        pending = input.notify(function NotifyDelegate(state, value) {
+          resolution.finalize(state, value, this);
+        });
+      }
+
+      // 2.3.3 https://promisesaplus.com/#point-53
+      // Otherwise, if x is an object or function
+      else if (input !== undefined && input !== null) {
+        switch(typeof(input)) {
+          case "object":
+          case "function":
+            pending = this.runThenable(input, context);
+        }
+      }
+    }
+
+    // 2.3.4 https://promisesaplus.com/#point-64
+    // If x is not an object or function, fulfill promise with x.
+    if (!pending) {
+      if (state === states.resolved) {
+        promise.resolve.apply(context, value);
+      }
+      else {
+        promise.reject.apply(context, value);
+      }
+    }
+  };
+
+  /**
+   * Run thenable.
+   */
+  Resolution.prototype.runThenable = function(thenable, context) {
+    var resolution = this,
+        resolved   = false;
+
+    try {
+      // 2.3.3.1 https://promisesaplus.com/#point-54
+      var then = thenable.then;  // Reading `.then` could throw
+      if (typeof(then) === "function") {
+        // 2.3.3.3 https://promisesaplus.com/#point-56
+        then.call(thenable, function resolvePromise() {
+          if (!resolved) { resolved = true;
+            resolution.finalize(states.resolved, arguments, this);
+          }
+        }, function rejectPromise() {
+          if (!resolved) { resolved = true;
+            resolution.promise.reject.apply(this, arguments);
+          }
+        });
+
+        return true;
+      }
+    }
+    catch (ex) {
+      if (!resolved) {
+        resolution.promise.reject.call(context, ex);
+      }
+
+      return true;
+    }
+
+    return false;
+  };
+
+  /**
+   * Task manager to handle queuing up async tasks in an optimal manner
+   */
+  var TaskManager = {
+    _asyncQueue: [],
+    asyncTask: function(task) {
+      if (TaskManager._asyncQueue.push(task) === 1) {
+        async(TaskManager.taskRunner(TaskManager._asyncQueue));
+      }
+    },
+    asyncQueue: function(queue) {
+      if (queue.length === 1) {
+        TaskManager.asyncTask(queue[0]);
+      }
+      else {
+        TaskManager.asyncTask(TaskManager.taskRunner(queue));
+      }
+    },
+    taskRunner: function(queue) {
+      return function runTasks() {
+        var task;
+        while ((task = queue[0])) {
+          TaskManager._runTask(task);
+          queue.shift();
+        }
+      };
+    },
+    _runTask: function(task) {
+      try {
+        task();
+      }
+      catch(ex) {
+        printDebug(ex);
+      }
+    }
+  };
+
+  function printDebug(ex) {
+    if (Factory.debug) {
+      console.error(ex);
+      if (ex && ex.stack) {
+        console.log(ex.stack);
+      }
+    }
+  }
+
+  /**
+   * Public interface to create promises
+   */
+  function Factory(resolver) {
+    return new Promise(resolver);
+  }
+
+  // Enable type check with instanceof
+  Factory.prototype = Promise.prototype;
+
+  /**
+   * Interface to play nice with libraries like when and q.
+   */
+  Factory.defer = function () {
+    return new Promise();
+  };
+
+  /**
+   * Create a promise that's already rejected
+   *
+   * @returns {Promise} A promise that is alraedy rejected with the input value
+   */
+  Factory.reject = function () {
+    return new Promise(null, new StateManager({
+      context: this,
+      value: arguments,
+      state: states.rejected
+    }));
+  };
+
+  /**
+   * Interface that makes sure a promise is returned, regardless of the input.
+   * 1. If the input is a promsie, then that's immediately returned.
+   * 2. If the input is a thenable (has a then method), then a new promise is returned
+   *    that's chained to the input thenable.
+   * 3. If the input is any other value, then a new promise is returned and resolved with
+   *    the input value
+   *
+   * @returns {Promise}
+   */
+  Factory.resolve = Factory.thenable = function (value) {
+    if (value) {
+      if (value.constructor === Promise) {
+        return value;
+      }
+      else if (typeof(value.then) === "function") {
+        return new Promise(value.then);
+      }
+    }
+
+    return new Promise(null, new StateManager({
+      context: this,
+      value: arguments,
+      state: states.resolved
+    }));
+  };
+
+  /**
+   * Creates a promise that's resolved after ms number of milleseconds. All arguments passed
+   * in to delay, with the excpetion of ms, will be used to resolve the new promise with.
+   *
+   * @param {number} ms - Number of milliseconds to wait before the promise is resolved.
+   */
+  Factory.delay = function delay(ms) {
+    var args = Array.prototype.slice(arguments, 1);
+    return new Promise(function(resolve) {
+      async.delay(resolve.bind(this), ms, args);
+    });
+  };
+
+  // Expose enums for the states
+  Factory.states = states;
+  Factory.debug  = false;
+  module.exports = Factory;
+}());
+
+},{"./async":2}],4:[function(require,module,exports){
+/**
+ * spromise Copyright (c) 2014 Miguel Castillo.
+ * Licensed under MIT
+ */
+
+(function() {
+  "use strict";
+
+  var Promise = require("./promise");
+
+  function Race(iterable) {
+    if (!iterable) {
+      return Promise.resolve();
+    }
+
+    return new Promise(function(resolve, reject) {
+      var i, length, _done = false;
+      for (i = 0, length = iterable.length; i < length; i++) {
+        iterable[i].then(_resolve, _reject);
+      }
+
+      function _resolve() {
+        if (!_done) {
+          _done = true;
+          /*jshint -W040 */
+          resolve.apply(this, arguments);
+          /*jshint +W040 */
+        }
+      }
+
+      function _reject() {
+        if (!_done) {
+          _done = true;
+          /*jshint -W040 */
+          reject.apply(this, arguments);
+          /*jshint +W040 */
+        }
+      }
+    });
+  }
+
+  module.exports = Race;
+}());
+
+},{"./promise":3}],5:[function(require,module,exports){
+/**
+ * spromise Copyright (c) 2014 Miguel Castillo.
+ * Licensed under MIT
+ */
+
+(function() {
+  "use strict";
+
+  var Promise   = require("./promise");
+  Promise.async = require("./async");
+  Promise.when  = require("./when");
+  Promise.all   = require("./all");
+  Promise.race  = require("./race");
+
+  module.exports = Promise;
+}());
+
+},{"./all":1,"./async":2,"./promise":3,"./race":4,"./when":6}],6:[function(require,module,exports){
+/**
+ * spromise Copyright (c) 2014 Miguel Castillo.
+ * Licensed under MIT
+ */
+
+(function() {
+  "use strict";
+
+  var Promise = require("./promise"),
+      All     = require("./all");
+
+  /**
+   * Interface to allow multiple promises to be synchronized
+   */
+  function When() {
+    var context = this, args = arguments;
+    return new Promise(function(resolve, reject) {
+      All.call(context, args).then(function(results) {
+        resolve.apply(context, results);
+      },
+      function(reason) {
+        reject.call(context, reason);
+      });
+    });
+  }
+
+  module.exports = When;
+}());
+
+},{"./all":1,"./promise":3}],7:[function(require,module,exports){
 (function () {
   "use strict";
 
-  var Promise    = require('spromise'),
+  var Promise    = require('./promise'),
       Utils      = require('./utils'),
       Logger     = require('./logger'),
       Fetch      = require('./fetch'),
@@ -219,7 +844,7 @@
   module.exports       = Bitloader;
 })();
 
-},{"./fetch":3,"./import":4,"./loader":5,"./logger":6,"./middleware":11,"./module":12,"./registry":15,"./utils":17,"spromise":1}],3:[function(require,module,exports){
+},{"./fetch":8,"./import":9,"./loader":10,"./logger":11,"./middleware":16,"./module":17,"./promise":20,"./registry":21,"./utils":23}],8:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -233,11 +858,11 @@
   module.exports = Fetch;
 })();
 
-},{}],4:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 (function() {
   "use strict";
 
-  var Promise  = require('spromise'),
+  var Promise  = require('./promise'),
       Registry = require('./registry'),
       Utils    = require('./utils');
 
@@ -253,7 +878,7 @@
 
 
   /**
-   * Module importer.  Primary function is to load Module instances and resolving
+   * Module importer. Primary function is to load Module instances and resolving
    * their dependencies in order to make the Module fully consumable.
    */
   function Import(manager) {
@@ -273,31 +898,17 @@
    *
    * @returns {Promise}
    */
-  Import.prototype.import = function(names, options) {
+  Import.prototype.import = function(name, options) {
     options = options || {};
     var importer = this;
 
-    // Coerce string to array to simplify input processing
-    if (typeof(names) === "string") {
-      names = [names];
+    if (typeof(name) === "string") {
+      return Promise.resolve(importer._getModule(name, options));
     }
 
-    return new Promise(function deferredModuleImport(resolve, reject) {
-      // Callback when modules are loaded
-      function modulesLoaded(modules) {
-        resolve.apply((void 0), modules);
-      }
-
-      // Callback if there was an error loading the modules
-      function handleError(error) {
-        reject.call((void 0), Utils.printError(error));
-      }
-
-      // Load modules
-      Promise
-        .all(importer._getModules(names, options))
-        .then(modulesLoaded, handleError);
-    });
+    return Promise.all(name.map(function getModuleByName(name) {
+      return importer._getModule(name, options);
+    }));
   };
 
 
@@ -308,30 +919,29 @@
    * @param {Array<string>} names - Array of module names
    * @param {Object} options
    */
-  Import.prototype._getModules = function(names, options) {
+  Import.prototype._getModule = function(name, options) {
     var importer = this,
         manager  = this.manager;
 
-    return names.map(function getModule(name) {
-      if (hasModule(options.modules, name)) {
-        return options.modules[name];
-      }
-      else if (manager.hasModule(name)) {
-        return manager.getModuleCode(name);
-      }
-      else if (importer.hasModule(name)) {
-        return importer.getModule(name);
-      }
+    if (hasModule(options.modules, name)) {
+      return options.modules[name];
+    }
+    else if (manager.hasModule(name)) {
+      return manager.getModuleCode(name);
+    }
+    else if (importer.hasModule(name)) {
+      return importer.getModule(name);
+    }
 
-      // Workflow for loading a module that has not yet been loaded
-      return new Promise(function(resolve, reject) {
-        importer.setModule(name, importer._loadModule(name))
-          .then(function success(val) {
-            resolve(val);
-          }, function failed(err) {
-            reject(err);
-          });
-      });
+    // Wrap in a separate promise to handle this:
+    // https://github.com/MiguelCastillo/spromise/issues/35
+    return new Promise(function deferredModuleResolver(resolve, reject) {
+      importer.setModule(name, importer._loadModule(name))
+        .then(function moduleSuccess(result) {
+          resolve(result);
+        }, function moduleError(error) {
+          reject(error);
+        });
     });
   };
 
@@ -354,7 +964,7 @@
 
     return function getCode(mod) {
       if (name !== mod.name) {
-        throw new TypeError("Module name must be the same as the name used for loading the Module itself");
+        return Promise.reject(new TypeError("Module name must be the same as the name used for loading the Module itself"));
       }
 
       importer.deleteModule(mod.name);
@@ -387,11 +997,11 @@
 })();
 
 
-},{"./registry":15,"./utils":17,"spromise":1}],5:[function(require,module,exports){
+},{"./promise":20,"./registry":21,"./utils":23}],10:[function(require,module,exports){
 (function() {
   "use strict";
 
-  var Promise          = require('spromise'),
+  var Promise          = require('./promise'),
       Module           = require('./module'),
       Utils            = require('./utils'),
       Pipeline         = require('./pipeline'),
@@ -922,7 +1532,7 @@
   module.exports = Loader;
 })();
 
-},{"./meta/compilation":7,"./meta/dependencies":8,"./meta/fetch":9,"./meta/transform":10,"./module":12,"./module/linker":13,"./pipeline":14,"./registry":15,"./utils":17,"spromise":1}],6:[function(require,module,exports){
+},{"./meta/compilation":12,"./meta/dependencies":13,"./meta/fetch":14,"./meta/transform":15,"./module":17,"./module/linker":18,"./pipeline":19,"./promise":20,"./registry":21,"./utils":23}],11:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -1162,7 +1772,7 @@
   module.exports = new Logger();
 }());
 
-},{}],7:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -1201,11 +1811,11 @@
   module.exports = MetaCompilation;
 })();
 
-},{"../logger":6,"../module":12}],8:[function(require,module,exports){
+},{"../logger":11,"../module":17}],13:[function(require,module,exports){
 (function() {
   "use strict";
 
-  var Promise = require('spromise'),
+  var Promise = require('../promise'),
       Module  = require('../module'),
       Utils   = require('../utils'),
       Logger  = require('../logger'),
@@ -1225,9 +1835,10 @@
       return Promise.resolve(moduleMeta);
     }
 
-    var loading = moduleMeta.deps.map(function fetchDependency(mod_name) {
-      return manager.providers.loader.fetch(mod_name, moduleMeta);
-    });
+    var i, length, loading = new Array(moduleMeta.deps.length);
+    for (i = 0, length = moduleMeta.deps.length; i < length; i++) {
+      loading[i] = manager.providers.loader.fetch(moduleMeta.deps[i], moduleMeta);
+    }
 
     return Promise.all(loading)
       .then(dependenciesFetched, Utils.forwardError);
@@ -1240,11 +1851,11 @@
   module.exports = MetaDependencies;
 })();
 
-},{"../logger":6,"../module":12,"../utils":17,"spromise":1}],9:[function(require,module,exports){
+},{"../logger":11,"../module":17,"../promise":20,"../utils":23}],14:[function(require,module,exports){
 (function() {
   "use strict";
 
-  var Promise = require('spromise'),
+  var Promise = require('../promise'),
       Module  = require('../module'),
       Utils   = require('../utils'),
       Logger  = require('../logger'),
@@ -1259,7 +1870,7 @@
     // Once the module meta is fetched, we want to add helper properties
     // to it to facilitate further processing.
     function moduleFetched(moduleMeta) {
-      if (!(moduleMeta instanceof Module.Meta)) {
+      if (!(moduleMeta instanceof(Module.Meta))) {
         Module.Meta.validate(moduleMeta);
         moduleMeta.deps = moduleMeta.deps || [];
       }
@@ -1272,7 +1883,7 @@
   module.exports = MetaFetch;
 })();
 
-},{"../logger":6,"../module":12,"../utils":17,"spromise":1}],10:[function(require,module,exports){
+},{"../logger":11,"../module":17,"../promise":20,"../utils":23}],15:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -1299,11 +1910,11 @@
   module.exports = MetaTransform;
 })();
 
-},{"../logger":6,"../utils":17}],11:[function(require,module,exports){
+},{"../logger":11,"../utils":23}],16:[function(require,module,exports){
 (function() {
   "use strict";
 
-  var Promise = require('spromise'),
+  var Promise = require('./promise'),
       Logger  = require('./logger'),
       Utils   = require('./utils');
 
@@ -1551,16 +2162,18 @@
     var cancelled = false;
 
     return providers.reduce(function(prev, curr) {
-      return prev.then(function(next) {
+      return prev.then(function middlewareSequenceNext(next) {
         if (next === false) {
           cancelled = true;
         }
 
         if (!cancelled && !curr.__pending) {
-          logger.log("transformation", curr.name, data);
-          return curr.handler.apply(curr, data);
+          logger.log("transformation [start]", curr.name);
+          var result = curr.handler.apply(curr, data);
+          logger.log("transformation [end]", curr.name);
+          return result;
         }
-      }, function(err) {
+      }, function middlewareSequenceError(err) {
         cancelled = true;
         return err;
       });
@@ -1571,7 +2184,7 @@
   module.exports = Middleware;
 }());
 
-},{"./logger":6,"./utils":17,"spromise":1}],12:[function(require,module,exports){
+},{"./logger":11,"./promise":20,"./utils":23}],17:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -1646,7 +2259,7 @@
   module.exports = Module;
 })();
 
-},{"./utils":17}],13:[function(require,module,exports){
+},{"./utils":23}],18:[function(require,module,exports){
 (function(root) {
   "use strict";
 
@@ -1679,11 +2292,12 @@
   module.exports = ModuleLinker;
 })(typeof(window) !== 'undefined' ? window : this);
 
-},{"../logger":6}],14:[function(require,module,exports){
+},{"../logger":11}],19:[function(require,module,exports){
 (function() {
   "use strict";
 
-  var Promise = require('spromise');
+  var Promise = require('./promise'),
+      Utils   = require('./utils');
 
   function Pipeline(assets) {
     this.assets = assets;
@@ -1698,18 +2312,20 @@
     }
 
     return this.assets.reduce(function(prev, curr) {
-      return prev.then(cb(curr), forwardError);
+      return prev.then(cb(curr), Utils.forwardError);
     }, Promise.resolve());
   };
-
-  function forwardError(error) {
-    return error;
-  }
 
   module.exports = Pipeline;
 })();
 
-},{"spromise":1}],15:[function(require,module,exports){
+},{"./promise":20,"./utils":23}],20:[function(require,module,exports){
+(function() {
+  "use strict";
+  module.exports = require("spromise");
+}());
+
+},{"spromise":5}],21:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -1800,7 +2416,7 @@
   module.exports = Registry;
 })();
 
-},{"./stateful-items":16}],16:[function(require,module,exports){
+},{"./stateful-items":22}],22:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -1870,7 +2486,7 @@
   module.exports = StatefulItems;
 })();
 
-},{}],17:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 (function() {
   "use strict";
 
@@ -2014,5 +2630,5 @@
   };
 })();
 
-},{}]},{},[2])(2)
+},{}]},{},[7])(7)
 });

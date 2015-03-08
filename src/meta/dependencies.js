@@ -1,7 +1,7 @@
 (function() {
   "use strict";
 
-  var Promise = require('spromise'),
+  var Promise = require('../promise'),
       Module  = require('../module'),
       Utils   = require('../utils'),
       Logger  = require('../logger'),
@@ -21,9 +21,10 @@
       return Promise.resolve(moduleMeta);
     }
 
-    var loading = moduleMeta.deps.map(function fetchDependency(mod_name) {
-      return manager.providers.loader.fetch(mod_name, moduleMeta);
-    });
+    var i, length, loading = new Array(moduleMeta.deps.length);
+    for (i = 0, length = moduleMeta.deps.length; i < length; i++) {
+      loading[i] = manager.providers.loader.fetch(moduleMeta.deps[i], moduleMeta);
+    }
 
     return Promise.all(loading)
       .then(dependenciesFetched, Utils.forwardError);

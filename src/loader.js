@@ -1,7 +1,7 @@
 (function() {
   "use strict";
 
-  var Promise          = require('spromise'),
+  var Promise          = require('./promise'),
       Module           = require('./module'),
       Utils            = require('./utils'),
       Pipeline         = require('./pipeline'),
