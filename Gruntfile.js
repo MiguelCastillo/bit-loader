@@ -80,10 +80,18 @@ module.exports = function(grunt) {
           "dist/bit-loader.min.js": ["dist/bit-loader.js"]
         }
       }
+    },
+    release: {
+      options: {
+        tagName: 'v<%= version %>',
+        tagMessage: 'Version <%= version %>',
+        commitMessage: 'Release v<%= version %>'
+      }
     }
   });
 
   grunt.loadNpmTasks("grunt-mocha");
+  grunt.loadNpmTasks("grunt-release");
   grunt.loadNpmTasks("grunt-concurrent");
   grunt.loadNpmTasks("grunt-contrib-uglify");
   grunt.loadNpmTasks("grunt-contrib-connect");
