@@ -31,8 +31,8 @@
     factories = factories || {};
 
     this.context   = Registry.getById(getRegistryId());
-    this.transform = Middleware.factory(this);
-    this.plugin    = Middleware.factory(this);
+    this.transform = new Middleware(this);
+    this.plugin    = new Middleware(this);
 
     if (options.transforms) {
       this.transform(options.transforms);

@@ -242,11 +242,9 @@ define(['dist/bit-loader'], function(Bitloader) {
     describe("When registering a middleware provider as a string `concat`", function() {
       var middleware, importStub, handlerStub;
       beforeEach(function() {
-        var manager = {};
         handlerStub = sinon.stub();
-        importStub = sinon.stub().returns(Promise.resolve(handlerStub));
-        manager.import = importStub;
-        middleware = new Middleware(manager);
+        importStub  = sinon.stub().returns(Promise.resolve(handlerStub));
+        middleware  = new Middleware({import: importStub});
         middleware.use("concat");
       });
 
