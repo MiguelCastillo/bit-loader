@@ -2,15 +2,32 @@
   "use strict";
 
   var Promise = require('./promise'),
-      Logger  = require('./logger'),
-      Utils   = require('./utils');
-
-  var logger = Logger.factory("Middleware");
+      Utils   = require('./utils'),
+      logger  = require('./logger').factory("Middleware");
 
   /**
    * @constructor For checking middleware provider instances
    */
-  function Provider() {
+  function Provider(middleware, options) {
+    if (Utils.isFunction(options)) {
+      this.handler = options;
+    }
+    else if (Utils.isString(options)) {
+      this.name = options;
+      this.handler = deferredHandler(middleware, this);
+    }
+    else if (Utils.isPlainObject(options)) {
+      if (!Utils.isFunction(options.handler)) {
+        if (Utils.isString(options.name)) {
+          this.handler = deferredHandler(middleware, this);
+        }
+        else {
+          throw new TypeError("Middleware provider must have a handler method or a name");
+        }
+      }
+
+      Utils.merge(this, options);
+    }
   }
 
 
@@ -19,8 +36,8 @@
    * called in the order in which they are registered.  These middlewares can
    * be module names that can be loaded at runtime or can be functions.
    */
-  function Middleware(manager) {
-    this.manager   = manager;
+  function Middleware(options) {
+    this.settings  = options || {};
     this.providers = [];
     this.named     = {};
   }
@@ -39,7 +56,7 @@
    * provider.
    *
    * @param {Object | Array<Object>} providers - One or collection of providers to
-   *   be registered in this middleware manager instance.
+   *   be registered in this middleware instance.
    *
    *
    * For example, the provider below is just a method that will get invoked when
@@ -78,7 +95,7 @@
 
     for (var provider in providers) {
       if (providers.hasOwnProperty(provider)) {
-        provider = this.configure(providers[provider]);
+        provider = new Provider(this, providers[provider]);
         this.providers.push(provider);
 
         if (Utils.isString(provider.name)) {
@@ -118,13 +135,13 @@
     }
 
     var i, length;
-    var handlers = [];
+    var providers = [];
 
     for (i = 0, length = names.length; i < length; i++) {
-      handlers.push(this.getProvider(names[i]));
+      providers.push(this.getProvider(names[i]));
     }
 
-    return _runProviders(handlers, Array.prototype.slice.call(arguments, 1));
+    return _runProviders(providers, Array.prototype.slice.call(arguments, 1));
   };
 
 
@@ -154,66 +171,6 @@
   };
 
 
-  /**
-   * Method to normalize provider settings to proper provider objects that can
-   * be used by the middleware manager.
-   */
-  Middleware.prototype.configure = function(options) {
-    var provider = new Provider();
-
-    if (Utils.isFunction(options)) {
-      provider.handler = options;
-    }
-    else if (Utils.isString(options)) {
-      provider.name    = options;
-      provider.handler = _deferred(this, provider);
-    }
-    else if (Utils.isPlainObject(options)) {
-      if (!Utils.isFunction(options.handler)) {
-        if (!Utils.isString(options.name)) {
-          throw new TypeError("Middleware provider must have a handler method or a name");
-        }
-
-        provider.handler = _deferred(this, provider);
-      }
-
-      Utils.merge(provider, options);
-    }
-
-    provider.settings = provider.settings || {};
-    return provider;
-  };
-
-
-  /**
-   * Convenience method to allow registration of providers by calling the middleware
-   * manager itself rather than the use method.
-   *
-   * E.g.
-   *
-   * middleware(function() {
-   * })
-   *
-   * vs.
-   *
-   * middleware.use(function() {
-   * });
-   *
-   */
-  Middleware.factory = function(manager) {
-    var middleware = new Middleware(manager);
-
-    function instance(provider) {
-      middleware.use(provider);
-    }
-
-    instance.use    = middleware.use.bind(middleware);
-    instance.run    = middleware.run.bind(middleware);
-    instance.runAll = middleware.runAll.bind(middleware);
-    return Utils.extend(instance, middleware);
-  };
-
-
   Middleware.Provider = Provider;
 
 
@@ -221,22 +178,27 @@
    * @private
    * Method that enables chaining in providers that have to be dynamically loaded.
    */
-  function _deferred(middleware, provider) {
-    return function deferredTransform() {
+  function deferredHandler(middleware, provider) {
+    if (!middleware.settings.import) {
+      throw new TypeError("You must configure an import method in order to dynamically load middleware providers");
+    }
+
+    return function deferredHandlerDelegate() {
       var args = arguments;
       provider.__pending = true;
 
       logger.log("import [start]", provider);
-      provider.handler = middleware.manager.import(provider.name)
-        .then(function transformReady(handler) {
-          logger.log("import [end]", provider);
-          delete provider.__pending;
-          provider.handler = handler;
-          return handler.apply(provider, args);
-        });
+      return (provider.handler = middleware.settings
+        .import(provider.name)
+        .then(providerReady, Utils.reportError));
 
-      provider.handler.name = provider.name;
-      return provider.handler;
+
+      // Callback when provider is loaded
+      function providerReady(handler) {
+        logger.log("import [end]", provider);
+        delete provider.__pending;
+        return (provider.handler = handler).apply(provider, args);
+      }
     };
   }
 
@@ -246,25 +208,28 @@
    * Method that runs a cancellable sequence of promises.
    */
   function _runProviders(providers, data) {
-    var cancelled = false;
+    return providers.reduce(providerSequence, Promise.resolve());
 
-    return providers.reduce(function(prev, curr) {
-      return prev.then(function middlewareSequenceNext(next) {
-        if (next === false) {
+    // Method that runs the sequence of providers
+    function providerSequence(prev, curr) {
+      var cancelled = false;
+      return prev.then(providerSequenceRun, providerSequenceError);
+
+      function providerSequenceRun(result) {
+        if (result === false) {
           cancelled = true;
         }
 
         if (!cancelled && !curr.__pending) {
-          logger.log("transformation [start]", curr.name);
-          var result = curr.handler.apply(curr, data);
-          logger.log("transformation [end]", curr.name);
-          return result;
+          return curr.handler.apply(curr, data);
         }
-      }, function middlewareSequenceError(err) {
+      }
+
+      function providerSequenceError(err) {
         cancelled = true;
         return err;
-      });
-    }, Promise.resolve());
+      }
+    }
   }
 
 
