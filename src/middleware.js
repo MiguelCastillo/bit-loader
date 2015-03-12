@@ -2,9 +2,8 @@
   "use strict";
 
   var Promise = require('./promise'),
-      Logger  = require('./logger'),
       Utils   = require('./utils'),
-      logger  = Logger.factory("Middleware");
+      logger  = require('./logger').factory("Middleware");
 
   /**
    * @constructor For checking middleware provider instances

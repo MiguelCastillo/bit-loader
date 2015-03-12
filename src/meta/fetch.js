@@ -4,8 +4,7 @@
   var Promise = require('../promise'),
       Module  = require('../module'),
       Utils   = require('../utils'),
-      Logger  = require('../logger'),
-      logger  = Logger.factory("Meta/Fetch");
+      logger  = require('../logger').factory("Meta/Fetch");
 
   function MetaFetch(manager, name, parentMeta) {
     logger.log(name);

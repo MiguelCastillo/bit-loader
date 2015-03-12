@@ -2,8 +2,7 @@
   "use strict";
 
   var Utils  = require('../utils'),
-      Logger = require('../logger'),
-      logger = Logger.factory("Meta/Tranform");
+      logger = require('../logger').factory("Meta/Tranform");
 
   /**
    * The transform enables transformation providers to process the moduleMeta

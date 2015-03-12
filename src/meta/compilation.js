@@ -2,8 +2,7 @@
   "use strict";
 
   var Module = require('../module'),
-      Logger = require('../logger'),
-      logger = Logger.factory("Meta/Compilation");
+      logger = require('../logger').factory("Meta/Compilation");
 
   /**
    * The compile step is to convert the moduleMeta to an instance of Module. The
