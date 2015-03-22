@@ -35,11 +35,11 @@
     this.plugin    = new Middleware(this);
 
     if (options.transforms) {
-      this.transform(options.transforms);
+      this.transform.use(options.transforms);
     }
 
     if (options.plugins) {
-      this.plugin(options.plugins);
+      this.plugin.use(options.plugins);
     }
 
     // Override any of these factories if you need specialized implementation
