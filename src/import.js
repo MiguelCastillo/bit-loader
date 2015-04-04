@@ -87,17 +87,17 @@
   Import.prototype._loadModule = function(name) {
     return this.manager
       .load(name)
-      .then(this._getModuleCode(name), Utils.forwardError);
+      .then(this._getCodeDelegate(name), Utils.forwardError);
   };
 
 
   /**
    * Handler for when modules are loaded.
    */
-  Import.prototype._getModuleCode = function(name) {
+  Import.prototype._getCodeDelegate = function(name) {
     var importer = this;
 
-    return function getCode(mod) {
+    return function getCodeDelegate(mod) {
       if (name !== mod.name) {
         return Promise.reject(new TypeError("Module name must be the same as the name used for loading the Module itself"));
       }

@@ -4,7 +4,8 @@
   var Promise    = require('./promise'),
       Utils      = require('./utils'),
       Logger     = require('./logger'),
-      Fetch      = require('./fetch'),
+      Fetch      = require('./interfaces/fetch'),
+      Compiler   = require('./interfaces/compiler'),
       Import     = require('./import'),
       Loader     = require('./loader'),
       Module     = require('./module'),
@@ -41,9 +42,10 @@
 
     // Override any of these factories if you need specialized implementation
     var providers = {
-      fetcher  : factories.fetch  ? factories.fetch(this)  : new Bitloader.Fetch(this),
-      loader   : factories.loader ? factories.loader(this) : new Bitloader.Loader(this),
-      importer : factories.import ? factories.import(this) : new Bitloader.Import(this)
+      fetcher  : factories.fetch    ? factories.fetch(this)    : new Bitloader.Fetch(this),
+      loader   : factories.loader   ? factories.loader(this)   : new Bitloader.Loader(this),
+      importer : factories.import   ? factories.import(this)   : new Bitloader.Import(this),
+      compiler : factories.compiler ? factories.compiler(this) : new Bitloader.Compiler(this)
     };
 
     // Public Interface
@@ -52,6 +54,7 @@
     this.load      = providers.loader.load.bind(providers.loader);
     this.register  = providers.loader.register.bind(providers.loader);
     this.import    = providers.importer.import.bind(providers.importer);
+    this.compile   = providers.compiler.compile.bind(providers.compiler);
   }
 
 
@@ -196,6 +199,7 @@
   Bitloader.Import     = Import;
   Bitloader.Module     = Module;
   Bitloader.Fetch      = Fetch;
+  Bitloader.Compiler   = Compiler;
   Bitloader.Middleware = Middleware;
   Bitloader.Logger     = Logger;
   module.exports       = Bitloader;
