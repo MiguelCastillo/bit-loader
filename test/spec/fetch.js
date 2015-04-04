@@ -44,7 +44,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
 
         it("then fetch is called with `I really like`", function() {
-          expect(fetchStub.calledWith("I really like", undefined)).to.equal(true);
+          expect(fetchStub.calledWithExactly("I really like", undefined)).to.equal(true);
         });
 
         it("then result from fetch is module meta", function() {
@@ -62,7 +62,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
 
         it("then fetch is called with `I really like this import`", function() {
-          expect(fetchStub.calledWith("I really like this import")).to.equal(true);
+          expect(fetchStub.calledWithExactly("I really like this import", undefined)).to.equal(true);
         });
 
         it("then result from import is `this is content of the module`", function() {
