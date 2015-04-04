@@ -5,11 +5,7 @@
       Registry = require('./registry'),
       Utils    = require('./utils');
 
-  var registryId = 0;
-  function getRegistryId() {
-    return 'import-' + registryId++;
-  }
-
+  var getRegistryId = Registry.idGenerator('import');
 
   var ModuleState = {
     LOADING: "loading"

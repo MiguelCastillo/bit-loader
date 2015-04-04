@@ -11,10 +11,7 @@
       Registry   = require('./registry'),
       Middleware = require('./middleware');
 
-  var registryId = 0;
-  function getRegistryId() {
-    return 'bitloader-' + registryId++;
-  }
+  var getRegistryId = Registry.idGenerator('bitloader');
 
   var ModuleState = {
     LOADED: "loaded"
