@@ -15,7 +15,7 @@
 
     var mod;
     if (Module.Meta.canCompile(moduleMeta)) {
-      mod = moduleMeta.compile();
+      mod = manager.compile(moduleMeta);
     }
     else if (Module.Meta.isCompiled(moduleMeta)) {
       mod = new Module(moduleMeta);

@@ -47,7 +47,7 @@
     }
 
     if (!Meta.isCompiled(moduleMeta) && !Meta.canCompile(moduleMeta)) {
-      throw new TypeError("ModuleMeta must provide a `source` string and `compile` interface, or `code`.");
+      throw new TypeError("ModuleMeta must provide a `source` string or `code`.");
     }
   };
 
@@ -63,7 +63,7 @@
 
 
   Meta.canCompile = function(moduleMeta) {
-    return !Meta.isCompiled(moduleMeta) && typeof(moduleMeta.source) === "string" && typeof(moduleMeta.compile) === "function";
+    return !Meta.isCompiled(moduleMeta) && typeof(moduleMeta.source) === "string";
   };
 
 

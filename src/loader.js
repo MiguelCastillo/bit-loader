@@ -14,16 +14,17 @@
 
   var getRegistryId = Registry.idGenerator('loader');
 
+
   /**
+   * - Loading means that the module meta is currently being loaded. Only for ASYNC
+   *  processing.
+   *
    * - Loaded means that the module meta is all processed and it is ready to be
    *  built into a Module instance. Only for SYNC processing.
    *
    * - Pending means that the module meta is already loaded, but it needs it's
    *  dependencies processed, which might lead to further loading of module meta
    *  objects. Only for ASYNC processing.
-   *
-   * - Loading means that the module meta is currently being loaded. Only for ASYNC
-   *  processing.
    */
   var ModuleState = {
     LOADING: "loading",
@@ -44,6 +45,7 @@
    *      source before it is compiled into an instance of Module.
    * 3. Compile the source that was fetched and transformed into a proper instance
    *      of Module
+   * 4. Link the module
    */
   function Loader(manager) {
     if (!manager) {
@@ -88,19 +90,23 @@
       return Promise.reject(new TypeError("Must provide the name of the module to load"));
     }
 
+    // Take a look if the module is already loaded
     if (manager.hasModule(name)) {
       return Promise.resolve(manager.getModule(name));
     }
 
+    // Check if the module is fetch or registered
     if (loader.isLoaded(name) || loader.isPending(name)) {
-      return Promise.resolve(buildModule());
+      return Promise.resolve(build());
     }
 
+    // Load a fresh copy
     return loader
       .fetch(name, parentMeta)
-      .then(buildModule, Utils.forwardError);
+      .then(build, Utils.forwardError);
 
-    function buildModule() {
+
+    function build() {
       return loader.asyncBuildModule(name);
     }
   };
@@ -128,22 +134,25 @@
       return Promise.reject(new TypeError("Must provide the name of the module to fetch"));
     }
 
+    // Take a look if the module is already loaded
     if (manager.hasModule(name)) {
       return Promise.resolve();
     }
 
+    // Check if the module is being fetched
     if (loader.isLoading(name)) {
       return loader.getLoading(name);
     }
 
     var loading = loader
       ._fetchModuleMeta(name, parentMeta)
-      .then(moduleMetaReady, Utils.printError);
+      .then(moduleMetaFetched, Utils.printError);
 
     return loader.setLoading(name, loading);
 
-    function moduleMetaReady(moduleMeta) {
-      loader.setLoaded(name, moduleMeta);
+
+    function moduleMetaFetched(moduleMeta) {
+      return loader.setLoaded(moduleMeta.name, moduleMeta);
     }
   };
 
@@ -184,17 +193,17 @@
     var loader = this;
     var mod;
 
-    if (this.isLoaded(name)) {
-      mod = this._compileModuleMeta(name);
+    if (loader.isLoaded(name)) {
+      mod = loader._compileModuleMeta(name);
     }
-    else if (this.manager.hasModule(name)) {
-      return Promise.resolve(this.manager.getModule(name));
+    else if (loader.manager.hasModule(name)) {
+      return Promise.resolve(loader.manager.getModule(name));
     }
 
     // If the module evaluation didn't register a new module, then we return whatever
     // was produced.
-    if (!this.isPending(name)) {
-      return Promise.resolve(this._linkModule(mod));
+    if (!loader.isPending(name)) {
+      return Promise.resolve(loader._linkModule(mod));
     }
 
     // Right here is where we handle dynamic registration of modules while are being loaded.
@@ -216,7 +225,7 @@
       return Promise.all(pending)
         .then(function dependenciesBuilt() {
           return moduleMeta;
-        });
+        }, Utils.forwardError);
     }
 
     function linkModuleMeta(moduleMeta) {
