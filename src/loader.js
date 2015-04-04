@@ -12,12 +12,7 @@
       metaDependencies = require('./meta/dependencies'),
       metaCompilation  = require('./meta/compilation');
 
-
-  var registryId = 0;
-  function getRegistryId() {
-    return 'loader-' + registryId++;
-  }
-
+  var getRegistryId = Registry.idGenerator('loader');
 
   /**
    * - Loaded means that the module meta is all processed and it is ready to be
