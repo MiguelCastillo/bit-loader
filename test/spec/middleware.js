@@ -302,6 +302,133 @@ define(['dist/bit-loader'], function(Bitloader) {
       });
     });
 
-  });
 
+    describe("When registering three middleware providers with the individual calls to `use` method", function() {
+      var middleware, providerStub;
+      beforeEach(function() {
+        middleware = new Middleware();
+        providerStub = sinon.stub();
+        providerStub.onFirstCall().returns("sweet");
+        providerStub.onSecondCall().returns("sour");
+        providerStub.onThirdCall().returns("chicken");
+
+        middleware.use({name: "sweet", handler: providerStub});
+        middleware.use({name: "sour", handler: providerStub});
+        middleware.use({name: "chicken", handler: providerStub});
+      });
+
+      describe("and running all providers, they are called in the order in which they were registered", function() {
+        beforeEach(function() {
+            return middleware.runAll();
+        });
+
+        it("then provider `sweet` is called first", function() {
+          expect(providerStub.returnValues[0]).to.equal("sweet");
+        });
+
+        it("then provider `sour` is called second", function() {
+          expect(providerStub.returnValues[1]).to.equal("sour");
+        });
+
+        it("then provider `chicken` is called third", function() {
+          expect(providerStub.returnValues[2]).to.equal("chicken");
+        });
+      });
+    });
+
+
+    describe("When registering three middleware providers with a single call to `use` method", function() {
+      var middleware, providerStub;
+      beforeEach(function() {
+        middleware = new Middleware();
+        providerStub = sinon.stub();
+        providerStub.onFirstCall().returns("sweet");
+        providerStub.onSecondCall().returns("sour");
+        providerStub.onThirdCall().returns("chicken");
+
+        middleware.use([
+          {name: "sweet", handler: providerStub},
+          {name: "sour", handler: providerStub},
+          {name: "chicken", handler: providerStub}
+        ]);
+      });
+
+      describe("and running all providers, they are called in the order in which they were registered", function() {
+        beforeEach(function() {
+            return middleware.runAll();
+        });
+
+        it("then provider `sweet` is called first", function() {
+          expect(providerStub.returnValues[0]).to.equal("sweet");
+        });
+
+        it("then provider `sour` is called second", function() {
+          expect(providerStub.returnValues[1]).to.equal("sour");
+        });
+
+        it("then provider `chicken` is called third", function() {
+          expect(providerStub.returnValues[2]).to.equal("chicken");
+        });
+      });
+    });
+
+
+    describe("When registering 6 middleware providers. Two in a single call and the other two in seperate calls and the last 2 in a single call to `use` method", function() {
+      var middleware, providerStub;
+      beforeEach(function() {
+        middleware = new Middleware();
+        providerStub = sinon.stub();
+        providerStub.onCall(0).returns("sweet");
+        providerStub.onCall(1).returns("sour");
+        providerStub.onCall(2).returns("chicken");
+        providerStub.onCall(3).returns("dinner");
+        providerStub.onCall(4).returns("very");
+        providerStub.onCall(5).returns("spicy");
+
+        middleware.use([
+          {name: "sweet", handler: providerStub},
+          {name: "sour", handler: providerStub},
+        ]);
+
+        middleware.use({name: "chicken", handler: providerStub});
+        middleware.use({name: "dinner", handler: providerStub});
+
+        middleware.use([
+          {name: "very", handler: providerStub},
+          {name: "spicy", handler: providerStub},
+        ]);
+      });
+
+      describe("and running all providers, they are called in the order in which they were registered", function() {
+        beforeEach(function() {
+            return middleware.runAll();
+        });
+
+        it("then provider `sweet` is called first", function() {
+          expect(providerStub.returnValues[0]).to.equal("sweet");
+        });
+
+        it("then provider `sour` is called second", function() {
+          expect(providerStub.returnValues[1]).to.equal("sour");
+        });
+
+        it("then provider `chicken` is called third", function() {
+          expect(providerStub.returnValues[2]).to.equal("chicken");
+        });
+
+        it("then provider `dinner` is called fourth", function() {
+          expect(providerStub.returnValues[3]).to.equal("dinner");
+        });
+
+        it("then provider `very` is called fifth", function() {
+          expect(providerStub.returnValues[4]).to.equal("very");
+        });
+
+        it("then provider `spicy` is called sixth", function() {
+          expect(providerStub.returnValues[5]).to.equal("spicy");
+        });
+      });
+    });
+
+  });
 });
