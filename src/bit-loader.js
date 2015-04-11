@@ -28,22 +28,13 @@
     options   = options   || {};
     factories = factories || {};
 
-    this.context    = Registry.getById(getRegistryId());
-    this.transform  = new Middleware(this);
-    this.dependency = new Middleware(this);
-    this.compiler   = new Middleware(this);
+    this.context = Registry.getById(getRegistryId());
 
-    if (options.transform) {
-      this.transform.use(options.transform);
-    }
-
-    if (options.dependency) {
-      this.dependency.use(options.dependency);
-    }
-
-    if (options.compiler) {
-      this.compiler.use(options.compiler);
-    }
+    this.pipelines = {
+      transform  : new Middleware(this),
+      dependency : new Middleware(this),
+      compiler   : new Middleware(this)
+    };
 
     // Override any of these factories if you need specialized implementation
     this.providers = {
@@ -60,6 +51,19 @@
     this.register = providers.loader.register.bind(providers.loader);
     this.import   = providers.importer.import.bind(providers.importer);
     this.compile  = providers.compiler.compile.bind(providers.compiler);
+
+
+    if (options.transform) {
+      this.pipelines.transform.use(options.transform);
+    }
+
+    if (options.dependency) {
+      this.pipelines.dependency.use(options.dependency);
+    }
+
+    if (options.compiler) {
+      this.pipelines.compiler.use(options.compiler);
+    }
   }
 
 

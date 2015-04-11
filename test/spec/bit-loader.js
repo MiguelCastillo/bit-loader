@@ -104,7 +104,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         beforeEach(function() {
           moduleMeta = {"source": ""};
           dependencyStub = sinon.stub();
-          bitloader.dependency.use(dependencyStub);
+          bitloader.pipelines.dependency.use(dependencyStub);
           return bitloader.providers.loader._pipelineModuleMeta(moduleMeta);
         });
 
@@ -124,8 +124,8 @@ define(["dist/bit-loader"], function(Bitloader) {
           moduleMeta = {"source": ""};
           dependencyStub = sinon.stub();
           transformStub = sinon.stub();
-          bitloader.transform.use(transformStub);
-          bitloader.dependency.use(dependencyStub);
+          bitloader.pipelines.transform.use(transformStub);
+          bitloader.pipelines.dependency.use(dependencyStub);
           return bitloader.providers.loader._pipelineModuleMeta(moduleMeta);
         });
 
