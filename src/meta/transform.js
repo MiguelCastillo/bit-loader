@@ -12,7 +12,7 @@
   function MetaTransform(manager, moduleMeta) {
     logger.log(moduleMeta.name, moduleMeta);
 
-    return manager.transform.runAll(moduleMeta)
+    return manager.pipelines.transform.runAll(moduleMeta)
       .then(transformationFinished, Utils.forwardError);
 
     function transformationFinished() {
