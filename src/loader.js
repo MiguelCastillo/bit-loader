@@ -1,16 +1,16 @@
 (function() {
   "use strict";
 
-  var Promise          = require('./promise'),
-      Module           = require('./module'),
-      Utils            = require('./utils'),
-      Pipeline         = require('./pipeline'),
-      Registry         = require('./registry'),
-      moduleLinker     = require('./module/linker'),
-      metaFetch        = require('./meta/fetch'),
-      metaTransform    = require('./meta/transform'),
-      metaDependencies = require('./meta/dependencies'),
-      metaCompilation  = require('./meta/compilation');
+  var Promise        = require('./promise'),
+      Module         = require('./module'),
+      Utils          = require('./utils'),
+      Pipeline       = require('./pipeline'),
+      Registry       = require('./registry'),
+      moduleLinker   = require('./module/linker'),
+      metaFetch      = require('./meta/fetch'),
+      metaTransform  = require('./meta/transform'),
+      metaDependency = require('./meta/dependency'),
+      metaCompiler   = require('./meta/compiler');
 
   var getRegistryId = Registry.idGenerator('loader');
 
@@ -54,7 +54,7 @@
 
     this.manager  = manager;
     this.context  = Registry.getById(getRegistryId());
-    this.pipeline = new Pipeline([metaTransform, metaDependencies]);
+    this.pipeline = new Pipeline([metaTransform, metaDependency]);
   }
 
 
@@ -208,7 +208,7 @@
 
     // Right here is where we handle dynamic registration of modules while are being loaded.
     // E.g. System.register to register a module that's being loaded
-    return metaDependencies(loader.manager, loader.deleteModule(name))
+    return metaDependency(loader.manager, loader.deleteModule(name))
       .then(buildDependencies, Utils.forwardError)
       .then(linkModuleMeta, Utils.forwardError);
 
@@ -346,7 +346,7 @@
     }
 
     // Compile module meta to create a Module instance
-    return metaCompilation(manager, moduleMeta);
+    return metaCompiler(manager, moduleMeta);
   };
 
 

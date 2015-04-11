@@ -2,7 +2,7 @@
   "use strict";
 
   var Module = require('../module'),
-      logger = require('../logger').factory("Meta/Compilation");
+      logger = require('../logger').factory("Meta/Compiler");
 
   /**
    * The compile step is to convert the moduleMeta to an instance of Module. The
@@ -10,7 +10,7 @@
    * as that is the place with the most knowledge about how the module was loaded
    * from the server/local file system.
    */
-  function MetaCompilation(manager, moduleMeta) {
+  function MetaCompiler(manager, moduleMeta) {
     logger.log(moduleMeta.name, moduleMeta);
 
     var mod;
@@ -32,5 +32,5 @@
     }
   }
 
-  module.exports = MetaCompilation;
+  module.exports = MetaCompiler;
 })();

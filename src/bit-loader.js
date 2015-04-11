@@ -28,20 +28,25 @@
     options   = options   || {};
     factories = factories || {};
 
-    this.context   = Registry.getById(getRegistryId());
-    this.transform = new Middleware(this);
-    this.plugin    = new Middleware(this);
+    this.context    = Registry.getById(getRegistryId());
+    this.transform  = new Middleware(this);
+    this.dependency = new Middleware(this);
+    this.compiler   = new Middleware(this);
 
-    if (options.transforms) {
-      this.transform.use(options.transforms);
+    if (options.transform) {
+      this.transform.use(options.transform);
     }
 
-    if (options.plugins) {
-      this.plugin.use(options.plugins);
+    if (options.dependency) {
+      this.dependency.use(options.dependency);
+    }
+
+    if (options.compiler) {
+      this.compiler.use(options.compiler);
     }
 
     // Override any of these factories if you need specialized implementation
-    var providers = {
+    this.providers = {
       fetcher  : factories.fetch    ? factories.fetch(this)    : new Bitloader.Fetch(this),
       loader   : factories.loader   ? factories.loader(this)   : new Bitloader.Loader(this),
       importer : factories.import   ? factories.import(this)   : new Bitloader.Import(this),
@@ -49,12 +54,12 @@
     };
 
     // Public Interface
-    this.providers = providers;
-    this.fetch     = providers.fetcher.fetch.bind(providers.fetcher);
-    this.load      = providers.loader.load.bind(providers.loader);
-    this.register  = providers.loader.register.bind(providers.loader);
-    this.import    = providers.importer.import.bind(providers.importer);
-    this.compile   = providers.compiler.compile.bind(providers.compiler);
+    var providers = this.providers;
+    this.fetch    = providers.fetcher.fetch.bind(providers.fetcher);
+    this.load     = providers.loader.load.bind(providers.loader);
+    this.register = providers.loader.register.bind(providers.loader);
+    this.import   = providers.importer.import.bind(providers.importer);
+    this.compile  = providers.compiler.compile.bind(providers.compiler);
   }
 
 
