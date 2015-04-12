@@ -1,8 +1,9 @@
 (function() {
   "use strict";
 
-  var Utils  = require('../utils'),
-      logger = require('../logger').factory("Meta/Tranform");
+  var Utils   = require('../utils'),
+      Promise = require('../promise'),
+      logger  = require('../logger').factory("Meta/Tranform");
 
   /**
    * The transform enables transformation providers to process the moduleMeta
@@ -11,6 +12,10 @@
    */
   function MetaTransform(manager, moduleMeta) {
     logger.log(moduleMeta.name, moduleMeta);
+
+    if (manager.rules.ignore.match(moduleMeta.name, "transform")) {
+      return Promise.resolve(moduleMeta);
+    }
 
     return manager.pipelines.transform.runAll(moduleMeta)
       .then(transformationFinished, Utils.forwardError);
