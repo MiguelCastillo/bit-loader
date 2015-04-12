@@ -29,7 +29,8 @@
     options   = options   || {};
     factories = factories || {};
 
-    this.context = Registry.getById(getRegistryId());
+    this.settings = options;
+    this.context  = Registry.getById(getRegistryId());
 
     this.rules = {
       ignore: new RuleMatcher()
@@ -70,6 +71,59 @@
       this.pipelines.compiler.use(options.compiler);
     }
   }
+
+
+  /**
+   * Method to read files from storage. This is to be implemented by the code
+   * making use of Bitloader.
+   *
+   * @param {string} name - Name of the module whose file content needs to be
+   *  fetched.
+   * @param {object} parentMeta - Parent module meta object fetching a
+   *  dependency.
+   *
+   * @returns {Promise} Promise that when resolved, a module meta object
+   *  with a "source" property is returned. The "source" property is where
+   *  the content of the file is stored.
+   */
+  Bitloader.prototype.fetch = function(){};
+
+
+  /**
+   * Method for asynchronously loading modules.
+   *
+   * @returns {Pormise} That when resolved, it returns the full instance of the
+   *  module loaded
+   */
+  Bitloader.prototype.load = function(){};
+
+
+  /**
+   * Method to asynchronously load modules
+   *
+   * @function
+   *
+   * @param {string|Array.<string>} names - Module or list of modules names to
+   *  load. These names map back to the paths settings Bitloader was created
+   *  with.
+   *
+   * @returns {Promise} That when resolved, all the imported modules are passed
+   *  back as arguments.
+   */
+  Bitloader.prototype.import = function(){};
+
+
+  /**
+   * Method to define a module to be asynchronously loaded via the
+   * [import]{@link Bitloader#import} method
+   *
+   * @param {string} name - Name of the module to register
+   * @param {Array.<string>} deps - Collection of dependencies to be loaded and
+   *  passed into the factory callback method.
+   * @param {Function} factory - Function to be called in order to instantiate
+   *  (realize) the module
+   */
+  Bitloader.prototype.register = function(){};
 
 
   /**
