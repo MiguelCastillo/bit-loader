@@ -5,21 +5,12 @@ var require = (function() {
     "baseUrl": "../",
     "paths": {
       "chai": "../node_modules/chai/chai"
-    },
-    "transforms": [{
-      name: "ignore",
-      handler: ignore,
-      ignore: ["chai", "dist/bit-loader"]
-    }]
+    }
   });
 
-  /**
-   * Simple filter for excluding particular modules from being processed by the transformation pipeline.
-   */
-  function ignore(moduleMeta) {
-    var ignoreList = this.ignore;
-    return !(ignoreList && ignoreList.length && ignoreList.indexOf(moduleMeta.name) !== -1);
-  }
+  importer.loader.ignore({
+    match: ["chai", "dist/bit-loader"]
+  });
 
   bitimports.Logger.enableAll();
   return importer.require;
