@@ -1,16 +1,17 @@
 (function () {
   "use strict";
 
-  var Promise    = require('./promise'),
-      Utils      = require('./utils'),
-      Logger     = require('./logger'),
-      Fetch      = require('./interfaces/fetch'),
-      Compiler   = require('./interfaces/compiler'),
-      Import     = require('./import'),
-      Loader     = require('./loader'),
-      Module     = require('./module'),
-      Registry   = require('./registry'),
-      Middleware = require('./middleware');
+  var Promise     = require('./promise'),
+      Utils       = require('./utils'),
+      Logger      = require('./logger'),
+      Fetch       = require('./interfaces/fetch'),
+      Compiler    = require('./interfaces/compiler'),
+      Import      = require('./import'),
+      Loader      = require('./loader'),
+      Module      = require('./module'),
+      Registry    = require('./registry'),
+      RuleMatcher = require('./rule-matcher'),
+      Middleware  = require('./middleware');
 
   var getRegistryId = Registry.idGenerator('bitloader');
 
@@ -29,6 +30,10 @@
     factories = factories || {};
 
     this.context = Registry.getById(getRegistryId());
+
+    this.rules = {
+      ignore: new RuleMatcher()
+    };
 
     this.pipelines = {
       transform  : new Middleware(this),
@@ -191,6 +196,36 @@
    */
   Bitloader.prototype.isModuleCached = function(name) {
     return this.context.hasModule(name);
+  };
+
+
+  /**
+   * Add ignore rules for configuring what the different pipelines shoud not process.
+   *
+   * @param {Object} rule - Rule configuration
+   * @returns {Bitloader} Bitloader instance
+   */
+  Bitloader.prototype.ignore = function(rule) {
+    if (!rule) {
+      throw new TypeError("Must provide a rule configuration");
+    }
+
+    var i, length, ruleNames;
+    if (!rule.name) {
+      ruleNames = Object.keys(this.pipelines);
+    }
+    else {
+      ruleNames = rule.name instanceof(Array) ? rule.name : [rule.name];
+    }
+
+    for (i = 0, length = ruleNames.length; i < length; i++) {
+      this.rules.ignore.add({
+        name: ruleNames[i],
+        match: rule.match
+      });
+    }
+
+    return this;
   };
 
 

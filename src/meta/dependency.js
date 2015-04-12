@@ -16,6 +16,10 @@
   function MetaDependency(manager, moduleMeta) {
     logger.log(moduleMeta.name, moduleMeta);
 
+    if (manager.rules.ignore.match(moduleMeta.name, "dependency")) {
+      return Promise.resolve(moduleMeta);
+    }
+
     return manager.pipelines.dependency.runAll(moduleMeta)
       .then(dependenciesFinished, Utils.forwardError);
 
