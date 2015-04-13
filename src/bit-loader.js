@@ -283,6 +283,41 @@
   };
 
 
+  /**
+   * Registers plugins into the pipeline.
+   *
+   * @param {object} plugin - Object whose keys are the name of the particular
+   *  pipeline they intend to register with. For example, if the plugin is to
+   *  register a `transform` and a `dependency` pipeline handler, then the
+   *  plugin object will have entries with those names. E.g.
+   *
+   *  ``` javascript
+   *  var pluginDefinition = {
+   *    "transform": function(meta) {
+   *      console.log(meta);
+   *    },
+   *    "dependency": function(meta) {
+   *      console.log(meta);
+   *    }
+   *  };
+   *
+   *  bitlaoder.plugin(plugin);
+   *  ```
+   */
+  Bitloader.prototype.plugin = function(plugin) {
+    var pipelines = this.pipelines;
+    for (var handler in plugin) {
+      if (plugin.hasOwnProperty(handler) && pipelines.hasOwnProperty(handler)) {
+        pipelines[handler].use(plugin[handler]);
+      }
+      else {
+        throw new TypeError("Unable to register plugin for `" + handler + "`. '" + handler + "' is not found");
+      }
+    }
+    return this;
+  };
+
+
   Bitloader.prototype.Promise    = Promise;
   Bitloader.prototype.Module     = Module;
   Bitloader.prototype.Utils      = Utils;

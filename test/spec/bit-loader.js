@@ -276,6 +276,82 @@ define(["dist/bit-loader"], function(Bitloader) {
 
     });
 
+    describe("When registering `plugins`", function() {
+      var bitloader;
+      beforeEach(function() {
+        bitloader = new Bitloader();
+      });
+
+      describe("and registering a single plugin for `transform`", function() {
+        var transformStub;
+        beforeEach(function() {
+          bitloader = new Bitloader();
+          transformStub = sinon.stub();
+          bitloader.plugin({
+            "transform": transformStub
+          });
+
+          return bitloader.providers.loader._pipelineModuleMeta({"source":""});
+        });
+
+        it("then the `transform` plugin is called", function() {
+          expect(transformStub.called).to.equal(true);
+        });
+      });
+
+
+      describe("and registering a plugin for `transform` and `dependency`", function() {
+        var transformStub, dependencyStub;
+        beforeEach(function() {
+          bitloader = new Bitloader();
+          transformStub = sinon.stub();
+          dependencyStub = sinon.stub();
+          bitloader.plugin({
+            "transform": transformStub,
+            "dependency": dependencyStub
+          });
+
+          return bitloader.providers.loader._pipelineModuleMeta({"source":""});
+        });
+
+        it("then the `transform` plugin is called", function() {
+          expect(transformStub.calledOnce).to.equal(true);
+        });
+
+        it("then the `dependency` plugin is called", function() {
+          expect(dependencyStub.calledOnce).to.equal(true);
+        });
+      });
+
+      describe("and registering a plugin for a pipeline that does not exist", function() {
+        var tranformStub, bitloaderSpy;
+        beforeEach(function() {
+          bitloader = new Bitloader();
+          tranformStub = sinon.stub();
+          bitloaderSpy = sinon.spy(bitloader, "plugin");
+
+          try {
+            bitloader.plugin({
+              "tranform": tranformStub
+            });
+          }
+          catch(e) {
+          }
+
+          return bitloader.providers.loader._pipelineModuleMeta({"source":""});
+        });
+
+        it("then an exception is thrown", function() {
+          expect(bitloaderSpy.threw()).to.equal(true);
+        });
+
+        it("then the `transform` plugin is never called", function() {
+          expect(tranformStub.called).to.equal(false);
+        });
+      });
+
+    });
+
   });
 
 });
