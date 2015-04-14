@@ -286,6 +286,7 @@
   /**
    * Registers plugins into the pipeline.
    *
+   * @param {string} name - Name of the plugin
    * @param {object} plugin - Object whose keys are the name of the particular
    *  pipeline they intend to register with. For example, if the plugin is to
    *  register a `transform` and a `dependency` pipeline handler, then the
@@ -304,16 +305,36 @@
    *  bitlaoder.plugin(plugin);
    *  ```
    */
-  Bitloader.prototype.plugin = function(plugin) {
+  Bitloader.prototype.plugin = function(name, plugin) {
+    if (Utils.isPlainObject(name) && !plugin) {
+      plugin = name;
+      name = "";
+    }
+
     var pipelines = this.pipelines;
     for (var handler in plugin) {
       if (plugin.hasOwnProperty(handler) && pipelines.hasOwnProperty(handler)) {
-        pipelines[handler].use(plugin[handler]);
+        var definition = plugin[handler];
+
+        // Handle if the plugin is named
+        if (Utils.isFunction(definition) && name) {
+          definition = {
+            name: name,
+            handler: definition
+          };
+        }
+
+        if (!definition.name && name) {
+          definition.name = name;
+        }
+
+        pipelines[handler].use(definition);
       }
       else {
         throw new TypeError("Unable to register plugin for `" + handler + "`. '" + handler + "' is not found");
       }
     }
+
     return this;
   };
 
