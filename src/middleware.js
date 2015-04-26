@@ -3,12 +3,27 @@
 
   var Promise = require('./promise'),
       Utils   = require('./utils'),
-      logger  = require('./logger').factory("Middleware");
+      logger  = require('./logger').factory("Middleware"),
+      slice   = Array.prototype.slice;
 
   /**
    * @constructor For checking middleware provider instances
    */
   function Provider(middleware, options) {
+    this.middleware = middleware;
+    this.configure(options);
+  }
+
+
+  /**
+   * Configure the provider with the given options.  Options will be processed
+   * and merged into the provided as needed.
+   *
+   * @param {object} options - Options to configure the provider with.
+   */
+  Provider.prototype.configure = function(options) {
+    var middleware = this.middleware;
+
     if (Utils.isFunction(options)) {
       this.handler = options;
     }
@@ -28,7 +43,26 @@
 
       Utils.merge(this, options);
     }
-  }
+  };
+
+
+  /**
+   * Method that determines if the handler should be called and then calls
+   * if need be.
+   *
+   * @returns {Promise} Promise returned from the call to the handler.
+   */
+  Provider.prototype.execute = function(data) {
+    return this.handler.apply(this, data);
+  };
+
+
+  /**
+   * Method that is called to handler a request.
+   */
+  Provider.prototype.handler = function() {
+    throw new TypeError("Must implement handle method");
+  };
 
 
   /**
@@ -44,23 +78,12 @@
 
 
   /**
-   * Method to register middleware providers.  Providers can be methods, a module
-   * name, or an object with a method in it called `handler`.  If the provider is
-   * is a module name, then it will be loaded dynamically. These providers will also
-   * be registered as `named` providers, which are providers.  Named providers are
-   * those that can be executed by name.  For example, you can say `middleware.run("concat");`
-   * Registering a provider that is function will just be an `anonymouse` provider
-   * and will only execute when running the entire chain of providers.  When passing
-   * in an object, you will need to define a method `handler`. But you can optionally
-   * pass in a name, which will cause the provider to be registered as a `named`
-   * provider.
-   *
-   * @param {Object | Array<Object>} providers - One or collection of providers to
-   *   be registered in this middleware instance.
-   *
+   * Method to register middleware providers. Providers can be methods, a module name,
+   * or an object.
    *
    * For example, the provider below is just a method that will get invoked when
-   * running the entire sequence of providers.
+   * running the entire sequence of providers. The provider is registered as an
+   * anonymous provider.
    *
    * ``` javascript
    * middleware.use(function() {
@@ -69,14 +92,14 @@
    * ```
    *
    * But registering a provider as a name will cause the middleware engine to
-   * dynamically load it, and can also be executed with `run("concat")` which
-   * runs only the provider `concat` rather than the entire chain.
+   * dynamically load it at runtime, and can also be executed by name.
    *
    * ``` javascript
    * middleware.use(`concat`);
+   * middleware.run(`concat`);
    * ```
    *
-   * The alternative for registering `named` providers is to pass in a `Object` with a
+   * The alternative for registering named providers is to pass in a `Object` with a
    * `handler` method and a `name`.  The name is only required if you are interested in
    * more control for executing the provider.
    *
@@ -86,16 +109,37 @@
    *  handler: function() {
    *  }
    * });
+   *
+   * // Will only run `concat`
+   * middleware.run(`concat`);
+   *
+   * // Will run all registered providers, including `concat`
+   * middleware.runAll();
    * ```
+   *
+   * @param {Object | Array<Object>} providers - One or collection of providers to
+   *   be registered in this middleware instance.
+   *
+   * @returns {Middleware} Returns instance of Middleware
    */
   Middleware.prototype.use = function(providers) {
     if (!Utils.isArray(providers)) {
       providers = [providers];
     }
 
-    for (var provider in providers) {
-      if (providers.hasOwnProperty(provider)) {
-        provider = new Provider(this, providers[provider]);
+    var i, length, provider;
+    for (i = 0, length = providers.length; i < length; i++) {
+      provider = providers[i];
+
+      if (!provider) {
+        throw new TypeError("Middleware provider must not be empty");
+      }
+
+      if (provider.name && this.hasProvider(provider.name)) {
+        Utils.merge(this.getProvider(provider.name), provider);
+      }
+      else {
+        provider = new Provider(this, provider);
         this.providers.push(provider);
 
         if (Utils.isString(provider.name)) {
@@ -105,6 +149,33 @@
     }
 
     return this;
+  };
+
+
+  /**
+   * Gets the middleware provider by name.  It also handles when the middlware
+   * handler does not exist.
+   *
+   * @returns {Provider}
+   */
+  Middleware.prototype.getProvider = function(name) {
+    if (!this.named.hasOwnProperty(name)) {
+      throw new TypeError("Middleware provider '" + name + "' does not exist");
+    }
+
+    return this.named[name];
+  };
+
+
+  /**
+   * Determines whether or not the provider with the specific name is already
+   * registered.
+   *
+   * @param {string} name - Name of the provider.
+   * @returns {boolean} Whether or not the named provider is already registered
+   */
+  Middleware.prototype.hasProvider = function(name) {
+    return this.named.hasOwnProperty(name);
   };
 
 
@@ -141,7 +212,7 @@
       providers.push(this.getProvider(names[i]));
     }
 
-    return _runProviders(providers, Array.prototype.slice.call(arguments, 1));
+    return _runProviders(providers, slice.call(arguments, 1));
   };
 
 
@@ -153,21 +224,6 @@
    */
   Middleware.prototype.runAll = function() {
     return _runProviders(this.providers, arguments);
-  };
-
-
-  /**
-   * Gets the middleware provider by name.  It also handles when the middlware
-   * handler does not exist.
-   *
-   * @returns {Provider}
-   */
-  Middleware.prototype.getProvider = function(name) {
-    if (!this.named.hasOwnProperty(name)) {
-      throw new TypeError("Middleware provider '" + name + "' does not exist");
-    }
-
-    return this.named[name];
   };
 
 
@@ -183,22 +239,33 @@
       throw new TypeError("You must configure an import method in order to dynamically load middleware providers");
     }
 
+    function importProvider() {
+      if (!provider.__pending) {
+        logger.log("import [start]", provider);
+        provider.__pending = middleware.settings
+          .import(provider.name)
+          .then(providerImported, Utils.reportError);
+      }
+
+      return provider.__pending;
+    }
+
+    function providerImported(handler) {
+      logger.log("import [end]", provider);
+      delete provider.__pending;
+      provider.configure(handler);
+    }
+
+
     return function deferredHandlerDelegate() {
-      var args = arguments;
-      provider.__pending = true;
-
-      logger.log("import [start]", provider);
-      return (provider.handler = middleware.settings
-        .import(provider.name)
-        .then(providerReady, Utils.reportError));
-
+      var data = arguments;
 
       // Callback when provider is loaded
-      function providerReady(handler) {
-        logger.log("import [end]", provider);
-        delete provider.__pending;
-        return (provider.handler = handler).apply(provider, args);
+      function providerReady() {
+        return provider.execute(data);
       }
+
+      return importProvider().then(providerReady, Utils.reportError);
     };
   }
 
@@ -208,20 +275,17 @@
    * Method that runs a cancellable sequence of promises.
    */
   function _runProviders(providers, data) {
-    return providers.reduce(providerSequence, Promise.resolve());
-
     // Method that runs the sequence of providers
-    function providerSequence(prev, curr) {
+    function providerSequence(result, provider) {
       var cancelled = false;
-      return prev.then(providerSequenceRun, providerSequenceError);
 
       function providerSequenceRun(result) {
         if (result === false) {
           cancelled = true;
         }
 
-        if (!cancelled && !curr.__pending) {
-          return curr.handler.apply(curr, data);
+        if (!cancelled) {
+          return provider.execute(data);
         }
       }
 
@@ -229,7 +293,11 @@
         cancelled = true;
         return err;
       }
+
+      return result.then(providerSequenceRun, providerSequenceError);
     }
+
+    return providers.reduce(providerSequence, Promise.resolve());
   }
 
 

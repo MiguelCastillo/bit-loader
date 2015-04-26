@@ -58,17 +58,11 @@
     this.import   = providers.importer.import.bind(providers.importer);
     this.compile  = providers.compiler.compile.bind(providers.compiler);
 
-
-    if (options.transform) {
-      this.pipelines.transform.use(options.transform);
-    }
-
-    if (options.dependency) {
-      this.pipelines.dependency.use(options.dependency);
-    }
-
-    if (options.compiler) {
-      this.pipelines.compiler.use(options.compiler);
+    // Register pipeline options.
+    for (var pipeline in options) {
+      if (options.hasOwnProperty(pipeline) && this.pipelines.hasOwnProperty(pipeline)) {
+        this.pipelines[pipeline].use(options[pipeline]);
+      }
     }
   }
 
@@ -306,33 +300,37 @@
    *  ```
    */
   Bitloader.prototype.plugin = function(name, plugin) {
-    if (Utils.isPlainObject(name) && !plugin) {
+    if (Utils.isPlainObject(name)) {
       plugin = name;
-      name = "";
+      name = null;
     }
 
     var pipelines = this.pipelines;
-    for (var handler in plugin) {
-      if (plugin.hasOwnProperty(handler) && pipelines.hasOwnProperty(handler)) {
-        var definition = plugin[handler];
 
-        // Handle if the plugin is named
-        if (Utils.isFunction(definition) && name) {
+    for (var target in plugin) {
+      if (!plugin.hasOwnProperty(target)) {
+        continue;
+      }
+
+      if (!pipelines.hasOwnProperty(target)) {
+        throw new TypeError("Unable to register plugin for `" + target + "`. '" + target + "' is not found");
+      }
+
+      var definition = plugin[target];
+
+      if (name) {
+        if (Utils.isFunction(definition)) {
           definition = {
             name: name,
             handler: definition
           };
         }
-
-        if (!definition.name && name) {
+        else if (!definition.name) {
           definition.name = name;
         }
+      }
 
-        pipelines[handler].use(definition);
-      }
-      else {
-        throw new TypeError("Unable to register plugin for `" + handler + "`. '" + handler + "' is not found");
-      }
+      pipelines[target].use(definition);
     }
 
     return this;
