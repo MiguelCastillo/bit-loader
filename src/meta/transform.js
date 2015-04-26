@@ -17,12 +17,24 @@
       return Promise.resolve(moduleMeta);
     }
 
-    return manager.pipelines.transform.runAll(moduleMeta)
-      .then(transformationFinished, Utils.forwardError);
-
     function transformationFinished() {
       return moduleMeta;
     }
+
+    function canExecuteProvider(provider) {
+      if (provider.filter && !provider.filter.test(moduleMeta.location)) {
+        return false;
+      }
+      if (provider.ignore && provider.ignore.test(moduleMeta.location)) {
+        return false;
+      }
+    }
+
+
+    // Run transform pipeline.
+    return manager.pipelines.transform
+      .runAll(moduleMeta, canExecuteProvider)
+      .then(transformationFinished, Utils.forwardError);
   }
 
   module.exports = MetaTransform;

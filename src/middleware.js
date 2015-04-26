@@ -3,8 +3,8 @@
 
   var Promise = require('./promise'),
       Utils   = require('./utils'),
-      logger  = require('./logger').factory("Middleware"),
-      slice   = Array.prototype.slice;
+      logger  = require('./logger').factory("Middleware");
+
 
   /**
    * @constructor For checking middleware provider instances
@@ -61,7 +61,7 @@
    * Method that is called to handler a request.
    */
   Provider.prototype.handler = function() {
-    throw new TypeError("Must implement handle method");
+    throw new TypeError("Must be implemented");
   };
 
 
@@ -196,13 +196,17 @@
    *
    * @returns {Promise}
    */
-  Middleware.prototype.run = function(names) {
+  Middleware.prototype.run = function(names, data, canExecuteProvider) {
     if (Utils.isString(names)) {
       names = [names];
     }
 
     if (!Utils.isArray(names)) {
       throw new TypeError("List of handlers must be a string or an array of names");
+    }
+
+    if (data && !Utils.isArray(data)) {
+      data = [data];
     }
 
     var i, length;
@@ -212,7 +216,7 @@
       providers.push(this.getProvider(names[i]));
     }
 
-    return _runProviders(providers, slice.call(arguments, 1));
+    return _runProviders(providers, data, canExecuteProvider);
   };
 
 
@@ -222,8 +226,12 @@
    *
    * @returns {Promise}
    */
-  Middleware.prototype.runAll = function() {
-    return _runProviders(this.providers, arguments);
+  Middleware.prototype.runAll = function(data, canExecuteProvider) {
+    if (data && !Utils.isArray(data)) {
+      data = [data];
+    }
+
+    return _runProviders(this.providers, data, canExecuteProvider);
   };
 
 
@@ -245,6 +253,9 @@
         provider.__pending = middleware.settings
           .import(provider.name)
           .then(providerImported, Utils.reportError);
+      }
+      else {
+        logger.log("import [pending]", provider);
       }
 
       return provider.__pending;
@@ -274,7 +285,7 @@
    * @private
    * Method that runs a cancellable sequence of promises.
    */
-  function _runProviders(providers, data) {
+  function _runProviders(providers, data, canExecuteProvider) {
     // Method that runs the sequence of providers
     function providerSequence(result, provider) {
       var cancelled = false;
@@ -285,7 +296,9 @@
         }
 
         if (!cancelled) {
-          return provider.execute(data);
+          if (!canExecuteProvider || (canExecuteProvider && canExecuteProvider(provider) !== false)) {
+            return provider.execute(data);
+          }
         }
       }
 

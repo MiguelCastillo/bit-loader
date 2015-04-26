@@ -20,9 +20,6 @@
       return Promise.resolve(moduleMeta);
     }
 
-    return manager.pipelines.dependency.runAll(moduleMeta)
-      .then(dependenciesFinished, Utils.forwardError);
-
     function dependenciesFinished() {
       // Return if the module has no dependencies
       if (!Module.Meta.hasDependencies(moduleMeta)) {
@@ -31,21 +28,36 @@
 
       return loadDependencies(manager, moduleMeta);
     }
+
+    function canExecuteProvider(provider) {
+      if (provider.filter && !provider.filter.test(moduleMeta.location)) {
+        return false;
+      }
+      if (provider.ignore && provider.ignore.test(moduleMeta.location)) {
+        return false;
+      }
+    }
+
+
+    // Run dependency pipeline
+    return manager.pipelines.dependency
+      .runAll(moduleMeta, canExecuteProvider)
+      .then(dependenciesFinished, Utils.forwardError);
   }
 
 
   function loadDependencies(manager, moduleMeta) {
     var i, length, loading = new Array(moduleMeta.deps.length);
+
     for (i = 0, length = moduleMeta.deps.length; i < length; i++) {
       loading[i] = manager.providers.loader.fetch(moduleMeta.deps[i], moduleMeta);
     }
 
-    return Promise.all(loading)
-      .then(dependenciesFetched, Utils.forwardError);
-
     function dependenciesFetched() {
       return moduleMeta;
     }
+
+    return Promise.all(loading).then(dependenciesFetched, Utils.forwardError);
   }
 
 
