@@ -150,7 +150,7 @@
     }
 
     if (!this.context.hasModule(name)) {
-      return this.context.setModule(ModuleState.LOADED, name, this.providers.loader.syncBuildModule(name));
+      return this.context.setModule(ModuleState.LOADED, name, this.providers.loader.syncBuild(name));
     }
 
     return this.context.getModule(name);

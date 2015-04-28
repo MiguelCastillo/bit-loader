@@ -82,9 +82,9 @@ define(["dist/bit-loader"], function(Bitloader) {
         };
 
         loader = new Loader(manager);
-        loader.isLoaded         = loaderIsLadedStub;
-        loader.asyncBuildModule = loaderBuildModuleStub;
-        loader.setModule        = loaderSetModuleStub;
+        loader.isLoaded   = loaderIsLadedStub;
+        loader.asyncBuild = loaderBuildModuleStub;
+        loader.setModule  = loaderSetModuleStub;
         return loader.load("yes").then(moduleLoadedStub);
       });
 
