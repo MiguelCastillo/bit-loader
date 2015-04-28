@@ -31,14 +31,32 @@
   }
 
 
-  function Meta(options) {
-    Meta.validate(options);
-    Utils.extend(this, options);
+  /**
+   * Module meta object
+   */
+  function Meta(name, options) {
+    options = options || {};
+    if (Utils.isString(name)) {
+      options.name = name;
+    }
 
-    if (!options.deps) {
+    if (!Utils.isString(options.name)) {
+      throw new TypeError("Must provide a name, which is used by the resolver to create a location for the resource");
+    }
+
+    if (!Utils.isArray(options.deps)) {
+      delete options.deps;
       this.deps = [];
     }
+
+    this.configure(options);
   }
+
+
+  Meta.prototype.configure = function(options) {
+    Utils.extend(this, options);
+    return this;
+  };
 
 
   Meta.validate = function(moduleMeta) {

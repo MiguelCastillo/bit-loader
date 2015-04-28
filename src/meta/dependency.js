@@ -30,10 +30,10 @@
     }
 
     function canExecuteProvider(provider) {
-      if (provider.filter && !provider.filter.test(moduleMeta.location)) {
+      if (provider.filter && !provider.filter.test(moduleMeta.path)) {
         return false;
       }
-      if (provider.ignore && provider.ignore.test(moduleMeta.location)) {
+      if (provider.ignore && provider.ignore.test(moduleMeta.path)) {
         return false;
       }
     }

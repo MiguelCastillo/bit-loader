@@ -5,7 +5,7 @@
   }
 
   Fetch.prototype.fetch = function(/*name*/) {
-    throw new TypeError("Not implemented, must be implemented by the consumer code");
+    throw new TypeError("Fetch:fetch is not implemented, must be implemented by the consumer code");
   };
 
   Fetch.prototype.canProcess = function() {
