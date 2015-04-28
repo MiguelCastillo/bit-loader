@@ -1,9 +1,9 @@
 (function() {
   "use strict";
 
-  var Utils   = require('../utils'),
-      Promise = require('../promise'),
-      logger  = require('../logger').factory("Meta/Tranform");
+  var Promise = require('promise'),
+      Utils   = require('../utils'),
+      logger  = require('logger').factory("Meta/Tranform");
 
   /**
    * The transform enables transformation providers to process the moduleMeta

@@ -1,9 +1,9 @@
 (function() {
   "use strict";
 
-  var Promise = require('./promise'),
+  var Promise = require('promise'),
       Utils   = require('./utils'),
-      logger  = require('./logger').factory("Middleware");
+      logger  = require('logger').factory("Middleware");
 
 
   /**

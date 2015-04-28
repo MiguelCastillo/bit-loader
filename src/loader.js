@@ -1,7 +1,7 @@
 (function() {
   "use strict";
 
-  var Promise        = require('./promise'),
+  var Promise        = require('promise'),
       Module         = require('./module'),
       Utils          = require('./utils'),
       Pipeline       = require('./pipeline'),
@@ -318,7 +318,7 @@
    * Put a module meta object through the pipeline, which includes the transformation
    * and dependency loading stages.
    *
-   * @param {object} moduleMeta - Module meta object to run through the pipeline.
+   * @param {Module.Meta} moduleMeta - Module meta object to run through the pipeline.
    *
    * @returns {Promise} that when fulfilled, the processed module meta object is returned.
    */

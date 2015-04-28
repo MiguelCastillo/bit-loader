@@ -1,10 +1,10 @@
 (function() {
   "use strict";
 
-  var Promise = require('../promise'),
+  var Promise = require('promise'),
       Module  = require('../module'),
       Utils   = require('../utils'),
-      logger  = require('../logger').factory("Meta/Dependency");
+      logger  = require('logger').factory("Meta/Dependency");
 
 
   /**

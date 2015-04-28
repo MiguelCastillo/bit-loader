@@ -1,10 +1,10 @@
 (function() {
   "use strict";
 
-  var Promise = require('../promise'),
+  var Promise = require('promise'),
       Module  = require('../module'),
       Utils   = require('../utils'),
-      logger  = require('../logger').factory("Meta/Resolve");
+      logger  = require('logger').factory("Meta/Resolve");
 
   function MetaResolve(manager, name, parentMeta) {
     logger.log(name);

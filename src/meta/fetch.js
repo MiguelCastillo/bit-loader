@@ -1,9 +1,9 @@
 (function() {
   "use strict";
 
-  var Promise = require('../promise'),
+  var Promise = require('promise'),
       Utils   = require('../utils'),
-      logger  = require('../logger').factory("Meta/Fetch");
+      logger  = require('logger').factory("Meta/Fetch");
 
   function MetaFetch(manager, moduleMeta) {
     logger.log(moduleMeta);

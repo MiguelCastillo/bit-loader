@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var Promise     = require('./promise'),
+  var Promise     = require('promise'),
+      Logger      = require('logger'),
       Utils       = require('./utils'),
-      Logger      = require('./logger'),
       Fetcher     = require('./interfaces/fetcher'),
       Compiler    = require('./interfaces/compiler'),
       Resolver    = require('./interfaces/resolver'),
