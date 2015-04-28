@@ -1,7 +1,7 @@
 (function() {
   "use strict";
 
-  var Promise  = require('./promise'),
+  var Promise  = require('promise'),
       Registry = require('./registry'),
       Utils    = require('./utils');
 

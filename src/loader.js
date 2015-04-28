@@ -1,12 +1,13 @@
 (function() {
   "use strict";
 
-  var Promise        = require('./promise'),
+  var Promise        = require('promise'),
       Module         = require('./module'),
       Utils          = require('./utils'),
       Pipeline       = require('./pipeline'),
       Registry       = require('./registry'),
       moduleLinker   = require('./module/linker'),
+      metaResolve    = require('./meta/resolve'),
       metaFetch      = require('./meta/fetch'),
       metaTransform  = require('./meta/transform'),
       metaDependency = require('./meta/dependency'),
@@ -100,21 +101,19 @@
       return Promise.resolve(build());
     }
 
-    // Load a fresh copy
+    function build() {
+      return loader.asyncBuild(name);
+    }
+
     return loader
       .fetch(name, parentMeta)
       .then(build, Utils.forwardError);
-
-
-    function build() {
-      return loader.asyncBuildModule(name);
-    }
   };
 
 
   /**
    * This method fetches the module meta if it is not already loaded. Once the
-   * the module meta is fetched, it is put through the transform pipeline. Once
+   * the module meta is fetched, it is sent through the transform pipeline. Once
    * the transformation is done, all dependencies are fetched.
    *
    * The purpose for this method is to setup the module meta and all its dependencies
@@ -144,16 +143,26 @@
       return loader.getLoading(name);
     }
 
-    var loading = loader
-      ._fetchModuleMeta(name, parentMeta)
-      .then(moduleMetaFetched, Utils.printError);
 
-    return loader.setLoading(name, loading);
+    function moduleMetaFetch(moduleMeta) {
+      return loader._fetchModuleMeta(moduleMeta);
+    }
 
+    function moduleMetaPipeline(moduleMeta) {
+      return loader._pipelineModuleMeta(moduleMeta);
+    }
 
-    function moduleMetaFetched(moduleMeta) {
+    function moduleMetaFinished(moduleMeta) {
       return loader.setLoaded(moduleMeta.name, moduleMeta);
     }
+
+    var loading = loader
+      ._resolveModuleMeta(name, parentMeta)
+      .then(moduleMetaFetch,    Utils.printError)
+      .then(moduleMetaPipeline, Utils.printError)
+      .then(moduleMetaFinished, Utils.printError);
+
+    return loader.setLoading(name, loading);
   };
 
 
@@ -164,7 +173,7 @@
    *
    * @returns {Module} Module instance from the conversion of module meta
    */
-  Loader.prototype.syncBuildModule = function(name) {
+  Loader.prototype.syncBuild = function(name) {
     var mod = this._compileModuleMeta(name);
 
     if (!mod) {
@@ -189,7 +198,7 @@
    *
    * @returns {Promise}
    */
-  Loader.prototype.asyncBuildModule = function(name) {
+  Loader.prototype.asyncBuild = function(name) {
     var loader = this;
     var mod;
 
@@ -219,7 +228,7 @@
 
     function buildDependencies(moduleMeta) {
       var pending = moduleMeta.deps.map(function buildDependency(moduleName) {
-        return loader.asyncBuildModule(moduleName);
+        return loader.asyncBuild(moduleName);
       });
 
       return Promise.all(pending)
@@ -277,27 +286,31 @@
 
 
   /**
-   * Calls the fetch provider to get a module meta object, and then puts it through
-   * the module meta pipeline
+   * Method that converts module names to a module meta objects that is then fetched,
+   * fed through the pipeline, and eventually built into a Module instance.
    *
-   * @param {string} name - Module name for which to build the module meta for
-   * @param {Object} parentMeta - Is the module meta object that is requesting the fetch
-   *   transaction, which is important when processing sub dependencies.
+   * @param {string} name - Module name for which to build the module meta for.
+   * @param {Module.Meta} parentMeta - Is the module meta object that is initiating the
+   *   current transaction
+   *
+   * @returns {Promise} When resolved, a module meta instance is returned
+   */
+  Loader.prototype._resolveModuleMeta = function(name, parentMeta) {
+    return metaResolve(this.manager, name, parentMeta);
+  };
+
+
+  /**
+   * Method that fetches the content of a module from storage, via XHR, file system, or
+   * whatever fetch provider is configured
+   *
+   * @param {Module.Meta} moduleMeta - Module meta
    *
    * @returns {Promise} When resolved, a module meta that has gone through the pipeline
    *   is returned.
    */
-  Loader.prototype._fetchModuleMeta = function(name, parentMeta) {
-    var loader = this;
-
-    // This is where the call to fetch the module meta takes place. Once the
-    // module meta is loaded, it is put through the transformation pipeline.
-    return metaFetch(this.manager, name, parentMeta)
-      .then(pipelineModuleMeta, Utils.forwardError);
-
-    function pipelineModuleMeta(moduleMeta) {
-      return loader._pipelineModuleMeta(moduleMeta);
-    }
+  Loader.prototype._fetchModuleMeta = function(moduleMeta) {
+    return metaFetch(this.manager, moduleMeta);
   };
 
 
@@ -305,7 +318,7 @@
    * Put a module meta object through the pipeline, which includes the transformation
    * and dependency loading stages.
    *
-   * @param {object} moduleMeta - Module meta object to run through the pipeline.
+   * @param {Module.Meta} moduleMeta - Module meta object to run through the pipeline.
    *
    * @returns {Promise} that when fulfilled, the processed module meta object is returned.
    */

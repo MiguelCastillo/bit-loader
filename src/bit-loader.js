@@ -1,11 +1,12 @@
 (function () {
   "use strict";
 
-  var Promise     = require('./promise'),
+  var Promise     = require('promise'),
+      Logger      = require('logger'),
       Utils       = require('./utils'),
-      Logger      = require('./logger'),
-      Fetch       = require('./interfaces/fetch'),
+      Fetcher     = require('./interfaces/fetcher'),
       Compiler    = require('./interfaces/compiler'),
+      Resolver    = require('./interfaces/resolver'),
       Import      = require('./import'),
       Loader      = require('./loader'),
       Module      = require('./module'),
@@ -44,7 +45,8 @@
 
     // Override any of these factories if you need specialized implementation
     this.providers = {
-      fetcher  : factories.fetch    ? factories.fetch(this)    : new Bitloader.Fetch(this),
+      resolver : factories.resolver ? factories.resolver(this) : new Bitloader.Resolver(this),
+      fetcher  : factories.fetcher  ? factories.fetcher(this)  : new Bitloader.Fetcher(this),
       loader   : factories.loader   ? factories.loader(this)   : new Bitloader.Loader(this),
       importer : factories.import   ? factories.import(this)   : new Bitloader.Import(this),
       compiler : factories.compiler ? factories.compiler(this) : new Bitloader.Compiler(this)
@@ -52,23 +54,18 @@
 
     // Public Interface
     var providers = this.providers;
+    this.resolve  = providers.resolver.resolve.bind(providers.resolver);
     this.fetch    = providers.fetcher.fetch.bind(providers.fetcher);
     this.load     = providers.loader.load.bind(providers.loader);
     this.register = providers.loader.register.bind(providers.loader);
     this.import   = providers.importer.import.bind(providers.importer);
     this.compile  = providers.compiler.compile.bind(providers.compiler);
 
-
-    if (options.transform) {
-      this.pipelines.transform.use(options.transform);
-    }
-
-    if (options.dependency) {
-      this.pipelines.dependency.use(options.dependency);
-    }
-
-    if (options.compiler) {
-      this.pipelines.compiler.use(options.compiler);
+    // Register pipeline options.
+    for (var pipeline in options) {
+      if (options.hasOwnProperty(pipeline) && this.pipelines.hasOwnProperty(pipeline)) {
+        this.pipelines[pipeline].use(options[pipeline]);
+      }
     }
   }
 
@@ -153,7 +150,7 @@
     }
 
     if (!this.context.hasModule(name)) {
-      return this.context.setModule(ModuleState.LOADED, name, this.providers.loader.syncBuildModule(name));
+      return this.context.setModule(ModuleState.LOADED, name, this.providers.loader.syncBuild(name));
     }
 
     return this.context.getModule(name);
@@ -306,33 +303,37 @@
    *  ```
    */
   Bitloader.prototype.plugin = function(name, plugin) {
-    if (Utils.isPlainObject(name) && !plugin) {
+    if (Utils.isPlainObject(name)) {
       plugin = name;
-      name = "";
+      name = null;
     }
 
     var pipelines = this.pipelines;
-    for (var handler in plugin) {
-      if (plugin.hasOwnProperty(handler) && pipelines.hasOwnProperty(handler)) {
-        var definition = plugin[handler];
 
-        // Handle if the plugin is named
-        if (Utils.isFunction(definition) && name) {
+    for (var target in plugin) {
+      if (!plugin.hasOwnProperty(target)) {
+        continue;
+      }
+
+      if (!pipelines.hasOwnProperty(target)) {
+        throw new TypeError("Unable to register plugin for `" + target + "`. '" + target + "' is not found");
+      }
+
+      var definition = plugin[target];
+
+      if (name) {
+        if (Utils.isFunction(definition)) {
           definition = {
             name: name,
             handler: definition
           };
         }
-
-        if (!definition.name && name) {
+        else if (!definition.name) {
           definition.name = name;
         }
+      }
 
-        pipelines[handler].use(definition);
-      }
-      else {
-        throw new TypeError("Unable to register plugin for `" + handler + "`. '" + handler + "' is not found");
-      }
+      pipelines[target].use(definition);
     }
 
     return this;
@@ -352,7 +353,8 @@
   Bitloader.Loader     = Loader;
   Bitloader.Import     = Import;
   Bitloader.Module     = Module;
-  Bitloader.Fetch      = Fetch;
+  Bitloader.Resolver   = Resolver;
+  Bitloader.Fetcher    = Fetcher;
   Bitloader.Compiler   = Compiler;
   Bitloader.Middleware = Middleware;
   Bitloader.Logger     = Logger;

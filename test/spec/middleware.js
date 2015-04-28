@@ -13,6 +13,23 @@ define(['dist/bit-loader'], function(Bitloader) {
       });
 
 
+      describe("and re-registering it to add a `filter`", function() {
+        var provider;
+        beforeEach(function() {
+          middleware.use({name: "test", filter: "**/*.js"});
+          provider = middleware.getProvider("test");
+        });
+
+        it("then middleware `test` provider has a new property `filter`", function() {
+          expect(provider.hasOwnProperty("filter")).to.equal(true);
+        });
+
+        it("then middleware `test` provider `filter` property is `**/*.js`", function() {
+          expect(provider.filter).to.equal("**/*.js");
+        });
+      });
+
+
       describe("and running the `test` middleware with no arguments", function() {
         beforeEach(function() {
           return middleware.run("test");

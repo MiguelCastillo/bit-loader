@@ -1,7 +1,7 @@
 (function(root) {
   "use strict";
 
-  var logger = require('../logger').factory("Module/Linker");
+  var logger = require('logger').factory("Module/Linker");
 
   function ModuleLinker(manager, mod) {
     function traverseDependencies(mod) {

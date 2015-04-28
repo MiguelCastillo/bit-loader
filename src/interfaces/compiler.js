@@ -5,7 +5,7 @@
   }
 
   Compiler.prototype.compile = function(/*moduleMeta*/) {
-    throw new TypeError("Not implemented, must be implemented by the consumer code");
+    throw new TypeError("Compiler:compile is not implemented, must be implemented by the consumer code");
   };
 
   Compiler.prototype.canProcess = function(/*moduleMeta*/) {

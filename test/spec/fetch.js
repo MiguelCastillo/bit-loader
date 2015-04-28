@@ -3,19 +3,29 @@ define(["dist/bit-loader"], function(Bitloader) {
   describe("Fetch Test Suite", function() {
 
     describe("When calling fetch returns a module meta with `code`", function() {
-      var loader, fetchStub, moduleMeta;
+      var loader, fetchStub, resolveStub, moduleMeta;
 
       beforeEach(function() {
         moduleMeta = {code: "this is content of the module"};
         fetchStub = sinon.stub().returns(moduleMeta);
+        resolveStub = sinon.stub();
 
-        function fetchFactory() {
+        function fetcherFactory() {
           return {
             fetch: fetchStub
           };
         }
 
-        loader = new Bitloader({}, {fetch: fetchFactory});
+        function resolveFactory() {
+          return {
+            resolve: resolveStub
+          };
+        }
+
+        loader = new Bitloader({}, {
+          fetcher: fetcherFactory,
+          resolver: resolveFactory
+        });
       });
 
 
@@ -44,7 +54,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
 
         it("then fetch is called with `I really like`", function() {
-          expect(fetchStub.calledWithExactly("I really like", undefined)).to.equal(true);
+          expect(fetchStub.calledWithExactly(sinon.match({ name: "I really like" }))).to.equal(true);
         });
 
         it("then result from fetch is module meta", function() {
@@ -62,7 +72,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
 
         it("then fetch is called with `I really like this import`", function() {
-          expect(fetchStub.calledWithExactly("I really like this import", undefined)).to.equal(true);
+          expect(fetchStub.calledWithExactly(sinon.match({ name: "I really like this import" }))).to.equal(true);
         });
 
         it("then result from import is `this is content of the module`", function() {
@@ -73,12 +83,13 @@ define(["dist/bit-loader"], function(Bitloader) {
 
 
     describe("When calling fetch returns a module meta with `compile`", function() {
-      var loader, fetchStub, compileStub, moduleMeta;
+      var loader, fetchStub, resolveStub, compileStub, moduleMeta;
 
       beforeEach(function() {
         moduleMeta  = {source: ""};
         fetchStub   = sinon.stub().returns(moduleMeta);
         compileStub = sinon.stub().returns(new Bitloader.Module({code: "this is content of the module"}));
+        resolveStub = sinon.stub();
 
         function compilerFactory() {
           return {
@@ -86,14 +97,23 @@ define(["dist/bit-loader"], function(Bitloader) {
           };
         }
 
-        function fetchFactory() {
+        function fetcherFactory() {
           return {
             fetch: fetchStub
           };
         }
 
+        function resolveFactory() {
+          return {
+            resolve: resolveStub
+          };
+        }
 
-        loader = new Bitloader({}, {fetch: fetchFactory, compiler: compilerFactory});
+        loader = new Bitloader({}, {
+          fetcher: fetcherFactory,
+          compiler: compilerFactory,
+          resolver: resolveFactory
+        });
       });
 
 
@@ -127,7 +147,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
 
         it("then fetch is called with `I really like`", function() {
-          expect(fetchStub.calledWith("I really like")).to.equal(true);
+          expect(fetchStub.calledWithExactly(sinon.match({name: "I really like"}))).to.equal(true);
         });
 
         it("then result from fetch is module meta", function() {
@@ -149,7 +169,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
 
         it("then fetch is called with `I really like this import`", function() {
-          expect(fetchStub.calledWith("I really like this import")).to.equal(true);
+          expect(fetchStub.calledWithExactly(sinon.match({name: "I really like this import"}))).to.equal(true);
         });
 
         it("then result from import is `this is content of the module`", function() {

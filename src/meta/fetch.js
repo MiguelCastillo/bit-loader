@@ -1,28 +1,17 @@
 (function() {
   "use strict";
 
-  var Promise = require('../promise'),
-      Module  = require('../module'),
+  var Promise = require('promise'),
       Utils   = require('../utils'),
-      logger  = require('../logger').factory("Meta/Fetch");
+      logger  = require('logger').factory("Meta/Fetch");
 
-  function MetaFetch(manager, name, parentMeta) {
-    logger.log(name);
+  function MetaFetch(manager, moduleMeta) {
+    logger.log(moduleMeta);
 
-    return Promise.resolve(manager.fetch(name, parentMeta))
-      .then(moduleFetched, Utils.forwardError);
-
-    // Once the module meta is fetched, we want to add helper properties
-    // to it to facilitate further processing.
-    function moduleFetched(moduleMeta) {
-      if (!(moduleMeta instanceof(Module.Meta))) {
-        Module.Meta.validate(moduleMeta);
-        moduleMeta.deps = moduleMeta.deps || [];
-      }
-
-      moduleMeta.name = name;
-      return moduleMeta;
-    }
+    return Promise.resolve(manager.fetch(moduleMeta))
+      .then(function(meta) {
+        return moduleMeta.configure(meta);
+      }, Utils.reportError);
   }
 
   module.exports = MetaFetch;
