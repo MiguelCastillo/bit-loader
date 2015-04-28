@@ -239,7 +239,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         fetchStub.withArgs(sinon.match({ name: moduleName })).throws(new TypeError("Registered Module must NOT be fetched"));
         fetchStub.withArgs(sinon.match({ name: "js/deep1" })).returns(deep1Module);
 
-        function fetchFactory() {
+        function fetcherFactory() {
           return {
             fetch: fetchStub
           };
@@ -253,7 +253,7 @@ define(["dist/bit-loader"], function(Bitloader) {
 
 
         var bitloader = new Bitloader({}, {
-          fetch: fetchFactory,
+          fetcher: fetcherFactory,
           resolver: resolverFactory
         });
 

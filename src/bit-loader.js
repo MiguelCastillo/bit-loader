@@ -4,7 +4,7 @@
   var Promise     = require('./promise'),
       Utils       = require('./utils'),
       Logger      = require('./logger'),
-      Fetch       = require('./interfaces/fetch'),
+      Fetcher     = require('./interfaces/fetcher'),
       Compiler    = require('./interfaces/compiler'),
       Resolver    = require('./interfaces/resolver'),
       Import      = require('./import'),
@@ -46,7 +46,7 @@
     // Override any of these factories if you need specialized implementation
     this.providers = {
       resolver : factories.resolver ? factories.resolver(this) : new Bitloader.Resolver(this),
-      fetcher  : factories.fetch    ? factories.fetch(this)    : new Bitloader.Fetch(this),
+      fetcher  : factories.fetcher  ? factories.fetcher(this)  : new Bitloader.Fetcher(this),
       loader   : factories.loader   ? factories.loader(this)   : new Bitloader.Loader(this),
       importer : factories.import   ? factories.import(this)   : new Bitloader.Import(this),
       compiler : factories.compiler ? factories.compiler(this) : new Bitloader.Compiler(this)
@@ -354,7 +354,7 @@
   Bitloader.Import     = Import;
   Bitloader.Module     = Module;
   Bitloader.Resolver   = Resolver;
-  Bitloader.Fetch      = Fetch;
+  Bitloader.Fetcher    = Fetcher;
   Bitloader.Compiler   = Compiler;
   Bitloader.Middleware = Middleware;
   Bitloader.Logger     = Logger;

@@ -10,7 +10,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         fetchStub = sinon.stub().returns(moduleMeta);
         resolveStub = sinon.stub();
 
-        function fetchFactory() {
+        function fetcherFactory() {
           return {
             fetch: fetchStub
           };
@@ -23,7 +23,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         }
 
         loader = new Bitloader({}, {
-          fetch: fetchFactory,
+          fetcher: fetcherFactory,
           resolver: resolveFactory
         });
       });
@@ -97,7 +97,7 @@ define(["dist/bit-loader"], function(Bitloader) {
           };
         }
 
-        function fetchFactory() {
+        function fetcherFactory() {
           return {
             fetch: fetchStub
           };
@@ -110,7 +110,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         }
 
         loader = new Bitloader({}, {
-          fetch: fetchFactory,
+          fetcher: fetcherFactory,
           compiler: compilerFactory,
           resolver: resolveFactory
         });
