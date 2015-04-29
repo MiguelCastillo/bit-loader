@@ -21,10 +21,16 @@
       return moduleMeta;
     }
 
-    // Run transform pipeline.
-    return manager.pipelines.transform
-      .runAll(moduleMeta)
-      .then(transformationFinished, Utils.forwardError);
+    if (moduleMeta.plugins) {
+      return manager.pipelines.transform
+        .run(moduleMeta.plugins)
+        .then(transformationFinished, Utils.forwardError);
+    }
+    else {
+      return manager.pipelines.transform
+        .runAll(moduleMeta)
+        .then(transformationFinished, Utils.forwardError);
+    }
   }
 
   module.exports = MetaTransform;
