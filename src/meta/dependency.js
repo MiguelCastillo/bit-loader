@@ -29,19 +29,9 @@
       return loadDependencies(manager, moduleMeta);
     }
 
-    function canExecuteProvider(provider) {
-      if (provider.filter && !provider.filter.test(moduleMeta.path)) {
-        return false;
-      }
-      if (provider.ignore && provider.ignore.test(moduleMeta.path)) {
-        return false;
-      }
-    }
-
-
     // Run dependency pipeline
     return manager.pipelines.dependency
-      .runAll(moduleMeta, canExecuteProvider)
+      .runAll(moduleMeta)
       .then(dependenciesFinished, Utils.forwardError);
   }
 

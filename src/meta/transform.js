@@ -21,19 +21,9 @@
       return moduleMeta;
     }
 
-    function canExecuteProvider(provider) {
-      if (provider.filter && !provider.filter.test(moduleMeta.path)) {
-        return false;
-      }
-      if (provider.ignore && provider.ignore.test(moduleMeta.path)) {
-        return false;
-      }
-    }
-
-
     // Run transform pipeline.
     return manager.pipelines.transform
-      .runAll(moduleMeta, canExecuteProvider)
+      .runAll(moduleMeta)
       .then(transformationFinished, Utils.forwardError);
   }
 

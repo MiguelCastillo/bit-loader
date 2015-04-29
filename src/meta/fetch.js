@@ -8,6 +8,10 @@
   function MetaFetch(manager, moduleMeta) {
     logger.log(moduleMeta);
 
+    if (manager.rules.ignore.match(moduleMeta.name, "fetch")) {
+      return Promise.resolve(moduleMeta);
+    }
+
     return Promise.resolve(manager.fetch(moduleMeta))
       .then(function(meta) {
         return moduleMeta.configure(meta);
