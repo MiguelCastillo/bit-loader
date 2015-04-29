@@ -21,14 +21,9 @@
       return moduleMeta;
     }
 
-    function canExecuteProvider(provider) {
-      return provider.match && provider.match.test(moduleMeta.name);
-    }
-
-
     // Run transform pipeline.
     return manager.pipelines.transform
-      .runAll(moduleMeta, canExecuteProvider)
+      .runAll(moduleMeta)
       .then(transformationFinished, Utils.forwardError);
   }
 

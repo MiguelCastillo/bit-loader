@@ -29,14 +29,9 @@
       return loadDependencies(manager, moduleMeta);
     }
 
-    function canExecuteProvider(provider) {
-      return provider.match && provider.match.test(moduleMeta.name);
-    }
-
-
     // Run dependency pipeline
     return manager.pipelines.dependency
-      .runAll(moduleMeta, canExecuteProvider)
+      .runAll(moduleMeta)
       .then(dependenciesFinished, Utils.forwardError);
   }
 
