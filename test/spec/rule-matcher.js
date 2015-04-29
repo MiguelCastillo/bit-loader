@@ -1,4 +1,5 @@
-define(["src/rule-matcher"], function(RuleMatcher) {
+define(["dist/bit-loader"], function(Bitloader) {
+  var RuleMatcher = Bitloader.RuleMatcher;
 
   describe("RuleMatcher Suite", function() {
 
@@ -8,6 +9,7 @@ define(["src/rule-matcher"], function(RuleMatcher) {
         matcher = new RuleMatcher();
       });
 
+
       describe("and the rule added is a empty", function() {
         var rule;
         beforeEach(function() {
@@ -15,9 +17,10 @@ define(["src/rule-matcher"], function(RuleMatcher) {
         });
 
         it("then the name of the rule is `rule-0`", function() {
-          expect(rule.name).to.equal("rule-0");
+          expect(rule.getName()).to.equal("rule-0");
         });
       });
+
 
       describe("and the rule added has name `transform`", function() {
         var rule;
@@ -28,9 +31,10 @@ define(["src/rule-matcher"], function(RuleMatcher) {
         });
 
         it("then the name of the rule is `transform`", function() {
-          expect(rule.name).to.equal("transform");
+          expect(rule.getName()).to.equal("transform");
         });
       });
+
 
       describe("and the rule has a single match for `test.js`", function() {
         beforeEach(function() {
@@ -47,6 +51,70 @@ define(["src/rule-matcher"], function(RuleMatcher) {
           expect(matcher.match("notfound.js")).to.equal(false);
         });
       });
+
+
+      describe("and the rule has a single match for `*.js`", function() {
+        beforeEach(function() {
+          matcher.add({
+            match: "*.js"
+          });
+        });
+
+        it("then match for `test.js` is true", function() {
+          expect(matcher.match("test.js")).to.equal(true);
+        });
+
+        it("then match for `some/path/test.js` is false", function() {
+          expect(matcher.match("some/path/test.js")).to.equal(false);
+        });
+
+        it("then match for `notfound.jsx` is false", function() {
+          expect(matcher.match("notfound.jsx")).to.equal(false);
+        });
+      });
+
+
+      describe("and the rule has a single match for `**/*.js`", function() {
+        beforeEach(function() {
+          matcher.add({
+            match: "**/*.js"
+          });
+        });
+
+        it("then match for `test.js` is true", function() {
+          expect(matcher.match("test.js")).to.equal(true);
+        });
+
+        it("then match for `some/path/test.js` is true", function() {
+          expect(matcher.match("some/path/test.js")).to.equal(true);
+        });
+
+        it("then match for `notfound.jsx` is false", function() {
+          expect(matcher.match("notfound.jsx")).to.equal(false);
+        });
+      });
+
+
+      describe("and the rule has a single match for `!**/*.js`", function() {
+        beforeEach(function() {
+          matcher.add({
+            match: "!**/*.js"
+          });
+        });
+
+        it("then match for `test.js` is false", function() {
+          expect(matcher.match("test.js")).to.equal(false);
+        });
+
+        it("then match for `some/path/test.js` is false", function() {
+          expect(matcher.match("some/path/test.js")).to.equal(false);
+        });
+
+        it("then match for `found.jsx` is true", function() {
+          expect(matcher.match("found.jsx")).to.equal(true);
+        });
+      });
+
 
       describe("and the rule has two matches, `test1.js` and `test2.js`", function() {
         beforeEach(function() {
@@ -67,6 +135,7 @@ define(["src/rule-matcher"], function(RuleMatcher) {
           expect(matcher.match("notfound.js")).to.equal(false);
         });
       });
+
 
       describe("and the rule has name `transform` with match `test1.js` and `test2.js`", function() {
         beforeEach(function() {
@@ -92,6 +161,7 @@ define(["src/rule-matcher"], function(RuleMatcher) {
           expect(matcher.match("notfound.js")).to.equal(false);
         });
       });
+
 
       describe("and the rule has name `transform` with one match `test1.js` and later add `test2.js`", function() {
         beforeEach(function() {

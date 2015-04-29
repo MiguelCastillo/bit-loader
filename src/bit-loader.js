@@ -39,8 +39,7 @@
 
     this.pipelines = {
       transform  : new Middleware(this),
-      dependency : new Middleware(this),
-      compiler   : new Middleware(this)
+      dependency : new Middleware(this)
     };
 
     // Override any of these factories if you need specialized implementation
@@ -263,10 +262,10 @@
 
     var i, length, ruleNames;
     if (!rule.name) {
-      ruleNames = Object.keys(this.pipelines);
+      ruleNames = ["transform", "dependency"];
     }
     else {
-      ruleNames = rule.name instanceof(Array) ? rule.name : [rule.name];
+      ruleNames = Utils.isArray(rule.name) ? rule.name : [rule.name];
     }
 
     for (i = 0, length = ruleNames.length; i < length; i++) {
@@ -347,16 +346,17 @@
   Bitloader.prototype.Middleware = Middleware;
 
   // Expose constructors and utilities
-  Bitloader.Promise    = Promise;
-  Bitloader.Utils      = Utils;
-  Bitloader.Registry   = Registry;
-  Bitloader.Loader     = Loader;
-  Bitloader.Import     = Import;
-  Bitloader.Module     = Module;
-  Bitloader.Resolver   = Resolver;
-  Bitloader.Fetcher    = Fetcher;
-  Bitloader.Compiler   = Compiler;
-  Bitloader.Middleware = Middleware;
-  Bitloader.Logger     = Logger;
-  module.exports       = Bitloader;
+  Bitloader.Promise     = Promise;
+  Bitloader.Utils       = Utils;
+  Bitloader.Registry    = Registry;
+  Bitloader.Loader      = Loader;
+  Bitloader.Import      = Import;
+  Bitloader.Module      = Module;
+  Bitloader.Resolver    = Resolver;
+  Bitloader.Fetcher     = Fetcher;
+  Bitloader.Compiler    = Compiler;
+  Bitloader.Middleware  = Middleware;
+  Bitloader.RuleMatcher = RuleMatcher;
+  Bitloader.Logger      = Logger;
+  module.exports        = Bitloader;
 })();

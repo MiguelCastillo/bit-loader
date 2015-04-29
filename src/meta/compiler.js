@@ -1,8 +1,9 @@
 (function() {
   "use strict";
 
-  var Module = require('../module'),
-      logger = require('logger').factory("Meta/Compiler");
+  var Promise = require('promise'),
+      Module  = require('../module'),
+      logger  = require('logger').factory("Meta/Compiler");
 
   /**
    * The compile step is to convert the moduleMeta to an instance of Module. The
@@ -12,6 +13,10 @@
    */
   function MetaCompiler(manager, moduleMeta) {
     logger.log(moduleMeta.name, moduleMeta);
+
+    if (manager.rules.ignore.match(moduleMeta.name, "compiler")) {
+      return Promise.resolve();
+    }
 
     var mod;
     if (Module.Meta.canCompile(moduleMeta)) {
