@@ -14,6 +14,9 @@ require([
   "test/spec/registry",
   "test/spec/middleware",
   "test/spec/module",
+  "test/spec/plugin",
+  "test/spec/ignore",
+  "test/spec/transform",
   "test/spec/bit-loader"
 ], function() {
   mocha.run();

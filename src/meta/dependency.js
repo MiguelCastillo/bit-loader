@@ -29,10 +29,16 @@
       return loadDependencies(manager, moduleMeta);
     }
 
-    // Run dependency pipeline
-    return manager.pipelines.dependency
-      .runAll(moduleMeta)
-      .then(dependenciesFinished, Utils.forwardError);
+    if (moduleMeta.plugins) {
+      return manager.pipelines.dependency
+        .run(moduleMeta.plugins)
+        .then(dependenciesFinished, Utils.forwardError);
+    }
+    else {
+      return manager.pipelines.dependency
+        .runAll(moduleMeta)
+        .then(dependenciesFinished, Utils.forwardError);
+    }
   }
 
 

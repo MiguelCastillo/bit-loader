@@ -180,23 +180,14 @@
 
 
   /**
-   * Method that runs `named` providers.  You can pass in a name of the provider
-   * to be executed or an array of names.  If passing in an array, the order in
-   * array is the order in which they will be ran; regardless of the order in
-   * which they were registered.
+   * Creates an array of Providers from the array of names
    *
-   * When a provider is executed, it can terminate the execution sequence by
-   * returning a value.  You can also `throw` to teminate the execution. Otherwise
-   * the sequence will run for as long as no poviders return anything.
+   * @param {string | Array.<string>} names - Name of collection of provider names
+   *   to be returned in an array of providers.
    *
-   * The only thing a provider can return is a promise, which is really useful
-   * if the provider needs to do some work asynchronously.
-   *
-   * @param {string | Array<string>} names - Name(s) of the providers to run
-   *
-   * @returns {Promise}
+   * @returns {Array.<Provider>} Array of providers.
    */
-  Middleware.prototype.run = function(names, data, canExecuteProvider) {
+  Middleware.prototype.filterProviders = function(names) {
     if (Utils.isString(names)) {
       names = [names];
     }
@@ -205,18 +196,54 @@
       throw new TypeError("List of handlers must be a string or an array of names");
     }
 
-    if (data && !Utils.isArray(data)) {
-      data = [data];
-    }
-
     var i, length;
     var providers = [];
 
     for (i = 0, length = names.length; i < length; i++) {
-      providers.push(this.getProvider(names[i]));
+      if (this.hasProvider(names[i])) {
+        providers.push(this.getProvider(names[i]));
+      }
     }
 
+    return providers;
+  };
+
+
+  /**
+   * Method that runs `named` providers.  You can pass in a name of the provider
+   * to be executed or an array of names.  If passing in an array, the providers
+   * will be executed in the order in which they are in the array; regardless of
+   * the order in which they were registered.
+   *
+   * @param {string | Array<string>} names - Name(s) of the providers to run
+   *
+   * @returns {Promise}
+   */
+  Middleware.prototype.run = function(names, data, canExecuteProvider) {
+    if (data && !Utils.isArray(data)) {
+      data = [data];
+    }
+
+    var providers = this.filterProviders(names);
     return _runProviders(providers, data, canExecuteProvider);
+  };
+
+
+  /**
+   * Method that runs the first found `named` provider.  You can pass in a name of
+   * the provider to be executed or an array of names to chose from.
+   *
+   * @param {string | Array<string>} names - Name(s) of the providers to run
+   *
+   * @returns {Promise}
+   */
+  Middleware.prototype.runFirst = function(names, data, canExecuteProvider) {
+    if (data && !Utils.isArray(data)) {
+      data = [data];
+    }
+
+    var providers = this.filterProviders(names).shift();
+    return _runProviders(providers ? [providers] : [], data, canExecuteProvider);
   };
 
 
@@ -284,6 +311,12 @@
   /**
    * @private
    * Method that runs a cancellable sequence of promises.
+   *
+   * When a provider is executed, sequence execution can be terminated by returning
+   * false. You can also `throw` to teminate the execution.
+   *
+   * The only thing a provider can return is a promise, which is really useful
+   * if the provider needs to do some work asynchronously.
    */
   function _runProviders(providers, data, canExecuteProvider) {
     // Method that runs the sequence of providers
