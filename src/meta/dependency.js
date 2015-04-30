@@ -29,7 +29,7 @@
       return loadDependencies(manager, moduleMeta);
     }
 
-    if (moduleMeta.plugins) {
+    if (moduleMeta.plugins && moduleMeta.plugins.length) {
       return manager.pipelines.dependency
         .run(moduleMeta.plugins)
         .then(dependenciesFinished, Utils.forwardError);

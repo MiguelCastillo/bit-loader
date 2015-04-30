@@ -21,7 +21,7 @@
       return moduleMeta;
     }
 
-    if (moduleMeta.plugins) {
+    if (moduleMeta.plugins && moduleMeta.plugins.length) {
       return manager.pipelines.transform
         .run(moduleMeta.plugins)
         .then(transformationFinished, Utils.forwardError);
