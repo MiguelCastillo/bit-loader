@@ -10,6 +10,7 @@
       Import      = require('./import'),
       Loader      = require('./loader'),
       Module      = require('./module'),
+      Plugin      = require('./plugin'),
       Registry    = require('./registry'),
       RuleMatcher = require('./rule-matcher'),
       Middleware  = require('./middleware');
@@ -283,7 +284,7 @@
    * Registers plugins into the pipeline.
    *
    * @param {string} name - Name of the plugin
-   * @param {object} plugin - Object whose keys are the name of the particular
+   * @param {object} options - Object whose keys are the name of the particular
    *  pipeline they intend to register with. For example, if the plugin is to
    *  register a `transform` and a `dependency` pipeline handler, then the
    *  plugin object will have entries with those names. E.g.
@@ -301,41 +302,14 @@
    *  bitlaoder.plugin(plugin);
    *  ```
    */
-  Bitloader.prototype.plugin = function(name, plugin) {
+  Bitloader.prototype.plugin = function(name, options) {
     if (Utils.isPlainObject(name)) {
-      plugin = name;
+      options = name;
       name = null;
     }
 
-    var pipelines = this.pipelines;
-
-    for (var target in plugin) {
-      if (!plugin.hasOwnProperty(target)) {
-        continue;
-      }
-
-      if (!pipelines.hasOwnProperty(target)) {
-        throw new TypeError("Unable to register plugin for `" + target + "`. '" + target + "' is not found");
-      }
-
-      var definition = plugin[target];
-
-      if (name) {
-        if (Utils.isFunction(definition)) {
-          definition = {
-            name: name,
-            handler: definition
-          };
-        }
-        else if (!definition.name) {
-          definition.name = name;
-        }
-      }
-
-      pipelines[target].use(definition);
-    }
-
-    return this;
+    var plugin = new Plugin(name, this);
+    return plugin.configure(options);
   };
 
 
@@ -352,6 +326,7 @@
   Bitloader.Loader      = Loader;
   Bitloader.Import      = Import;
   Bitloader.Module      = Module;
+  Bitloader.Plugin      = Plugin;
   Bitloader.Resolver    = Resolver;
   Bitloader.Fetcher     = Fetcher;
   Bitloader.Compiler    = Compiler;

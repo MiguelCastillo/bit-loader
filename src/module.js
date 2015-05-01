@@ -34,10 +34,12 @@
   /**
    * Module meta object
    */
-  function Meta(name, options) {
+  function Meta(options) {
     options = options || {};
-    if (Utils.isString(name)) {
-      options.name = name;
+    if (Utils.isString(options)) {
+      options = {
+        name: options
+      };
     }
 
     if (!Utils.isString(options.name)) {

@@ -31,7 +31,7 @@
 
     if (moduleMeta.plugins && moduleMeta.plugins.length) {
       return manager.pipelines.dependency
-        .run(moduleMeta.plugins)
+        .run(moduleMeta.plugins, moduleMeta)
         .then(dependenciesFinished, Utils.forwardError);
     }
     else {

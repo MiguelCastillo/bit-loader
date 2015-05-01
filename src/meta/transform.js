@@ -23,7 +23,7 @@
 
     if (moduleMeta.plugins && moduleMeta.plugins.length) {
       return manager.pipelines.transform
-        .run(moduleMeta.plugins)
+        .run(moduleMeta.plugins, moduleMeta)
         .then(transformationFinished, Utils.forwardError);
     }
     else {
