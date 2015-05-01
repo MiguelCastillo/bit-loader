@@ -1,6 +1,7 @@
 (function() {
   "use strict";
 
+  var Utils     = require('./utils');
   var minimatch = require('minimatch');
 
 
@@ -127,6 +128,17 @@
 
 
   RuleMatcher.prototype.add = function(config) {
+    if (Utils.isString(config)) {
+      config = {
+        name: config
+      };
+    }
+    else if (Utils.isArray(config)) {
+      config = {
+        match: config
+      };
+    }
+
     var rule = this.find(config.name);
     if (rule) {
       rule.addMatch(config.match);
@@ -135,6 +147,7 @@
       rule = new Rule(config);
       this._rules[rule.getName()] = rule;
     }
+
     return rule;
   };
 
@@ -157,6 +170,11 @@
       }
     }
     return rules;
+  };
+
+
+  RuleMatcher.prototype.getLength = function() {
+    return Object.keys(this._rules).length;
   };
 
 

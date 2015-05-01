@@ -13,6 +13,12 @@
 
     return Promise.resolve(manager.resolve(moduleMeta, parentMeta))
       .then(function(meta) {
+        meta = meta || {};
+        if (!meta.cname) {
+          meta.cname = meta.name;
+        }
+
+        delete meta.name;
         return moduleMeta.configure(meta);
       }, Utils.reportError);
   }
