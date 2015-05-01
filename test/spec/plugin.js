@@ -98,13 +98,17 @@ define(['dist/bit-loader'], function(Bitloader) {
         dependencyStub2 = sinon.stub();
 
         bitloader.plugin({
-          "matchPath": ["**/*.js"],
+          "match": {
+            "path": ["**/*.js"]
+          },
           "transform": [transformStub1, transformStub2],
           "dependency": dependencyStub1
         });
 
         bitloader.plugin({
-          "matchPath": ["**/*.jsx"],
+          "match": {
+            "path": ["**/*.jsx"]
+          },
           "transform": transformStub3,
           "dependency": dependencyStub2
         });

@@ -12,11 +12,9 @@
    * Plugin
    */
   function Plugin(name, manager) {
-    this.name       = name || ("plugin-" + (pluginId++));
-    this.manager    = manager;
-
-    this._matchPath = new RuleMatcher();
-    this._matchName = new RuleMatcher();
+    this.name     = name || ("plugin-" + (pluginId++));
+    this.manager  = manager;
+    this._matches = {};
   }
 
 
@@ -27,17 +25,20 @@
     var pipelines = this.manager.pipelines;
     var settings  = Utils.merge({}, options);
 
-    this.matchPath(settings.matchPath);
-    this.matchName(settings.matchName);
+    // Add matching rules
+    if (settings.match) {
+      for (var match in settings.match) {
+        if (!settings.match.hasOwnProperty(match)) {
+          continue;
+        }
 
-    // Remove the matching rules, if any exist... The rest can only be pipeline
-    // items.  So if there is stuff in the plugin config that is not in the
-    // pipeline, the plugin registration will not be successful.
-    delete settings.matchPath;
-    delete settings.matchName;
+        this.addMatchingRules(match, settings.match[match]);
+      }
+    }
 
+    // Hook into the different pipelines
     for (var target in settings) {
-      if (!settings.hasOwnProperty(target)) {
+      if (!settings.hasOwnProperty(target) || target === "match") {
         continue;
       }
 
@@ -53,31 +54,22 @@
 
 
   /**
-   * Adds path matching rules
+   * Method for adding matching rules used for determining if a
+   * module meta should be processed by the plugin or not.
    */
-  Plugin.prototype.matchPath = function(matches) {
+  Plugin.prototype.addMatchingRules = function(name, matches) {
+    var rules;
     if (matches && matches.length) {
-      this._matchPath.add(configureMatches(matches));
+      rules = this._matches[name] || (this._matches[name] = new RuleMatcher());
+      rules.add(configureMatchingRules(matches));
     }
-    return this;
-  };
-
-
-  /**
-   * Add name matching rules
-   */
-  Plugin.prototype.matchName = function(matches) {
-    if (matches && matches.length) {
-      this._matchName.add(configureMatches(matches));
-    }
-    return this;
   };
 
 
   /**
    * Configures matches
    */
-  function configureMatches(matches) {
+  function configureMatchingRules(matches) {
     if (Utils.isString(matches)) {
       matches = [matches];
     }
@@ -138,7 +130,7 @@
       // Handlers themselves can return promises and get injected in the
       // sequence.
       return settings.handler.reduce(function(prev, curr) {
-        return prev.then(function() {
+        return prev.then(function pluginHandler() {
           return curr.call(plugin, moduleMeta);
         }, Utils.reportError);
       }, Promise.resolve());
@@ -151,18 +143,27 @@
    * the matching rules for path and name.
    */
   function canExecute(plugin, moduleMeta) {
-    var matchPathLength = plugin._matchPath.getLength();
-    if (matchPathLength && plugin._matchPath.match(moduleMeta.path)) {
-      return true;
+    var ruleLength, allLength = 0;
+
+    for (var match in plugin._matches) {
+      if (!plugin._matches.hasOwnProperty(match)) {
+        continue;
+      }
+
+      ruleLength = plugin._matches[match].getLength();
+      allLength += ruleLength;
+
+      if (ruleLength && plugin._matches[match].match(moduleMeta[match])) {
+        return true;
+      }
     }
 
-    var matchNameLength = plugin._matchName.getLength();
-    if (matchNameLength && plugin._matchName.match(moduleMeta.name)) {
-      return true;
-    }
-
-    return !matchPathLength && !matchNameLength;
+    // If there was no matching rules, then we will return true.  That's because
+    // if there weren't any rules put in place to restrict module processing,
+    // then the assumption is that the module can be processed.
+    return !allLength;
   }
+
 
   module.exports = Plugin;
 }());
