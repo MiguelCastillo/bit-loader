@@ -1,9 +1,9 @@
 (function() {
   "use strict";
 
-  var Promise     = require('promise');
-  var Utils       = require('./utils');
-  var RuleMatcher = require('./rule-matcher');
+  var Promise     = require("promise");
+  var Utils       = require("./utils");
+  var RuleMatcher = require("./rule-matcher");
 
   var pluginId = 0;
 
@@ -11,9 +11,9 @@
   /**
    * Plugin
    */
-  function Plugin(name, manager) {
+  function Plugin(name, target) {
     this.name     = name || ("plugin-" + (pluginId++));
-    this.manager  = manager;
+    this.target   = target;
     this._matches = {};
   }
 
@@ -22,8 +22,8 @@
    * Configure plugin
    */
   Plugin.prototype.configure = function(options) {
-    var pipelines = this.manager.pipelines;
-    var settings  = Utils.merge({}, options);
+    var target   = this.target;
+    var settings = Utils.merge({}, options);
 
     // Add matching rules
     if (settings.match) {
@@ -37,16 +37,16 @@
     }
 
     // Hook into the different pipelines
-    for (var target in settings) {
-      if (!settings.hasOwnProperty(target) || target === "match") {
+    for (var targetItem in settings) {
+      if (!settings.hasOwnProperty(targetItem) || targetItem === "match") {
         continue;
       }
 
-      if (!pipelines.hasOwnProperty(target)) {
-        throw new TypeError("Unable to register plugin for `" + target + "`. '" + target + "' is not found");
+      if (!target.hasOwnProperty(targetItem)) {
+        throw new TypeError("Unable to register plugin for `" + targetItem + "`. '" + targetItem + "' is not found");
       }
 
-      regiterHandlers(this, settings[target], pipelines[target]);
+      regiterHandlers(this, settings[targetItem], target[targetItem]);
     }
 
     return this;
@@ -97,22 +97,22 @@
   /**
    * Configures pipeline handlers
    */
-  function configureHandlers(options) {
-    if (Utils.isFunction(options)) {
-      options = {
-        handler: [options]
+  function configureHandlers(settings) {
+    if (Utils.isFunction(settings)) {
+      settings = {
+        handler: [settings]
       };
     }
-    else if (Utils.isArray(options)) {
-      options = {
-        handler: options
+    else if (Utils.isArray(settings)) {
+      settings = {
+        handler: settings
       };
     }
-    else if (Utils.isFunction(options.handler)) {
-      options.handler = [options.handler];
+    else if (Utils.isFunction(settings.handler)) {
+      settings.handler = [settings.handler];
     }
 
-    return options;
+    return settings;
   }
 
 
@@ -158,7 +158,7 @@
       }
     }
 
-    // If there was no matching rules, then we will return true.  That's because
+    // If there was no matching rule, then we will return true.  That's because
     // if there weren't any rules put in place to restrict module processing,
     // then the assumption is that the module can be processed.
     return !allLength;

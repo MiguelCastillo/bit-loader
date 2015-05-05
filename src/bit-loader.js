@@ -308,7 +308,7 @@
       name = null;
     }
 
-    var plugin = new Plugin(name, this);
+    var plugin = new Plugin(name, this.pipelines);
     return plugin.configure(options);
   };
 
