@@ -43,7 +43,7 @@
       }
 
       if (!target.hasOwnProperty(targetItem)) {
-        throw new TypeError("Unable to register plugin for `" + targetItem + "`. '" + targetItem + "' is not found");
+        throw new TypeError("Unable to register plugin for '" + targetItem + "'. '" + targetItem + "' is not found");
       }
 
       regiterHandlers(this, settings[targetItem], target[targetItem]);
