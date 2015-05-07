@@ -34,6 +34,8 @@
     this.settings = options;
     this.context  = Registry.getById(getRegistryId());
 
+    this.plugins = {};
+
     this.rules = {
       ignore: new RuleMatcher()
     };
@@ -308,8 +310,33 @@
       name = null;
     }
 
-    var plugin = new Plugin(name, this.pipelines);
+    var plugin;
+
+    // If plugin exists, then we get it so that we can update it with the new settings.
+    // Otherwise we create a new plugin and configure it with the incoming settings.
+    if (this.plugins.hasOwnProperty(name)) {
+      plugin = this.plugins[name];
+    }
+    else {
+      plugin = new Plugin(name, this.pipelines);
+      this.plugins[plugin.name] = plugin;
+    }
+
     return plugin.configure(options);
+  };
+
+
+  Bitloader.prototype.hasPlugin = function(name) {
+    return this.plugins.hasOwnProperty(name);
+  };
+
+
+  Bitloader.prototype.getPlugin = function(name) {
+    if (this.plugins.hasOwnProperty(name)) {
+      throw new TypeError("Plugin '" + name + "' not found");
+    }
+
+    return this.plugins[name];
   };
 
 

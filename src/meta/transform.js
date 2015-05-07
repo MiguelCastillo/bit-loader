@@ -2,6 +2,7 @@
   "use strict";
 
   var Promise = require('promise'),
+      Plugin  = require('../plugin'),
       Utils   = require('../utils'),
       logger  = require('logger').factory("Meta/Tranform");
 
@@ -21,17 +22,23 @@
       return moduleMeta;
     }
 
-    if (moduleMeta.plugins && moduleMeta.plugins.length) {
+    if (runPlugins(moduleMeta.plugins)) {
       return manager.pipelines.transform
-        .run(moduleMeta.plugins, moduleMeta)
+        .run(moduleMeta.plugins, moduleMeta, Plugin.createCanExecute(moduleMeta))
         .then(transformationFinished, Utils.forwardError);
     }
     else {
       return manager.pipelines.transform
-        .runAll(moduleMeta)
+        .runAll(moduleMeta, Plugin.createCanExecute(moduleMeta))
         .then(transformationFinished, Utils.forwardError);
     }
   }
+
+
+  function runPlugins(plugins) {
+    return plugins && plugins.length && !(plugins.length === 1 && !plugins[0]);
+  }
+
 
   module.exports = MetaTransform;
 })();
