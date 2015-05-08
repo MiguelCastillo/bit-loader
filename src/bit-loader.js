@@ -318,7 +318,7 @@
       plugin = this.plugins[name];
     }
     else {
-      plugin = new Plugin(name, this.pipelines);
+      plugin = new Plugin(name, this);
       this.plugins[plugin.name] = plugin;
     }
 
@@ -326,11 +326,17 @@
   };
 
 
+  /**
+   * Method to check if a plugin already exists.
+   */
   Bitloader.prototype.hasPlugin = function(name) {
     return this.plugins.hasOwnProperty(name);
   };
 
 
+  /**
+   * Method to get a plugin that has already been loaded.
+   */
   Bitloader.prototype.getPlugin = function(name) {
     if (this.plugins.hasOwnProperty(name)) {
       throw new TypeError("Plugin '" + name + "' not found");

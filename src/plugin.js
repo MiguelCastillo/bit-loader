@@ -11,9 +11,10 @@
   /**
    * Plugin
    */
-  function Plugin(name, target) {
+  function Plugin(name, settings) {
     this.name       = name || ("plugin-" + (pluginId++));
-    this.target     = target;
+    this.settings   = settings;
+    this.services   = settings.services || settings.pipelines;
     this._matches   = {};
     this._delegates = {};
     this._handlers  = {};
@@ -24,49 +25,24 @@
    * Configure plugin
    */
   Plugin.prototype.configure = function(options) {
-    var target   = this.target;
     var settings = Utils.merge({}, options);
-    var pluginSettings;
 
     // Add matching rules
-    if (settings.match) {
-      for (var match in settings.match) {
-        if (!settings.match.hasOwnProperty(match)) {
-          continue;
-        }
-
-        this.addMatchingRules(match, settings.match[match]);
-      }
-    }
-
-
-    // Hook into the different pipelines
-    for (var targetItem in settings) {
-      if (!settings.hasOwnProperty(targetItem) || targetItem === "match") {
+    for (var match in settings.match) {
+      if (!settings.match.hasOwnProperty(match)) {
         continue;
       }
 
-      if (!target.hasOwnProperty(targetItem)) {
-        throw new TypeError("Unable to register plugin for '" + targetItem + "'. '" + targetItem + "' is not found");
+      this.addMatchingRules(match, settings.match[match]);
+    }
+
+    // Hook into the different services
+    for (var serviceName in settings) {
+      if (!settings.hasOwnProperty(serviceName) || serviceName === "match") {
+        continue;
       }
 
-      // Make sure we have a good plugin's configuration settings for the target.
-      pluginSettings = configurePlugin(settings[targetItem]);
-
-      // Must provide handlers for the plugin's target
-      if (!pluginSettings.handler) {
-        throw new TypeError("Plugin must have 'handler' defined");
-      }
-
-      // Let's store the handlers that will get called.
-      this._handlers[targetItem] = pluginSettings.handler;
-
-      // Register target delegate is one does not exist.  Delegates are the callbacks
-      // registered with the target that when called will execute all the registered
-      // handlers in a promise sequence.
-      if (!this._delegates[targetItem]) {
-        this._delegates[targetItem] = registerDelegate(this, target[targetItem], targetItem);
-      }
+      this.addHandlers(settings[serviceName], serviceName);
     }
 
     return this;
@@ -89,46 +65,65 @@
 
 
   /**
+   * Adds handlers for the particular service.
+   */
+  Plugin.prototype.addHandlers = function(handlers, serviceName) {
+    if (!this.services.hasOwnProperty(serviceName)) {
+      throw new TypeError("Unable to register plugin for '" + serviceName + "'. '" + serviceName + "' is not found");
+    }
+
+    // Make sure we have a good plugin's configuration settings for the service.
+    this._handlers[serviceName] = configurePlugin(handlers).handlers;
+
+    // Register service delegate if one does not exist.  Delegates are the callbacks
+    // registered with the service that when called, the plugins executes all the
+    // plugin's handlers in a promise sequence.
+    if (!this._delegates[serviceName]) {
+      this._delegates[serviceName] = createHandlerDelegate(this, serviceName);
+      registerHandlerDelegate(this, this.services[serviceName], this._delegates[serviceName]);
+    }
+
+    return this;
+  };
+
+
+  /**
    * Configures matches
    */
   function configureMatchingRules(matches) {
     if (Utils.isString(matches)) {
       matches = [matches];
     }
+
     return Utils.isArray(matches) ? matches : [];
   }
 
 
   /**
-   * Register pipeline handler delegate
+   * Register service handler delegate
    */
-  function registerDelegate(plugin, pipeline, targetName) {
-    var targetDelegate = createHandler(plugin, targetName);
-
-    pipeline.use({
+  function registerHandlerDelegate(plugin, service, handlerDelegate) {
+    service.use({
       name    : plugin.name,
       match   : plugin._matches,
-      handler : targetDelegate
+      handler : handlerDelegate
     });
-
-    return targetDelegate;
   }
 
 
   /**
-   * Creates handler for pipeline to handle module meta objects
+   * Creates handler for service to handle module meta objects
    */
-  function createHandler(plugin, targetName) {
+  function createHandlerDelegate(plugin, serviceName) {
     return function handlerDelegate(moduleMeta) {
       if (!canExecute(plugin._matches, moduleMeta)) {
         return Promise.resolve();
       }
 
-
       // This is a nasty little sucker with nested layers of promises...
-      // Handlers themselves can return promises and get injected in the
-      // sequence.
-      return plugin._handlers[targetName].reduce(function(prev, curr) {
+      // Handlers themselves can return promises and get injected into
+      // the promise sequence.
+      return plugin._handlers[serviceName].reduce(function(prev, curr) {
         return prev.then(function pluginHandler() {
           return curr.call(plugin, moduleMeta);
         }, Utils.reportError);
@@ -138,24 +133,46 @@
 
 
   /**
-   * Configures pipeline handlers
+   * Configures service handlers
    */
   function configurePlugin(settings) {
     if (Utils.isFunction(settings)) {
       settings = {
-        handler: [settings]
+        handlers: [settings]
       };
     }
     else if (Utils.isArray(settings)) {
       settings = {
-        handler: settings
+        handlers: settings
       };
     }
-    else if (Utils.isFunction(settings.handler)) {
-      settings.handler = [settings.handler];
+    else if (Utils.isFunction(settings.handlers)) {
+      settings.handlers = [settings.handlers];
     }
 
+    // Must provide handlers for the plugin's target
+    if (!settings.handlers) {
+      throw new TypeError("Plugin must have 'handlers' defined");
+    }
+
+    settings.handlers = configureHandlers(settings.handlers);
     return settings;
+  }
+
+
+  /**
+   * Function that goes through all the handlers and configures each one. This is
+   * where handle things like if a handler is a string, then we assume it is the
+   * name of a module that we need to load...
+   */
+  function configureHandlers(handlers) {
+    return handlers.map(function(handler) {
+      if (Utils.isString(handler)) {
+        // load dynamic plugin handler
+      }
+
+      return handler;
+    });
   }
 
 
