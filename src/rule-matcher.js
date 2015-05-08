@@ -127,7 +127,7 @@
   }
 
 
-  RuleMatcher.prototype.add = function(config) {
+  RuleMatcher.configureRule = function(config) {
     if (Utils.isString(config)) {
       config = {
         name: config
@@ -138,6 +138,12 @@
         match: config
       };
     }
+    return config;
+  };
+
+
+  RuleMatcher.prototype.add = function(config) {
+    config = RuleMatcher.configureRule(config);
 
     var rule = this.find(config.name);
     if (rule) {

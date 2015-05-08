@@ -3,6 +3,182 @@ define(['dist/bit-loader'], function(Bitloader) {
   describe("Plugin Test Suite", function() {
     var bitloader;
 
+    describe("When creating a puglin", function() {
+      var plugin;
+      beforeEach(function() {
+        plugin = new Bitloader.Plugin();
+      });
+
+      it("then `plugin` is an instance of `Plugin`", function() {
+        expect(plugin).to.be.an.instanceof(Bitloader.Plugin);
+      });
+
+      describe("and adding a rule calling `addMatchingRule'", function() {
+        var matchingRules, ruleName;
+        beforeEach(function() {
+          ruleName = "test";
+          matchingRules = ["**.js", "1.js"];
+          plugin.addMatchingRules(ruleName, matchingRules);
+        });
+
+        it("then `rules` are added to the plugin", function() {
+          expect(plugin._matches[ruleName]).to.be.an.instanceof(Bitloader.RuleMatcher);
+        });
+      });
+    });
+
+
+    describe("When creating a plugin with services", function() {
+      var plugin, pluginName, services, transformStub, dependencyStub;
+      beforeEach(function() {
+        transformStub = sinon.stub();
+        dependencyStub = sinon.stub();
+        pluginName = "testName";
+
+        services = {
+          'transform': {
+            use: transformStub
+          },
+          'dependency': {
+            use: dependencyStub
+          }
+        };
+
+        plugin = new Bitloader.Plugin(pluginName, {services: services});
+      });
+
+
+      describe("and adding a single function handler calling `addHandlers'", function() {
+        var handlerStub;
+        beforeEach(function() {
+          handlerStub = sinon.stub();
+          plugin.addHandlers(handlerStub, 'transform');
+        });
+
+        it("then plugin delegate handler is registered `transform` service", function() {
+          expect(transformStub.calledWith(sinon.match({name: pluginName}))).to.equal(true);
+        });
+
+        it("then plugin delegate handler is NOT registered for `dependency` service", function() {
+          expect(dependencyStub.called).to.equal(false);
+        });
+
+        it("then expect plugin handlers to be an `array`", function() {
+          expect(plugin._handlers.transform).to.be.an('array');
+        });
+
+        it("then there is only one plugin handler", function() {
+          expect(plugin._handlers.transform.length).to.equal(1);
+        });
+
+        it("then expect plugin handlers `array` to contain the handler regsitered", function() {
+          expect(plugin._handlers.transform.indexOf(handlerStub)).to.equal(0);
+        });
+      });
+
+
+      describe("and adding function handlers calling `addHandlers'", function() {
+        var handlerStub1, handlerStub2;
+        beforeEach(function() {
+          handlerStub1 = sinon.stub();
+          handlerStub2 = sinon.stub();
+          plugin.addHandlers(handlerStub1, 'transform');
+          plugin.addHandlers(handlerStub2, 'transform');
+        });
+
+        it("then plugin delegate handler is registered `transform` service only once", function() {
+          expect(transformStub.calledOnce).to.equal(true);
+        });
+
+        it("then plugin delegate handler is registered `transform` service", function() {
+          expect(transformStub.calledWith(sinon.match({name: pluginName}))).to.equal(true);
+        });
+
+        it("then expect plugin handlers to be an `array`", function() {
+          expect(plugin._handlers.transform).to.be.an('array');
+        });
+
+        it("then there is only one plugin handler", function() {
+          expect(plugin._handlers.transform.length).to.equal(1);
+        });
+
+        it("then expect plugin handlers `array` to NOT contain the first handler registered", function() {
+          expect(plugin._handlers.transform.indexOf(handlerStub1)).to.equal(-1);
+        });
+
+        it("then expect plugin handlers `array` to contain the second handler regsitered", function() {
+          expect(plugin._handlers.transform.indexOf(handlerStub2)).to.equal(0);
+        });
+      });
+
+
+      describe("and adding an array of two function handlers calling `addHandlers'", function() {
+        var handlerStub1, handlerStub2;
+        beforeEach(function() {
+          handlerStub1 = sinon.stub();
+          handlerStub2 = sinon.stub();
+          plugin.addHandlers([handlerStub1, handlerStub2], 'transform');
+        });
+
+        it("then plugin delegate handler is registered `transform` service only once", function() {
+          expect(transformStub.calledOnce).to.equal(true);
+        });
+
+        it("then plugin delegate handler is registered `transform` service", function() {
+          expect(transformStub.calledWith(sinon.match({name: pluginName}))).to.equal(true);
+        });
+
+        it("then expect plugin handlers to be an `array`", function() {
+          expect(plugin._handlers.transform).to.be.an('array');
+        });
+
+        it("then there is only one plugin handler", function() {
+          expect(plugin._handlers.transform.length).to.equal(2);
+        });
+
+        it("then plugin handlers `array` to contains the first handler registered", function() {
+          expect(plugin._handlers.transform.indexOf(handlerStub1)).to.equal(0);
+        });
+
+        it("then plugin handlers `array` to contains the second handler regsitered", function() {
+          expect(plugin._handlers.transform.indexOf(handlerStub2)).to.equal(1);
+        });
+      });
+
+
+      describe("and adding a NULL as a handler calling `addHandlers'", function() {
+        var handlerStub, addHandlersSpy;
+        beforeEach(function() {
+          handlerStub = sinon.stub();
+          addHandlersSpy = sinon.spy(plugin, "addHandlers");
+
+          try {
+            plugin.addHandlers([null, handlerStub],  'transform');
+          }
+          catch(ex) {
+          }
+        });
+
+        it("then plugin delegate handler is registered `transform` service only once", function() {
+          expect(transformStub.called).to.equal(false);
+        });
+
+        it("then plugin handlers to be an `array`", function() {
+          expect(plugin._handlers.transform).to.be.an('undefined');
+        });
+
+        it("then an exception to be thrown of type `TypeError`", function() {
+          expect(addHandlersSpy.exceptions[0]).to.an.instanceof(TypeError);
+        });
+
+        it("then an exception to be thrown", function() {
+          expect(addHandlersSpy.exceptions[0].toString()).to.equal(TypeError('Plugin handler must be a string or a function').toString());
+        });
+      });
+
+    });
+
+
     describe("When registering a single `transform` plugin", function() {
       var transformStub, moduleMeta;
       beforeEach(function() {
@@ -29,7 +205,6 @@ define(['dist/bit-loader'], function(Bitloader) {
 
     describe("When registering a single `dependency` plugin", function() {
       var dependencyStub, moduleMeta;
-
       beforeEach(function() {
         bitloader = new Bitloader();
         moduleMeta = {"source": ""};

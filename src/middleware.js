@@ -9,40 +9,19 @@
   /**
    * @constructor For checking middleware provider instances
    */
-  function Provider(middleware, options) {
-    this.middleware = middleware;
-    this.configure(options);
+  function Provider() {
   }
 
 
   /**
-   * Configure the provider with the given options.  Options will be processed
-   * and merged into the provided as needed.
-   *
-   * @param {object} options - Options to configure the provider with.
+   * Method to test if the provider handler can be called.  Override this method
+   * to customize how it is determined if a provider should be executed or not.
    */
-  Provider.prototype.configure = function(options) {
-    var middleware = this.middleware;
-
-    if (Utils.isFunction(options)) {
-      this.handler = options;
+  Provider.prototype.canExecute = function() {
+    if (!Utils.isFunction(this.handler)) {
+      throw new TypeError("Middleware provider handler must be implemented");
     }
-    else if (Utils.isString(options)) {
-      this.name = options;
-      this.handler = deferredHandler(middleware, this);
-    }
-    else if (Utils.isPlainObject(options)) {
-      if (!Utils.isFunction(options.handler)) {
-        if (Utils.isString(options.name)) {
-          this.handler = deferredHandler(middleware, this);
-        }
-        else {
-          throw new TypeError("Middleware provider must have a handler method or a name");
-        }
-      }
-
-      Utils.merge(this, options);
-    }
+    return true;
   };
 
 
@@ -53,15 +32,9 @@
    * @returns {Promise} Promise returned from the call to the handler.
    */
   Provider.prototype.execute = function(data) {
-    return this.handler.apply(this, data);
-  };
-
-
-  /**
-   * Method that is called to handler a request.
-   */
-  Provider.prototype.handler = function() {
-    throw new TypeError("Must be implemented");
+    if (this.canExecute.apply(this, data)) {
+      return this.handler.apply(this, data);
+    }
   };
 
 
@@ -127,19 +100,19 @@
       providers = [providers];
     }
 
-    var i, length, provider;
+    var i, length, provider, options;
     for (i = 0, length = providers.length; i < length; i++) {
-      provider = providers[i];
+      options = providers[i];
 
-      if (!provider) {
+      if (!options) {
         throw new TypeError("Middleware provider must not be empty");
       }
 
-      if (provider.name && this.hasProvider(provider.name)) {
-        Utils.merge(this.getProvider(provider.name), provider);
+      if (this.hasProvider(options.name)) {
+        Middleware.configureProvider(this, this.getProvider(options.name), options);
       }
       else {
-        provider = new Provider(this, provider);
+        provider = Middleware.createProvider(this, options);
         this.providers.push(provider);
 
         if (Utils.isString(provider.name)) {
@@ -262,22 +235,72 @@
   };
 
 
-  Middleware.Provider = Provider;
+  /**
+   * @private
+   *
+   * Method to configure providers.
+   */
+  Middleware.configureProvider = function(middleware, provider, options) {
+    if (Utils.isFunction(provider.configure)) {
+      provider.configure(options);
+    }
+    if (Utils.isFunction(options)) {
+      provider.handler = options;
+    }
+    else if (Utils.isString(options)) {
+      provider.name = options;
+
+      if (!Utils.isFunction(provider.handler)) {
+        provider.handler = Middleware.deferredHandler(middleware, provider);
+      }
+    }
+    else if (Utils.isPlainObject(options)) {
+      if (!Utils.isFunction(options.handler) && !Utils.isFunction(provider.handler)) {
+        if (Utils.isString(options.name)) {
+          options.handler = Middleware.deferredHandler(middleware, provider);
+        }
+        else {
+          throw new TypeError("Middleware provider must have a handler method or a name");
+        }
+      }
+
+      Utils.extend(provider, options);
+    }
+
+    return provider;
+  };
 
 
   /**
    * @private
+   *
+   * Provider factory
+   */
+  Middleware.createProvider = function(middleware, options) {
+    var provider;
+
+    if (Utils.isFunction(options) || Utils.isString(options) || Utils.isPlainObject(options)) {
+      provider = Middleware.configureProvider(middleware, new Provider(), options);
+    }
+
+    return provider || options;
+  };
+
+
+  /**
+   * @private
+   *
    * Method that enables chaining in providers that have to be dynamically loaded.
    */
-  function deferredHandler(middleware, provider) {
+  Middleware.deferredHandler = function(middleware, provider) {
     if (!middleware.settings.import) {
       throw new TypeError("You must configure an import method in order to dynamically load middleware providers");
     }
 
     function importProvider() {
-      if (!provider.__pending) {
+      if (!provider.__deferred) {
         logger.log("import [start]", provider);
-        provider.__pending = middleware.settings
+        provider.__deferred = middleware.settings
           .import(provider.name)
           .then(providerImported, Utils.reportError);
       }
@@ -285,13 +308,13 @@
         logger.log("import [pending]", provider);
       }
 
-      return provider.__pending;
+      return provider.__deferred;
     }
 
-    function providerImported(handler) {
+    function providerImported(result) {
       logger.log("import [end]", provider);
-      delete provider.__pending;
-      provider.configure(handler);
+      delete provider.__deferred;
+      Middleware.configureProvider(middleware, provider, result);
     }
 
 
@@ -305,11 +328,12 @@
 
       return importProvider().then(providerReady, Utils.reportError);
     };
-  }
+  };
 
 
   /**
    * @private
+   *
    * Method that runs a cancellable sequence of promises.
    *
    * When a provider is executed, sequence execution can be terminated by returning
@@ -347,5 +371,6 @@
   }
 
 
+  Middleware.Provider = Provider;
   module.exports = Middleware;
 }());

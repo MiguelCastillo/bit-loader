@@ -29,7 +29,7 @@
       return loadDependencies(manager, moduleMeta);
     }
 
-    if (moduleMeta.plugins && moduleMeta.plugins.length) {
+    if (runPlugins(moduleMeta.plugins)) {
       return manager.pipelines.dependency
         .run(moduleMeta.plugins, moduleMeta)
         .then(dependenciesFinished, Utils.forwardError);
@@ -54,6 +54,11 @@
     }
 
     return Promise.all(loading).then(dependenciesFetched, Utils.forwardError);
+  }
+
+
+  function runPlugins(plugins) {
+    return plugins && plugins.length && !(plugins.length === 1 && !plugins[0]);
   }
 
 
