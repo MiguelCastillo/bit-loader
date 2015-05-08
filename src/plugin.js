@@ -12,6 +12,7 @@
    * Plugin
    */
   function Plugin(name, settings) {
+    settings = settings || {};
     this.name       = name || ("plugin-" + (pluginId++));
     this.settings   = settings;
     this.services   = settings.services || settings.pipelines;
@@ -73,7 +74,7 @@
     }
 
     // Make sure we have a good plugin's configuration settings for the service.
-    this._handlers[serviceName] = configurePlugin(handlers).handlers;
+    this._handlers[serviceName] = configureHandlers(handlers);
 
     // Register service delegate if one does not exist.  Delegates are the callbacks
     // registered with the service that when called, the plugins executes all the
@@ -133,40 +134,28 @@
 
 
   /**
-   * Configures service handlers
-   */
-  function configurePlugin(settings) {
-    if (Utils.isFunction(settings)) {
-      settings = {
-        handlers: [settings]
-      };
-    }
-    else if (Utils.isArray(settings)) {
-      settings = {
-        handlers: settings
-      };
-    }
-    else if (Utils.isFunction(settings.handlers)) {
-      settings.handlers = [settings.handlers];
-    }
-
-    // Must provide handlers for the plugin's target
-    if (!settings.handlers) {
-      throw new TypeError("Plugin must have 'handlers' defined");
-    }
-
-    settings.handlers = configureHandlers(settings.handlers);
-    return settings;
-  }
-
-
-  /**
    * Function that goes through all the handlers and configures each one. This is
    * where handle things like if a handler is a string, then we assume it is the
    * name of a module that we need to load...
    */
   function configureHandlers(handlers) {
+    // Must provide handlers for the plugin's target
+    if (!handlers) {
+      throw new TypeError("Plugin must have 'handlers' defined");
+    }
+
+    if (Utils.isFunction(handlers)) {
+      handlers = [handlers];
+    }
+    else if (Utils.isString(handlers)) {
+      handlers = [handlers];
+    }
+
     return handlers.map(function(handler) {
+      if (!handler || (!Utils.isString(handler) && !Utils.isFunction(handler))) {
+        throw new TypeError("Plugin handler must be a string or a function");
+      }
+
       if (Utils.isString(handler)) {
         // load dynamic plugin handler
       }
