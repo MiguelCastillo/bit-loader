@@ -4,6 +4,7 @@
   var Promise     = require("promise");
   var Utils       = require("./utils");
   var RuleMatcher = require("./rule-matcher");
+  var logger      = require("./logger").factory('Plugin');
 
   var pluginId = 0;
 
@@ -19,6 +20,7 @@
     this._matches   = {};
     this._delegates = {};
     this._handlers  = {};
+    this._deferred  = {};
   }
 
 
@@ -74,7 +76,7 @@
     }
 
     // Make sure we have a good plugin's configuration settings for the service.
-    this._handlers[serviceName] = configureHandlers(handlers);
+    this._handlers[serviceName] = configureHandlers(this, serviceName, handlers);
 
     // Register service delegate if one does not exist.  Delegates are the callbacks
     // registered with the service that when called, the plugins executes all the
@@ -138,7 +140,7 @@
    * where handle things like if a handler is a string, then we assume it is the
    * name of a module that we need to load...
    */
-  function configureHandlers(handlers) {
+  function configureHandlers(plugin, serviceName, handlers) {
     // Must provide handlers for the plugin's target
     if (!handlers) {
       throw new TypeError("Plugin must have 'handlers' defined");
@@ -151,17 +153,77 @@
       handlers = [handlers];
     }
 
-    return handlers.map(function(handler) {
+    handlers = handlers.map(function(handler, i) {
       if (!handler || (!Utils.isString(handler) && !Utils.isFunction(handler))) {
         throw new TypeError("Plugin handler must be a string or a function");
       }
 
       if (Utils.isString(handler)) {
-        // load dynamic plugin handler
+        var handlerName = handler;
+
+        handler = function deferredHandlerDelegate() {
+          var data = arguments;
+
+          function handlerReady(newhandler) {
+            // Naive approach to make sure we replace the proper handler
+            if (handler === handlers[i]) {
+              handlers[i] = newhandler;
+              return newhandler.apply(plugin, data);
+            }
+            else {
+              return Promise.reject(new TypeError("Unable to register '" + serviceName + ":" + handlerName + "'. The collection of handlers has mutated."));
+            }
+          }
+
+          return deferredHandler(plugin, serviceName, handlerName).then(handlerReady, Utils.reportError);
+        };
       }
 
       return handler;
     });
+
+    return handlers;
+  }
+
+
+  /**
+   * Create a handler delegate that when call, it loads a module to be used
+   * as the actual handler used in a service.
+   */
+  function deferredHandler(plugin, serviceName, handlerName) {
+    if (!plugin.settings.import) {
+      throw new TypeError("You must configure an import method in order to dynamically load plugin handlers");
+    }
+
+    // Create a name that won't conflict with other deferred handlers in
+    // the plugin.
+    var deferredName = serviceName + ":" + handlerName;
+
+    // Function that imports the service handler and makes sure to manage
+    // caching to prevent multiple calls to import
+    function importHandler() {
+      if (!plugin._deferred[deferredName]) {
+        logger.log("import [start]", deferredName, plugin);
+        plugin._deferred[deferredName] = plugin.settings.import(handlerName);
+      }
+      else {
+        logger.log("import [pending]", deferredName, plugin);
+      }
+
+      return plugin._deferred[deferredName];
+    }
+
+    // Callback when provider is loaded
+    function handlerReady(handler) {
+      if (plugin._deferred[deferredName]) {
+        logger.log("import [end]", deferredName, plugin);
+        delete plugin._deferred[deferredName];
+      }
+
+      return handler;
+    }
+
+    return importHandler().then(handlerReady, Utils.reportError);
   }
 
 
