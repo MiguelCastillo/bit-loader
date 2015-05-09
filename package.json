@@ -1,6 +1,6 @@
 {
   "name": "bit-loader",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Module loading and dependency management micro framework designed to run in the browser and nodejs",
   "main": "src/bit-loader.js",
   "directories": {
