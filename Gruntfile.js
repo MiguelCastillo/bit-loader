@@ -73,6 +73,7 @@ module.exports = function(grunt) {
     uglify: {
       "build": {
         options: {
+          preserveComments: 'some',
           sourceMap: true
         },
         files: {
@@ -92,7 +93,7 @@ module.exports = function(grunt) {
       "build": {
         options: {
           position: 'top',
-          banner: "/** <%= pkg.name %> v<%= pkg.version %> - <%= grunt.template.today('yyyy-mm-dd') %>. (c) <%= grunt.template.today('yyyy') %> Miguel Castillo. Licensed under MIT */",
+          banner: "/*! <%= pkg.name %> v<%= pkg.version %> - <%= grunt.template.today('yyyy-mm-dd') %>. (c) <%= grunt.template.today('yyyy') %> Miguel Castillo. Licensed under MIT */",
           linebreak: true
         },
         files: {
@@ -112,7 +113,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks("grunt-contrib-jshint");
   grunt.loadNpmTasks("grunt-browserify");
 
-  grunt.registerTask("build", ["jshint:all", "browserify:build", "uglify:build", "usebanner:build"]);
+  grunt.registerTask("build", ["jshint:all", "browserify:build", "usebanner:build", "uglify:build"]);
   grunt.registerTask("server", ["connect:keepalive"]);
   grunt.registerTask("test", ["connect:test", "mocha:test"]);
   grunt.registerTask("dev", ["concurrent:test"]);
