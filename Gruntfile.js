@@ -96,7 +96,7 @@ module.exports = function(grunt) {
           linebreak: true
         },
         files: {
-          src: [ 'dist/**.js']
+          src: ['dist/**.js']
         }
       }
     }
