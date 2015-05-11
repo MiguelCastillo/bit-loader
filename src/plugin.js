@@ -31,12 +31,12 @@
     var settings = Utils.merge({}, options);
 
     // Add matching rules
-    for (var match in settings.match) {
-      if (!settings.match.hasOwnProperty(match)) {
+    for (var matchName in settings.match) {
+      if (!settings.match.hasOwnProperty(matchName)) {
         continue;
       }
 
-      this.addMatchingRules(match, settings.match[match]);
+      this.addMatchingRules(matchName, settings.match[matchName]);
     }
 
     // Hook into the different services
@@ -45,7 +45,7 @@
         continue;
       }
 
-      this.addHandlers(settings[serviceName], serviceName);
+      this.addHandlers(serviceName, settings[serviceName]);
     }
 
     return this;
@@ -56,10 +56,10 @@
    * Method for adding matching rules used for determining if a
    * module meta should be processed by the plugin or not.
    */
-  Plugin.prototype.addMatchingRules = function(name, matches) {
+  Plugin.prototype.addMatchingRules = function(matchName, matches) {
     var rules;
     if (matches && matches.length) {
-      rules = this._matches[name] || (this._matches[name] = new RuleMatcher());
+      rules = this._matches[matchName] || (this._matches[matchName] = new RuleMatcher());
       rules.add(configureMatchingRules(matches));
     }
 
@@ -70,7 +70,7 @@
   /**
    * Adds handlers for the particular service.
    */
-  Plugin.prototype.addHandlers = function(handlers, serviceName) {
+  Plugin.prototype.addHandlers = function(serviceName, handlers) {
     if (!this.services.hasOwnProperty(serviceName)) {
       throw new TypeError("Unable to register plugin for '" + serviceName + "'. '" + serviceName + "' is not found");
     }
