@@ -72,7 +72,7 @@ define(['dist/bit-loader'], function(Bitloader) {
         });
 
         it("then expect plugin handlers `array` to contain the handler regsitered", function() {
-          expect(plugin._handlers.transform.indexOf(handlerStub)).to.equal(0);
+          expect(plugin._handlers.transform[0].handler === handlerStub).to.equal(true);
         });
       });
 
@@ -103,11 +103,11 @@ define(['dist/bit-loader'], function(Bitloader) {
         });
 
         it("then expect plugin handlers `array` to NOT contain the first handler registered", function() {
-          expect(plugin._handlers.transform.indexOf(handlerStub1)).to.equal(-1);
+          expect(plugin._handlers.transform[0].handler === handlerStub1).to.equal(false);
         });
 
         it("then expect plugin handlers `array` to contain the second handler regsitered", function() {
-          expect(plugin._handlers.transform.indexOf(handlerStub2)).to.equal(0);
+          expect(plugin._handlers.transform[0].handler === handlerStub2).to.equal(true);
         });
       });
 
@@ -137,11 +137,11 @@ define(['dist/bit-loader'], function(Bitloader) {
         });
 
         it("then plugin handlers `array` to contains the first handler registered", function() {
-          expect(plugin._handlers.transform.indexOf(handlerStub1)).to.equal(0);
+          expect(plugin._handlers.transform[0].handler === handlerStub1).to.equal(true);
         });
 
         it("then plugin handlers `array` to contains the second handler regsitered", function() {
-          expect(plugin._handlers.transform.indexOf(handlerStub2)).to.equal(1);
+          expect(plugin._handlers.transform[1].handler === handlerStub2).to.equal(true);
         });
       });
 
@@ -172,10 +172,88 @@ define(['dist/bit-loader'], function(Bitloader) {
         });
 
         it("then an exception to be thrown", function() {
-          expect(addHandlersSpy.exceptions[0].toString()).to.equal(TypeError('Plugin handler must be a string or a function').toString());
+          expect(addHandlersSpy.exceptions[0].toString()).to.equal(TypeError('Plugin handler must be a string, a function, or an object with a handler that is a string or a function').toString());
         });
       });
 
+    });
+
+
+    describe("When adding an array of two handlers with options calling `addHandlers'", function() {
+      var handlerStub1, handlerStub2, handlerStub1Options, handlerStub2Options, moduleMeta, plugin;
+      beforeEach(function() {
+        bitloader = new Bitloader();
+        handlerStub1Options = {name: "dracular is pretty crazy"};
+        handlerStub2Options = {args: "pass it back"};
+        handlerStub1 = sinon.stub();
+        handlerStub2 = sinon.stub();
+        moduleMeta = {"source": ""};
+
+        plugin = bitloader.plugin().addHandlers('transform', [
+          {
+            handler: handlerStub1,
+            options: handlerStub1Options
+          }, {
+            handler: handlerStub2,
+            options: handlerStub2Options
+          }
+        ]);
+
+        return bitloader.providers.loader._pipelineModuleMeta(moduleMeta);
+      });
+
+
+      it("then expect plugin handlers to be an `array`", function() {
+        expect(plugin._handlers.transform).to.be.an('array');
+      });
+
+      it("then there is only one plugin handler", function() {
+        expect(plugin._handlers.transform.length).to.equal(2);
+      });
+
+      it("then plugin handler 1 is called once", function() {
+        expect(handlerStub1.calledOnce).to.equal(true);
+      });
+
+      it("then plugin handler 1 is called with the appropriate module meta and options", function() {
+        expect(handlerStub1.calledWithExactly(moduleMeta, handlerStub1Options)).to.equal(true);
+      });
+
+      it("then plugin handler 2 is called once", function() {
+        expect(handlerStub2.calledOnce).to.equal(true);
+      });
+
+      it("then plugin handler 2 is called with the appropriate module meta and options", function() {
+        expect(handlerStub2.calledWithExactly(moduleMeta, handlerStub2Options)).to.equal(true);
+      });
+    });
+
+
+    describe("When registering a single `transform` plugin with invalid handler", function() {
+      var moduleMeta, pluginSpy;
+      beforeEach(function() {
+        moduleMeta = {"source": ""};
+        bitloader = new Bitloader();
+        pluginSpy = sinon.spy(bitloader, 'plugin');
+
+        try {
+          bitloader.plugin({
+            "transform": {
+              handler: true
+            }
+          });
+        }
+        catch(ex) {
+        }
+      });
+
+      it("then an exception to be thrown of type `TypeError`", function() {
+        expect(pluginSpy.exceptions[0]).to.an.instanceof(TypeError);
+      });
+
+      it("then an exception to be thrown", function() {
+        expect(pluginSpy.exceptions[0].toString()).to.equal(TypeError('Plugin handler must be a function or a string').toString());
+      });
     });
 
 
@@ -198,7 +276,7 @@ define(['dist/bit-loader'], function(Bitloader) {
       });
 
       it("then the `dependency` handler is called with the appropriate module meta object", function() {
-        expect(transformStub.calledWithExactly(moduleMeta)).to.equal(true);
+        expect(transformStub.calledWithExactly(moduleMeta, undefined)).to.equal(true);
       });
     });
 
@@ -222,7 +300,7 @@ define(['dist/bit-loader'], function(Bitloader) {
       });
 
       it("then the `dependency` handler is called with the appropriate module meta object", function() {
-        expect(dependencyStub.calledWithExactly(moduleMeta)).to.equal(true);
+        expect(dependencyStub.calledWithExactly(moduleMeta, undefined)).to.equal(true);
       });
     });
 
@@ -248,7 +326,7 @@ define(['dist/bit-loader'], function(Bitloader) {
       });
 
       it("then then `transform` plugin is called with appropriate module meta", function(){
-        expect(transformStub.calledWithExactly(moduleMeta)).to.equal(true);
+        expect(transformStub.calledWithExactly(moduleMeta, undefined)).to.equal(true);
       });
 
       it("then the `dependency` plugin is called", function() {
@@ -256,16 +334,18 @@ define(['dist/bit-loader'], function(Bitloader) {
       });
 
       it("then then `dependency` plugin is called with appropriate module meta", function(){
-        expect(dependencyStub.calledWithExactly(moduleMeta)).to.equal(true);
+        expect(dependencyStub.calledWithExactly(moduleMeta, undefined)).to.equal(true);
       });
     });
 
 
-    describe("When registering a `transform` and `dependency` plugin with multiple handlers and `matchPath` pattern", function() {
-      var transformStub1, transformStub2, transformStub3, dependencyStub1, dependencyStub2, moduleMeta;
+    describe("When registering a `transform` and `dependency` plugin with multiple handlers and match path pattern", function() {
+      var transformStub1, transformStub2, transformStub3, dependencyStub1, dependencyStub2, moduleMeta, transformStub1Options, transformStub2Options;
       beforeEach(function() {
         bitloader = new Bitloader();
         moduleMeta = {"path": "test.js", "source":""};
+        transformStub1Options = {"some data": "for the win"};
+        transformStub2Options = {"race": 1};
         transformStub1  = sinon.stub();
         transformStub2  = sinon.stub();
         transformStub3  = sinon.stub();
@@ -276,7 +356,15 @@ define(['dist/bit-loader'], function(Bitloader) {
           "match": {
             "path": ["**/*.js"]
           },
-          "transform": [transformStub1, transformStub2],
+          "transform": [
+            {
+              handler: transformStub1,
+              options: transformStub1Options
+            }, {
+              handler: transformStub2,
+              options: transformStub2Options
+            }
+          ],
           "dependency": dependencyStub1
         });
 
@@ -295,16 +383,16 @@ define(['dist/bit-loader'], function(Bitloader) {
         expect(transformStub1.calledOnce).to.equal(true);
       });
 
-      it("then the `transform` handler1 is called for pattern **/*.js with the appropriate module meta", function() {
-        expect(transformStub1.calledWithExactly(moduleMeta)).to.equal(true);
+      it("then the `transform` handler1 is called for pattern **/*.js with the appropriate module meta and options", function() {
+        expect(transformStub1.calledWithExactly(moduleMeta, transformStub1Options)).to.equal(true);
       });
 
       it("then the `transform` handler2 is called for pattern **/*.js", function() {
         expect(transformStub2.calledOnce).to.equal(true);
       });
 
-      it("then the `transform` handler2 is called for pattern **/*.js with the appropriate module meta", function() {
-        expect(transformStub2.calledWithExactly(moduleMeta)).to.equal(true);
+      it("then the `transform` handler2 is called for pattern **/*.js with the appropriate module meta and options", function() {
+        expect(transformStub2.calledWithExactly(moduleMeta, transformStub2Options)).to.equal(true);
       });
 
       it("then the `dependency` handler1 is called for pattern **/*.js", function() {
@@ -312,7 +400,7 @@ define(['dist/bit-loader'], function(Bitloader) {
       });
 
       it("then the `dependency` handler1 is called for pattern **/*.js with the appropriate module meta", function() {
-        expect(dependencyStub1.calledWithExactly(moduleMeta)).to.equal(true);
+        expect(dependencyStub1.calledWithExactly(moduleMeta, undefined)).to.equal(true);
       });
 
       it("then the `transform` handler3 is NOT called for pattern **/*.jsx", function() {
@@ -471,7 +559,7 @@ define(['dist/bit-loader'], function(Bitloader) {
       });
 
       it("then the `less` plugin for `transform` is called with the appropriate module meta", function() {
-        expect(lessTransformStub.calledWithExactly(moduleMeta)).to.equal(true);
+        expect(lessTransformStub.calledWithExactly(moduleMeta, undefined)).to.equal(true);
       });
 
       it("then the `less` plugin for `dependency` is called", function() {
@@ -479,7 +567,7 @@ define(['dist/bit-loader'], function(Bitloader) {
       });
 
       it("then the `less` plugin for `dependency` is called with the appropriate module meta", function() {
-        expect(lessDependencyStub.calledWithExactly(moduleMeta)).to.equal(true);
+        expect(lessDependencyStub.calledWithExactly(moduleMeta, undefined)).to.equal(true);
       });
 
       it("then the `text` plugin for `transform` is NOT called", function() {
