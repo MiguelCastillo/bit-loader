@@ -52,7 +52,7 @@ define(['dist/bit-loader'], function(Bitloader) {
         var handlerStub;
         beforeEach(function() {
           handlerStub = sinon.stub();
-          plugin.addHandlers(handlerStub, 'transform');
+          plugin.addHandlers('transform', handlerStub);
         });
 
         it("then plugin delegate handler is registered `transform` service", function() {
@@ -82,8 +82,8 @@ define(['dist/bit-loader'], function(Bitloader) {
         beforeEach(function() {
           handlerStub1 = sinon.stub();
           handlerStub2 = sinon.stub();
-          plugin.addHandlers(handlerStub1, 'transform');
-          plugin.addHandlers(handlerStub2, 'transform');
+          plugin.addHandlers('transform', handlerStub1);
+          plugin.addHandlers('transform', handlerStub2);
         });
 
         it("then plugin delegate handler is registered `transform` service only once", function() {
@@ -117,7 +117,7 @@ define(['dist/bit-loader'], function(Bitloader) {
         beforeEach(function() {
           handlerStub1 = sinon.stub();
           handlerStub2 = sinon.stub();
-          plugin.addHandlers([handlerStub1, handlerStub2], 'transform');
+          plugin.addHandlers('transform', [handlerStub1, handlerStub2]);
         });
 
         it("then plugin delegate handler is registered `transform` service only once", function() {
@@ -153,7 +153,7 @@ define(['dist/bit-loader'], function(Bitloader) {
           addHandlersSpy = sinon.spy(plugin, "addHandlers");
 
           try {
-            plugin.addHandlers([null, handlerStub],  'transform');
+            plugin.addHandlers('transform', [null, handlerStub]);
           }
           catch(ex) {
           }
