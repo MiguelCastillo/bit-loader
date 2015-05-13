@@ -75,16 +75,16 @@
       throw new TypeError("Unable to register plugin for '" + serviceName + "'. '" + serviceName + "' is not found");
     }
 
-    // Make sure we have a good plugin's configuration settings for the service.
-    this._handlers[serviceName] = configureHandlers(this, serviceName, handlers);
-
     // Register service delegate if one does not exist.  Delegates are the callbacks
     // registered with the service that when called, the plugins executes all the
     // plugin's handlers in a promise sequence.
     if (!this._delegates[serviceName]) {
-      this._delegates[serviceName] = createHandlerDelegate(this, serviceName);
-      registerHandlerDelegate(this, this.services[serviceName], this._delegates[serviceName]);
+      this._delegates[serviceName] = createServiceHandler(this, serviceName);
+      registerServiceHandler(this, this.services[serviceName], this._delegates[serviceName]);
     }
+
+    // Make sure we have a good plugin's configuration settings for the service.
+    this._handlers[serviceName] = configurePluginHandlers(this, serviceName, handlers);
 
     return this;
   };
@@ -105,32 +105,34 @@
   /**
    * Register service handler delegate
    */
-  function registerHandlerDelegate(plugin, service, handlerDelegate) {
+  function registerServiceHandler(plugin, service, handler) {
     service.use({
       name    : plugin.name,
       match   : plugin._matches,
-      handler : handlerDelegate
+      handler : handler
     });
   }
 
 
   /**
-   * Creates handler for service to handle module meta objects
+   * Creates service handler to process module meta objects
    */
-  function createHandlerDelegate(plugin, serviceName) {
+  function createServiceHandler(plugin, serviceName) {
+
+    // The service handler iterates through all the plugin handlers
+    // passing in the correspoding module meta to be processed.
     return function handlerDelegate(moduleMeta) {
-      if (!canExecute(plugin._matches, moduleMeta)) {
-        return Promise.resolve();
+      function handlerIterator(prev, handlerConfig) {
+        function pluginHandler() {
+          return handlerConfig.handler.call(handlerConfig, moduleMeta, handlerConfig.options);
+        }
+        return prev.then(pluginHandler, Utils.reportError);
       }
 
       // This is a nasty little sucker with nested layers of promises...
       // Handlers themselves can return promises and get injected into
       // the promise sequence.
-      return plugin._handlers[serviceName].reduce(function(prev, handlerConfig) {
-        return prev.then(function pluginHandler() {
-          return handlerConfig.handler.call(handlerConfig, moduleMeta, handlerConfig.options);
-        }, Utils.reportError);
-      }, Promise.resolve());
+      return plugin._handlers[serviceName].reduce(handlerIterator, Promise.resolve());
     };
   }
 
@@ -140,7 +142,7 @@
    * where handle things like if a handler is a string, then we assume it is the
    * name of a module that we need to load...
    */
-  function configureHandlers(plugin, serviceName, handlers) {
+  function configurePluginHandlers(plugin, serviceName, handlers) {
     // Must provide handlers for the plugin's target
     if (!handlers) {
       throw new TypeError("Plugin must have 'handlers' defined");
@@ -162,7 +164,7 @@
         };
       }
 
-      // Handle handler that need to be loaded dynamically
+      // Handle dynamic handler loading
       if (Utils.isString(handlerConfig.handler)) {
         var handlerName = handlerConfig.handler;
 
@@ -178,7 +180,7 @@
             }
           }
 
-          return deferredHandler(plugin, serviceName, handlerName).then(handlerReady, Utils.reportError);
+          return deferredPluginHandler(plugin, serviceName, handlerName).then(handlerReady, Utils.reportError);
         };
       }
 
@@ -198,7 +200,7 @@
    * Create a handler delegate that when call, it loads a module to be used
    * as the actual handler used in a service.
    */
-  function deferredHandler(plugin, serviceName, handlerName) {
+  function deferredPluginHandler(plugin, serviceName, handlerName) {
     if (!plugin.settings.import) {
       throw new TypeError("You must configure an import method in order to dynamically load plugin handlers");
     }
@@ -266,10 +268,7 @@
 
   function createCanExecute(moduleMeta) {
     return function canExecuteDelegate(plugin) {
-      if (plugin.match) {
-        return canExecute(plugin.match, moduleMeta);
-      }
-      return true;
+      return canExecute(plugin.match, moduleMeta);
     };
   }
 
