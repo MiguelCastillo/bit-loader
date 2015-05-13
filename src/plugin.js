@@ -75,6 +75,9 @@
       throw new TypeError("Unable to register plugin for '" + serviceName + "'. '" + serviceName + "' is not found");
     }
 
+    // Make sure we have a good plugin's configuration settings for the service.
+    this._handlers[serviceName] = configurePluginHandlers(this, serviceName, handlers);
+
     // Register service delegate if one does not exist.  Delegates are the callbacks
     // registered with the service that when called, the plugins executes all the
     // plugin's handlers in a promise sequence.
@@ -82,9 +85,6 @@
       this._delegates[serviceName] = createServiceHandler(this, serviceName);
       registerServiceHandler(this, this.services[serviceName], this._delegates[serviceName]);
     }
-
-    // Make sure we have a good plugin's configuration settings for the service.
-    this._handlers[serviceName] = configurePluginHandlers(this, serviceName, handlers);
 
     return this;
   };
@@ -118,7 +118,6 @@
    * Creates service handler to process module meta objects
    */
   function createServiceHandler(plugin, serviceName) {
-
     // The service handler iterates through all the plugin handlers
     // passing in the correspoding module meta to be processed.
     return function handlerDelegate(moduleMeta) {
@@ -143,7 +142,6 @@
    * name of a module that we need to load...
    */
   function configurePluginHandlers(plugin, serviceName, handlers) {
-    // Must provide handlers for the plugin's target
     if (!handlers) {
       throw new TypeError("Plugin must have 'handlers' defined");
     }
@@ -244,18 +242,16 @@
   function canExecute(matches, moduleMeta) {
     var ruleLength, allLength = 0;
 
-    if (matches) {
-      for (var match in matches) {
-        if (!matches.hasOwnProperty(match)) {
-          continue;
-        }
+    for (var match in matches) {
+      if (!matches.hasOwnProperty(match)) {
+        continue;
+      }
 
-        ruleLength = matches[match].getLength();
-        allLength += ruleLength;
+      ruleLength = matches[match].getLength();
+      allLength += ruleLength;
 
-        if (ruleLength && matches[match].match(moduleMeta[match])) {
-          return true;
-        }
+      if (ruleLength && matches[match].match(moduleMeta[match])) {
+        return true;
       }
     }
 

@@ -1,10 +1,10 @@
 (function() {
   "use strict";
 
-  var Promise = require('promise'),
-      Plugin  = require('../plugin'),
-      Utils   = require('../utils'),
-      logger  = require('logger').factory("Meta/Tranform");
+  var Promise     = require('promise'),
+      runPipeline = require('./runPipeline'),
+      Utils       = require('../utils'),
+      logger      = require('logger').factory("Meta/Tranform");
 
   /**
    * The transform enables transformation providers to process the moduleMeta
@@ -22,21 +22,8 @@
       return moduleMeta;
     }
 
-    if (runPlugins(moduleMeta.plugins)) {
-      return manager.pipelines.transform
-        .run(moduleMeta.plugins, moduleMeta, Plugin.createCanExecute(moduleMeta))
-        .then(transformationFinished, Utils.forwardError);
-    }
-    else {
-      return manager.pipelines.transform
-        .runAll(moduleMeta, Plugin.createCanExecute(moduleMeta))
-        .then(transformationFinished, Utils.forwardError);
-    }
-  }
-
-
-  function runPlugins(plugins) {
-    return plugins && plugins.length && !(plugins.length === 1 && !plugins[0]);
+    return runPipeline(manager.pipelines.transform, moduleMeta)
+      .then(transformationFinished, Utils.forwardError);
   }
 
 
