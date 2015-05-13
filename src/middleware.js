@@ -14,25 +14,13 @@
 
 
   /**
-   * Method to test if the provider handler can be called.  Override this method
-   * to customize how it is determined if a provider should be executed or not.
-   */
-  Provider.prototype.canExecute = function() {
-    if (!Utils.isFunction(this.handler)) {
-      throw new TypeError("Middleware provider handler must be implemented");
-    }
-    return true;
-  };
-
-
-  /**
    * Method that determines if the handler should be called and then calls
    * if need be.
    *
    * @returns {Promise} Promise returned from the call to the handler.
    */
   Provider.prototype.execute = function(data) {
-    if (this.canExecute.apply(this, data)) {
+    if (Utils.isFunction(this.handler)) {
       return this.handler.apply(this, data);
     }
   };

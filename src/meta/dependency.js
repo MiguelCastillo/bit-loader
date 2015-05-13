@@ -1,10 +1,11 @@
 (function() {
   "use strict";
 
-  var Promise = require('promise'),
-      Module  = require('../module'),
-      Utils   = require('../utils'),
-      logger  = require('logger').factory("Meta/Dependency");
+  var Promise     = require('promise'),
+      runPipeline = require('./runPipeline'),
+      Module      = require('../module'),
+      Utils       = require('../utils'),
+      logger      = require('logger').factory("Meta/Dependency");
 
 
   /**
@@ -29,16 +30,8 @@
       return loadDependencies(manager, moduleMeta);
     }
 
-    if (runPlugins(moduleMeta.plugins)) {
-      return manager.pipelines.dependency
-        .run(moduleMeta.plugins, moduleMeta)
-        .then(dependenciesFinished, Utils.forwardError);
-    }
-    else {
-      return manager.pipelines.dependency
-        .runAll(moduleMeta)
-        .then(dependenciesFinished, Utils.forwardError);
-    }
+    return runPipeline(manager.pipelines.dependency, moduleMeta)
+      .then(dependenciesFinished, Utils.forwardError);
   }
 
 
@@ -54,11 +47,6 @@
     }
 
     return Promise.all(loading).then(dependenciesFetched, Utils.forwardError);
-  }
-
-
-  function runPlugins(plugins) {
-    return plugins && plugins.length && !(plugins.length === 1 && !plugins[0]);
   }
 
 
