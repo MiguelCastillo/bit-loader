@@ -12,11 +12,11 @@
   /**
    * Plugin
    */
-  function Plugin(name, settings) {
-    settings = settings || {};
+  function Plugin(name, options) {
+    options = options || {};
     this.name       = name || ("plugin-" + (pluginId++));
-    this.settings   = settings;
-    this.services   = settings.services || settings.pipelines;
+    this.settings   = options;
+    this.services   = options.services || options.pipelines;
     this._matches   = {};
     this._delegates = {};
     this._handlers  = {};
@@ -126,9 +126,9 @@
       // This is a nasty little sucker with nested layers of promises...
       // Handlers themselves can return promises and get injected into
       // the promise sequence.
-      return plugin._handlers[serviceName].reduce(function(prev, curr) {
+      return plugin._handlers[serviceName].reduce(function(prev, handlerConfig) {
         return prev.then(function pluginHandler() {
-          return curr.call(plugin, moduleMeta);
+          return handlerConfig.handler.call(handlerConfig, moduleMeta, handlerConfig.options);
         }, Utils.reportError);
       }, Promise.resolve());
     };
@@ -146,29 +146,32 @@
       throw new TypeError("Plugin must have 'handlers' defined");
     }
 
-    if (Utils.isFunction(handlers)) {
-      handlers = [handlers];
-    }
-    else if (Utils.isString(handlers)) {
+    if (!Utils.isArray(handlers)) {
       handlers = [handlers];
     }
 
-    handlers = handlers.map(function(handler, i) {
-      if (!handler || (!Utils.isString(handler) && !Utils.isFunction(handler))) {
-        throw new TypeError("Plugin handler must be a string or a function");
+
+    function handlerIterator(handlerConfig, i) {
+      if (!handlerConfig) {
+        throw new TypeError("Plugin handler must be a string, a function, or an object with a handler that is a string or a function");
       }
 
-      if (Utils.isString(handler)) {
-        var handlerName = handler;
+      if (Utils.isFunction(handlerConfig) || Utils.isString(handlerConfig)) {
+        handlerConfig = {
+          handler: handlerConfig
+        };
+      }
 
-        handler = function deferredHandlerDelegate() {
-          var data = arguments;
+      // Handle handler that need to be loaded dynamically
+      if (Utils.isString(handlerConfig.handler)) {
+        var handlerName = handlerConfig.handler;
 
+        handlerConfig.handler = function deferredHandlerDelegate(moduleMeta) {
           function handlerReady(newhandler) {
             // Naive approach to make sure we replace the proper handler
-            if (handler === handlers[i]) {
-              handlers[i] = newhandler;
-              return newhandler.apply(plugin, data);
+            if (handlerConfig === handlers[i]) {
+              handlers[i].handler = newhandler;
+              return newhandler.call(handlerConfig, moduleMeta, handlerConfig.options);
             }
             else {
               return Promise.reject(new TypeError("Unable to register '" + serviceName + ":" + handlerName + "'. The collection of handlers has mutated."));
@@ -179,10 +182,15 @@
         };
       }
 
-      return handler;
-    });
+      if (!Utils.isFunction(handlerConfig.handler)) {
+        throw new TypeError("Plugin handler must be a function or a string");
+      }
 
-    return handlers;
+      return handlerConfig;
+    }
+
+
+    return (handlers = handlers.map(handlerIterator));
   }
 
 
