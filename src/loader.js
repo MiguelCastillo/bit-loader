@@ -96,7 +96,7 @@
       return Promise.resolve(manager.getModule(name));
     }
 
-    // Check if the module is fetch or registered
+    // Check if the module is fetched or registered
     if (loader.isLoaded(name) || loader.isPending(name)) {
       return Promise.resolve(build());
     }
@@ -112,15 +112,12 @@
 
 
   /**
-   * This method fetches the module meta if it is not already loaded. Once the
-   * the module meta is fetched, it is sent through the transform pipeline. Once
-   * the transformation is done, all dependencies are fetched.
-   *
+   * This method fetches the module meta from storage, if it is not already loaded.
    * The purpose for this method is to setup the module meta and all its dependencies
    * so that the module meta can be converted to an instance of Module synchronously.
    *
    * Use this method if the intent is to preload dependencies without actually compiling
-   * module metas to instances of Module.
+   * module meta objects to instances of Module.
    *
    * @param {string} name - The name of the module to fetch
    * @returns {Promise}
@@ -286,6 +283,25 @@
 
 
   /**
+   * Put a module meta object through the pipeline, which includes the transformation
+   * and dependency loading stages.
+   *
+   * @param {Module.Meta} moduleMeta - Module meta object to run through the pipeline.
+   *
+   * @returns {Promise} that when fulfilled, the processed module meta object is returned.
+   */
+  Loader.prototype.runPipeline = function(moduleMeta) {
+    return this.pipeline
+      .run(this.manager, moduleMeta)
+      .then(pipelineFinished, Utils.forwardError);
+
+    function pipelineFinished() {
+      return moduleMeta;
+    }
+  };
+
+
+  /**
    * Method that converts module names to a module meta objects that is then fetched,
    * fed through the pipeline, and eventually built into a Module instance.
    *
@@ -315,8 +331,8 @@
 
 
   /**
-   * Put a module meta object through the pipeline, which includes the transformation
-   * and dependency loading stages.
+   * Verifies the state of the module meta object, and puts it though the processing
+   * pipeline if it needs to be processed.
    *
    * @param {Module.Meta} moduleMeta - Module meta object to run through the pipeline.
    *
@@ -327,13 +343,7 @@
       return Promise.resolve(moduleMeta);
     }
 
-    return this.pipeline
-      .run(this.manager, moduleMeta)
-      .then(pipelineFinished, Utils.forwardError);
-
-    function pipelineFinished() {
-      return moduleMeta;
-    }
+    return this.runPipeline(moduleMeta);
   };
 
 
