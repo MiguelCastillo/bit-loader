@@ -1,14 +1,14 @@
 (function() {
   "use strict";
 
-  var Promise  = require('promise'),
-      Registry = require('./registry'),
-      Utils    = require('./utils');
+  var Promise  = require('promise');
+  var Utils    = require('./utils');
+  var Registry = require('./registry');
 
   var getRegistryId = Registry.idGenerator('import');
 
   var ModuleState = {
-    LOADING: "loading"
+    IMPORTING: "importing"
   };
 
 
@@ -34,7 +34,6 @@
    * @returns {Promise}
    */
   Import.prototype.import = function(name, options) {
-    options = options || {};
     var importer = this;
 
     if (typeof(name) === "string") {
@@ -48,15 +47,16 @@
 
 
   /**
-   * Loops through the array of names, loading whatever has not yet been loaded,
-   * and returning what has already been loaded.
+   * Gets the module by name.  If the module has not been loaded before, then
+   * it is loaded via the module loader
    *
    * @param {Array<string>} names - Array of module names
    * @param {Object} options
    */
   Import.prototype._getModule = function(name, options) {
-    var importer = this,
-        manager  = this.manager;
+    options = options || {};
+    var importer = this;
+    var manager  = this.manager;
 
     if (hasModule(options.modules, name)) {
       return options.modules[name];
@@ -71,40 +71,22 @@
     // Wrap in a separate promise to handle this:
     // https://github.com/MiguelCastillo/spromise/issues/35
     return new Promise(function deferredModuleResolver(resolve, reject) {
-      importer.setModule(name, importer._loadModule(name))
-        .then(function moduleSuccess(result) {
-          resolve(result);
-        }, function moduleError(error) {
-          reject(error);
-        });
-    });
-  };
-
-
-  /**
-   * Load module
-   */
-  Import.prototype._loadModule = function(name) {
-    return this.manager
-      .load(name)
-      .then(this._getCodeDelegate(name), Utils.forwardError);
-  };
-
-
-  /**
-   * Handler for when modules are loaded.
-   */
-  Import.prototype._getCodeDelegate = function(name) {
-    var importer = this;
-
-    return function getCodeDelegate(mod) {
-      if (name !== mod.name) {
-        return Promise.reject(new TypeError("Module name must be the same as the name used for loading the Module itself"));
+      function moduleError(error) {
+        reject(Utils.reportError(error));
       }
 
-      importer.deleteModule(mod.name);
-      return importer.manager.getModuleCode(mod.name);
-    };
+      function moduleLoaded(mod) {
+        if (name !== mod.name) {
+          return Promise.reject(new TypeError("Module name must be the same as the name used for loading the Module itself"));
+        }
+
+        importer.deleteModule(mod.name);
+        resolve(manager.getModuleCode(mod.name));
+      }
+
+      importer.setModule(name, manager.load(name))
+        .then(moduleLoaded, moduleError);
+    });
   };
 
 
@@ -113,15 +95,15 @@
   }
 
   Import.prototype.hasModule = function(name) {
-    return this.context.hasModuleWithState(ModuleState.LOADING, name);
+    return this.context.hasModuleWithState(ModuleState.IMPORTING, name);
   };
 
   Import.prototype.getModule = function(name) {
-    return this.context.getModuleWithState(ModuleState.LOADING, name);
+    return this.context.getModuleWithState(ModuleState.IMPORTING, name);
   };
 
   Import.prototype.setModule = function(name, item) {
-    return this.context.setModule(ModuleState.LOADING, name, item);
+    return this.context.setModule(ModuleState.IMPORTING, name, item);
   };
 
   Import.prototype.deleteModule = function(name) {
