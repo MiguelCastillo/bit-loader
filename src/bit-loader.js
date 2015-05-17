@@ -41,8 +41,10 @@
     };
 
     this.pipelines = {
+      fetch      : new Middleware(this),
       transform  : new Middleware(this),
-      dependency : new Middleware(this)
+      dependency : new Middleware(this),
+      compile    : new Middleware(this)
     };
 
     // Override any of these factories if you need specialized implementation
