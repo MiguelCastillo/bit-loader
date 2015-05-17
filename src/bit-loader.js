@@ -75,6 +75,19 @@
 
 
   /**
+   * Method that converts a module name to a path to the module file.
+   *
+   * @param {string} name - Name of the module to generate a path for
+   * @param {Module.Meta} parentModule - Module meta that's requesting the module
+   *  name resolution. Primarily used for handling relative paths.
+   *
+   * @returns {Promise} Promise that when resolved, will return an object with
+   *  a required field `path` where we can load the module file from.
+   */
+  Bitloader.prototype.resolve = function(){};
+
+
+  /**
    * Method to read files from storage. This is to be implemented by the code
    * making use of Bitloader.
    *
@@ -102,8 +115,6 @@
   /**
    * Method to asynchronously load modules
    *
-   * @function
-   *
    * @param {string|Array.<string>} names - Module or list of modules names to
    *  load. These names map back to the paths settings Bitloader was created
    *  with.
@@ -112,6 +123,16 @@
    *  back as arguments.
    */
   Bitloader.prototype.import = function(){};
+
+
+  /**
+   * Method that converts source file to a module code that can be consumed by
+   * the host application.
+   *
+   * @returns {Module} Module instance with code that can be consumed by the host
+   *  application.
+   */
+  Bitloader.prototype.compile = function(){};
 
 
   /**
