@@ -87,7 +87,7 @@ define(['dist/bit-loader'], function(Bitloader) {
         });
 
         it("then plugin delegate handler is registered `transform` service only once", function() {
-          expect(transformStub.calledOnce).to.equal(true);
+          expect(transformStub.callCount).to.equal(1);
         });
 
         it("then plugin delegate handler is registered `transform` service", function() {
@@ -121,7 +121,7 @@ define(['dist/bit-loader'], function(Bitloader) {
         });
 
         it("then plugin delegate handler is registered `transform` service only once", function() {
-          expect(transformStub.calledOnce).to.equal(true);
+          expect(transformStub.callCount).to.equal(1);
         });
 
         it("then plugin delegate handler is registered `transform` service", function() {
@@ -212,7 +212,7 @@ define(['dist/bit-loader'], function(Bitloader) {
       });
 
       it("then plugin handler 1 is called once", function() {
-        expect(handlerStub1.calledOnce).to.equal(true);
+        expect(handlerStub1.callCount).to.equal(1);
       });
 
       it("then plugin handler 1 is called with the appropriate module meta and options", function() {
@@ -220,7 +220,7 @@ define(['dist/bit-loader'], function(Bitloader) {
       });
 
       it("then plugin handler 2 is called once", function() {
-        expect(handlerStub2.calledOnce).to.equal(true);
+        expect(handlerStub2.callCount).to.equal(1);
       });
 
       it("then plugin handler 2 is called with the appropriate module meta and options", function() {
@@ -272,7 +272,7 @@ define(['dist/bit-loader'], function(Bitloader) {
       });
 
       it("then the `transform` plugin is called", function() {
-        expect(transformStub.calledOnce).to.equal(true);
+        expect(transformStub.callCount).to.equal(1);
       });
 
       it("then the `dependency` handler is called with the appropriate module meta object", function() {
@@ -296,7 +296,7 @@ define(['dist/bit-loader'], function(Bitloader) {
       });
 
       it("then the `dependency` handler is called once", function() {
-        expect(dependencyStub.calledOnce).to.equal(true);
+        expect(dependencyStub.callCount).to.equal(1);
       });
 
       it("then the `dependency` handler is called with the appropriate module meta object", function() {
@@ -488,11 +488,11 @@ define(['dist/bit-loader'], function(Bitloader) {
       });
 
       it("then the `transform` plugin is called", function() {
-        expect(transformStub.calledOnce).to.equal(true);
+        expect(transformStub.callCount).to.equal(1);
       });
 
       it("then the `dependency` plugin is called", function() {
-        expect(dependencyStub.calledOnce).to.equal(true);
+        expect(dependencyStub.callCount).to.equal(1);
       });
     });
 
@@ -517,11 +517,11 @@ define(['dist/bit-loader'], function(Bitloader) {
       });
 
       it("then the `less` plugin handler1 for `transform` is called", function() {
-        expect(lessTransformStub1.calledOnce).to.equal(true);
+        expect(lessTransformStub1.callCount).to.equal(1);
       });
 
       it("then the `less` plugin handler2 for `transform` is called", function() {
-        expect(lessTransformStub2.calledOnce).to.equal(true);
+        expect(lessTransformStub2.callCount).to.equal(1);
       });
 
       it("then the `text` plugin for `transform` is NOT called", function() {
@@ -577,7 +577,7 @@ define(['dist/bit-loader'], function(Bitloader) {
       });
 
       it("then the `less` plugin handler1 for `transform` is called", function() {
-        expect(lessTransformStub1.calledOnce).to.equal(true);
+        expect(lessTransformStub1.callCount).to.equal(1);
       });
 
       it("then the `less` plugin handler1 for `transform` is called with the appropriate module meta", function() {
@@ -614,7 +614,7 @@ define(['dist/bit-loader'], function(Bitloader) {
       });
 
       it("then the `less` plugin for `transform` is called", function() {
-        expect(lessTransformStub.calledOnce).to.equal(true);
+        expect(lessTransformStub.callCount).to.equal(1);
       });
 
       it("then the `less` plugin for `transform` is called with the appropriate module meta", function() {
@@ -622,7 +622,7 @@ define(['dist/bit-loader'], function(Bitloader) {
       });
 
       it("then the `less` plugin for `dependency` is called", function() {
-        expect(lessDependencyStub.calledOnce).to.equal(true);
+        expect(lessDependencyStub.callCount).to.equal(1);
       });
 
       it("then the `less` plugin for `dependency` is called with the appropriate module meta", function() {

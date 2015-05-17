@@ -111,7 +111,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       });
 
       it("then `manager.hasModule` is called once", function() {
-        expect(hasModuleStub.calledOnce).to.equal(true);
+        expect(hasModuleStub.callCount).to.equal(1);
       });
 
       it("then `manager.hasModuleCode` is called with `yes`", function() {
@@ -119,7 +119,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       });
 
       it("then `manager.getModuleCode` is called once", function() {
-        expect(getModuleCodeStub.calledOnce).to.equal(true);
+        expect(getModuleCodeStub.callCount).to.equal(1);
       });
 
       it("then `manager.getModuleCode` is called with `yes`", function() {
@@ -242,7 +242,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
 
         it("then `manager.load` is called once", function() {
-          expect(loadStub.calledOnce).to.equal(true);
+          expect(loadStub.callCount).to.equal(1);
         });
 
         it("then `manager.load` is called once", function() {
@@ -254,7 +254,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
 
         it("then module importer callback is called once", function() {
-          expect(moduleImportedStub.calledOnce).to.equal(true);
+          expect(moduleImportedStub.callCount).to.equal(1);
         });
 
         it("then module importer callback is called with module `yes`", function() {
@@ -262,7 +262,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
 
         it("then setModule is called once", function() {
-          expect(setModuleSpy.calledOnce).to.equal(true);
+          expect(setModuleSpy.callCount).to.equal(1);
         });
 
         it("then setModule is called with `yes`", function() {
@@ -270,7 +270,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
 
         it("then removeModule is called once", function() {
-          expect(deleteModuleSpy.calledOnce).to.equal(true);
+          expect(deleteModuleSpy.callCount).to.equal(1);
         });
 
         it("then removeModule is called with `yes`", function() {

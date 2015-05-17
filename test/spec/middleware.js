@@ -36,7 +36,7 @@ define(['dist/bit-loader'], function(Bitloader) {
         });
 
         it("then `test` middleware is called only once", function() {
-          expect(testMiddlewareStub.calledOnce).to.equal(true);
+          expect(testMiddlewareStub.callCount).to.equal(1);
         });
 
         it("then `test` middleware is called with no arguments", function() {
@@ -53,7 +53,7 @@ define(['dist/bit-loader'], function(Bitloader) {
         });
 
         it("then `test` middleware is called only once", function() {
-          expect(testMiddlewareStub.calledOnce).to.equal(true);
+          expect(testMiddlewareStub.callCount).to.equal(1);
         });
 
         it("then `test` middleware is called with 1 arguments", function() {
@@ -88,7 +88,7 @@ define(['dist/bit-loader'], function(Bitloader) {
           });
 
           it("then `sweet` middleware is called once", function() {
-            expect(sweetMiddlewareStub.calledOnce).to.equal(true);
+            expect(sweetMiddlewareStub.callCount).to.equal(1);
           });
 
           it("then `sweet` middleware is called with no arguments", function() {
@@ -111,7 +111,7 @@ define(['dist/bit-loader'], function(Bitloader) {
           });
 
           it("then `sweet` middleware is called once", function() {
-            expect(sweetMiddlewareStub.calledOnce).to.equal(true);
+            expect(sweetMiddlewareStub.callCount).to.equal(1);
           });
 
           it("then `sour` middleware is not called", function() {
@@ -119,7 +119,7 @@ define(['dist/bit-loader'], function(Bitloader) {
           });
 
           it("then `chicken` middleware is called once", function() {
-            expect(chickenMiddlewareStub.calledOnce).to.equal(true);
+            expect(chickenMiddlewareStub.callCount).to.equal(1);
           });
         });
 
@@ -131,7 +131,7 @@ define(['dist/bit-loader'], function(Bitloader) {
           });
 
           it("then `sweet` middleware is called once", function() {
-            expect(sweetMiddlewareStub.calledOnce).to.equal(true);
+            expect(sweetMiddlewareStub.callCount).to.equal(1);
           });
 
           it("then `sweet` middleware is called with argument `test value`", function() {
@@ -143,7 +143,7 @@ define(['dist/bit-loader'], function(Bitloader) {
           });
 
           it("then `chicken` middleware is called once", function() {
-            expect(chickenMiddlewareStub.calledOnce).to.equal(true);
+            expect(chickenMiddlewareStub.callCount).to.equal(1);
           });
 
           it("then `chicken` middleware is called with argument `test value`", function() {
@@ -158,15 +158,15 @@ define(['dist/bit-loader'], function(Bitloader) {
           });
 
           it("then `sweet` middleware is called once", function() {
-            expect(sweetMiddlewareStub.calledOnce).to.equal(true);
+            expect(sweetMiddlewareStub.callCount).to.equal(1);
           });
 
           it("then `sour` middleware is called once", function() {
-            expect(sourMiddlewareStub.calledOnce).to.equal(true);
+            expect(sourMiddlewareStub.callCount).to.equal(1);
           });
 
           it("then `chicken` middleware is called once", function() {
-            expect(chickenMiddlewareStub.calledOnce).to.equal(true);
+            expect(chickenMiddlewareStub.callCount).to.equal(1);
           });
         });
       });
@@ -190,11 +190,11 @@ define(['dist/bit-loader'], function(Bitloader) {
           });
 
           it("then `sweet` provider is called once", function() {
-            expect(sweetMiddlewareStub.calledOnce).to.equal(true);
+            expect(sweetMiddlewareStub.callCount).to.equal(1);
           });
 
           it("then `sour` provider is called once", function() {
-            expect(sourMiddlewareStub.calledOnce).to.equal(true);
+            expect(sourMiddlewareStub.callCount).to.equal(1);
           });
 
           it("then `chicken` provider is never called", function() {
@@ -229,11 +229,11 @@ define(['dist/bit-loader'], function(Bitloader) {
           });
 
           it("then `sweet` provider is called once", function() {
-            expect(sweetMiddlewareStub.calledOnce).to.equal(true);
+            expect(sweetMiddlewareStub.callCount).to.equal(1);
           });
 
           it("then `sour` provider is called once", function() {
-            expect(sourMiddlewareStub.calledOnce).to.equal(true);
+            expect(sourMiddlewareStub.callCount).to.equal(1);
           });
 
           it("then `sour` provider throws `TypeError`", function() {
@@ -273,7 +273,7 @@ define(['dist/bit-loader'], function(Bitloader) {
           });
 
           it("then `importStub` is called once", function() {
-            expect(importStub.calledOnce).to.equal(true);
+            expect(importStub.callCount).to.equal(1);
           });
 
           it("then `importStub` is called with `concat`", function() {
@@ -281,7 +281,7 @@ define(['dist/bit-loader'], function(Bitloader) {
           });
 
           it("then `handlerStub` is called once", function() {
-            expect(handlerStub.calledOnce).to.equal(true);
+            expect(handlerStub.callCount).to.equal(1);
           });
 
           it("then `handlerStub` is called with no arguments", function() {
@@ -297,7 +297,7 @@ define(['dist/bit-loader'], function(Bitloader) {
           });
 
           it("then `importStub` is called once", function() {
-            expect(importStub.calledOnce).to.equal(true);
+            expect(importStub.callCount).to.equal(1);
           });
 
           it("then `importStub` is called with `concat`", function() {
@@ -305,7 +305,7 @@ define(['dist/bit-loader'], function(Bitloader) {
           });
 
           it("then `handlerStub` is called once", function() {
-            expect(handlerStub.calledOnce).to.equal(true);
+            expect(handlerStub.callCount).to.equal(1);
           });
 
           it("then `handlerStub` is called with `test value`", function() {
