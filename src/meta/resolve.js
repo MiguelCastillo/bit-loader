@@ -6,7 +6,12 @@
       Utils   = require('../utils'),
       logger  = require('logger').factory("Meta/Resolve");
 
-  function MetaResolve(manager, name, parentMeta) {
+
+  function MetaResolve() {
+  }
+
+
+  MetaResolve.resolve = function(manager, name, parentMeta) {
     logger.log(name);
 
     var moduleMeta = new Module.Meta(name);
@@ -21,7 +26,8 @@
         delete meta.name;
         return moduleMeta.configure(meta);
       }, Utils.reportError);
-  }
+  };
+
 
   module.exports = MetaResolve;
 })();

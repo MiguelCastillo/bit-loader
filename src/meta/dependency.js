@@ -8,13 +8,17 @@
       logger      = require('logger').factory("Meta/Dependency");
 
 
+  function MetaDependency() {
+  }
+
+
   /**
-   * Loads up all dependencies for the module
+   * Runs dependency pipeline to load up all dependencies for the module
    *
    * @returns {Function} callback to call with the Module instance with the
    *   dependencies to be resolved
    */
-  function MetaDependency(manager, moduleMeta) {
+  MetaDependency.pipeline = function(manager, moduleMeta) {
     logger.log(moduleMeta.name, moduleMeta);
 
     if (manager.rules.ignore.match(moduleMeta.name, "dependency")) {
@@ -23,16 +27,16 @@
 
     function dependenciesFinished() {
       // Return if the module has no dependencies
-      if (!Module.Meta.hasDependencies(moduleMeta)) {
-        return moduleMeta;
+      if (Module.Meta.hasDependencies(moduleMeta)) {
+        return loadDependencies(manager, moduleMeta);
       }
 
-      return loadDependencies(manager, moduleMeta);
+      return moduleMeta;
     }
 
     return runPipeline(manager.pipelines.dependency, moduleMeta)
       .then(dependenciesFinished, Utils.forwardError);
-  }
+  };
 
 
   function loadDependencies(manager, moduleMeta) {

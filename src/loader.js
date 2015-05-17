@@ -11,7 +11,7 @@
       metaFetch      = require('./meta/fetch'),
       metaTransform  = require('./meta/transform'),
       metaDependency = require('./meta/dependency'),
-      metaCompiler   = require('./meta/compiler');
+      metaCompile    = require('./meta/compile');
 
   var getRegistryId = Registry.idGenerator('loader');
 
@@ -53,9 +53,16 @@
       throw new TypeError("Must provide a manager");
     }
 
-    this.manager  = manager;
-    this.context  = Registry.getById(getRegistryId());
-    this.pipeline = new Pipeline([metaTransform, metaDependency]);
+    this.manager = manager;
+    this.context = Registry.getById(getRegistryId());
+
+    // Setup the pipeline
+    this.pipeline = new Pipeline([
+      metaFetch.pipeline,
+      metaTransform.pipeline,
+      metaDependency.pipeline,
+      metaCompile.pipeline
+    ]);
   }
 
 
@@ -141,12 +148,8 @@
     }
 
 
-    function moduleMetaFetch(moduleMeta) {
-      return loader._fetchModuleMeta(moduleMeta);
-    }
-
     function moduleMetaPipeline(moduleMeta) {
-      return loader._pipelineModuleMeta(moduleMeta);
+      return loader.runPipeline(moduleMeta);
     }
 
     function moduleMetaFinished(moduleMeta) {
@@ -155,7 +158,6 @@
 
     var loading = loader
       ._resolveModuleMeta(name, parentMeta)
-      .then(moduleMetaFetch,    Utils.printError)
       .then(moduleMetaPipeline, Utils.printError)
       .then(moduleMetaFinished, Utils.printError);
 
@@ -214,7 +216,7 @@
 
     // Right here is where we handle dynamic registration of modules while are being loaded.
     // E.g. System.register to register a module that's being loaded
-    return metaDependency(loader.manager, loader.deleteModule(name))
+    return metaDependency.pipeline(loader.manager, loader.deleteModule(name))
       .then(buildDependencies, Utils.forwardError)
       .then(linkModuleMeta, Utils.forwardError);
 
@@ -278,7 +280,7 @@
     }
 
     moduleMeta.deps = moduleMeta.deps || [];
-    return metaTransform(this.manager, moduleMeta);
+    return metaTransform.pipeline(this.manager, moduleMeta);
   };
 
 
@@ -312,21 +314,7 @@
    * @returns {Promise} When resolved, a module meta instance is returned
    */
   Loader.prototype._resolveModuleMeta = function(name, parentMeta) {
-    return metaResolve(this.manager, name, parentMeta);
-  };
-
-
-  /**
-   * Method that fetches the content of a module from storage, via XHR, file system, or
-   * whatever fetch provider is configured
-   *
-   * @param {Module.Meta} moduleMeta - Module meta
-   *
-   * @returns {Promise} When resolved, a module meta that has gone through the pipeline
-   *   is returned.
-   */
-  Loader.prototype._fetchModuleMeta = function(moduleMeta) {
-    return metaFetch(this.manager, moduleMeta);
+    return metaResolve.resolve(this.manager, name, parentMeta);
   };
 
 
@@ -369,7 +357,7 @@
     }
 
     // Compile module meta to create a Module instance
-    return metaCompiler(manager, moduleMeta);
+    return metaCompile.compile(manager, moduleMeta);
   };
 
 

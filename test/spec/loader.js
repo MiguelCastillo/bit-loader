@@ -27,7 +27,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       });
 
       it("then `manager.hasModule` is called once", function() {
-        expect(hasModuleStub.calledOnce).to.equal(true);
+        expect(hasModuleStub.callCount).to.equal(1);
       });
 
       it("then `manager.hasModule` is called with `yes`", function() {
@@ -35,7 +35,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       });
 
       it("then `manager.getModule` is called once", function() {
-        expect(getModuleStub.calledOnce).to.equal(true);
+        expect(getModuleStub.callCount).to.equal(1);
       });
 
       it("then `manager.getModule` is called with `yes`", function() {
@@ -43,7 +43,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       });
 
       it("then module loaded callback with called once", function() {
-        expect(moduleLoadedStub.calledOnce).to.equal(true);
+        expect(moduleLoadedStub.callCount).to.equal(1);
       });
 
       it("then module loaded callback with called with module `yes`", function() {
@@ -97,7 +97,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       });
 
       it("then `loader.isLoaded` is called once", function() {
-        expect(loaderIsLadedStub.calledOnce).to.equal(true);
+        expect(loaderIsLadedStub.callCount).to.equal(1);
       });
 
       it("then `loader.isLoaded` is called with `yes`", function() {
@@ -105,7 +105,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       });
 
       it("then `loader.buildModule` is called once", function() {
-        expect(loaderBuildModuleStub.calledOnce).to.equal(true);
+        expect(loaderBuildModuleStub.callCount).to.equal(1);
       });
 
       it("then `loader.buildModule` is called with `yes`", function() {
