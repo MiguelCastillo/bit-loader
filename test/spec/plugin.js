@@ -541,10 +541,10 @@ define(['dist/bit-loader'], function(Bitloader) {
         lessTransformStub1 = sinon.stub();
         lessTransformStub2 = sinon.stub();
 
-        bitloader = new Bitloader({}, {
-          resolver: resolverFactory,
-          fetcher: fetcherFactory,
-          compiler: compilerFactory
+        bitloader = new Bitloader({
+          resolve: resolveStub,
+          fetch: fetchStub,
+          compile: compileStub
         });
 
         bitloader.plugin("less", {
@@ -554,24 +554,6 @@ define(['dist/bit-loader'], function(Bitloader) {
         bitloader.plugin("css", {
           "transform": [lessTransformStub2]
         });
-
-        function resolverFactory() {
-          return {
-            resolve: resolveStub
-          };
-        }
-
-        function fetcherFactory() {
-          return {
-            fetch: fetchStub
-          };
-        }
-
-        function compilerFactory() {
-          return {
-            compile: compileStub
-          };
-        }
 
         return bitloader.import("less!test.less");
       });

@@ -30,29 +30,10 @@ define(["dist/bit-loader"], function(Bitloader) {
         dependencyStub     = sinon.spy(function(moduleMeta) {moduleMeta.deps = [];});
         compileStub        = sinon.spy(function(moduleMeta) {moduleMeta.code = "compiled source";});
 
-
-        function getResolver() {
-          return {
-            resolve: resolveStub
-          };
-        }
-
-        function getFetcher() {
-          return {
-            fetch: defaultFetchStub
-          };
-        }
-
-        function getCompiler() {
-          return {
-            compile: defaultCompileStub
-          };
-        }
-
-        bitloader = new Bitloader({}, {
-          resolver: getResolver,
-          fetcher: getFetcher,
-          compiler: getCompiler
+        bitloader = new Bitloader({
+          resolve: resolveStub,
+          fetch: fetchStub,
+          compile: compileStub
         });
 
         bitloader.plugin("js", {

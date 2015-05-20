@@ -27,20 +27,19 @@
    *
    * Facade for relevant interfaces to register and import modules
    */
-  function Bitloader(options, factories) {
-    options   = options   || {};
-    factories = factories || {};
+  function Bitloader(options) {
+    options = options || {};
 
     this.settings = options;
     this.context  = Registry.getById(getRegistryId());
-
-    this.plugins = {};
+    this.plugins  = {};
 
     this.rules = {
       ignore: new RuleMatcher()
     };
 
     this.pipelines = {
+      resolve    : new Middleware(this),
       fetch      : new Middleware(this),
       transform  : new Middleware(this),
       dependency : new Middleware(this),
@@ -49,26 +48,33 @@
 
     // Override any of these factories if you need specialized implementation
     this.providers = {
-      resolver : factories.resolver ? factories.resolver(this) : new Bitloader.Resolver(this),
-      fetcher  : factories.fetcher  ? factories.fetcher(this)  : new Bitloader.Fetcher(this),
-      loader   : factories.loader   ? factories.loader(this)   : new Bitloader.Loader(this),
-      importer : factories.import   ? factories.import(this)   : new Bitloader.Import(this),
-      compiler : factories.compiler ? factories.compiler(this) : new Bitloader.Compiler(this)
+      // Internal helper that can be overriden
+      loader   : new Bitloader.Loader(this),
+      importer : new Bitloader.Import(this)
     };
 
     // Public Interface
     var providers = this.providers;
-    this.resolve  = providers.resolver.resolve.bind(providers.resolver);
-    this.fetch    = providers.fetcher.fetch.bind(providers.fetcher);
+
+    // Module loader hooks
+    this.resolve  = options.resolve || (new Bitloader.Resolver()).resolve;
+    this.fetch    = options.fetch   || (new Bitloader.Fetcher()).fetch;
+    this.compile  = options.compile || (new Bitloader.Compiler()).compile;
+
+    // Internal helpers
     this.load     = providers.loader.load.bind(providers.loader);
     this.register = providers.loader.register.bind(providers.loader);
     this.import   = providers.importer.import.bind(providers.importer);
-    this.compile  = providers.compiler.compile.bind(providers.compiler);
+
+    // Register plugins
+    for (var plugin in options.plugins) {
+      this.plugin(plugin, options.plugins[plugin]);
+    }
 
     // Register pipeline options.
-    for (var pipeline in options) {
-      if (options.hasOwnProperty(pipeline) && this.pipelines.hasOwnProperty(pipeline)) {
-        this.pipelines[pipeline].use(options[pipeline]);
+    for (var pipeline in options.pipelines) {
+      if (this.pipelines.hasOwnProperty(pipeline)) {
+        this.pipelines[pipeline].use(options.pipelines[pipeline]);
       }
     }
   }
