@@ -1,4 +1,4 @@
-var Bitloader = require('../../dist/bit-loader.js');
+var Bitloader = require("bit-loader");
 var Promise = Bitloader.Promise;
 
 var loader = new Bitloader({
