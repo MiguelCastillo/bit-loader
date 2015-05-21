@@ -76,7 +76,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       beforeEach(function() {
         moduleMeta  = {source: ""};
         fetchStub   = sinon.stub().returns(moduleMeta);
-        compileStub = sinon.stub().returns(new Bitloader.Module({code: "this is content of the module"}));
+        compileStub = sinon.stub().returns({code: "this is content of the module"});
         resolveStub = sinon.stub();
 
         loader = new Bitloader({

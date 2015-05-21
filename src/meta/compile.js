@@ -42,11 +42,12 @@
       return Promise.resolve();
     }
 
-    var mod;
     if (Module.Meta.canCompile(moduleMeta)) {
-      mod = manager.compile(moduleMeta);
+      moduleMeta.configure(manager.compile(moduleMeta));
     }
-    else if (Module.Meta.isCompiled(moduleMeta)) {
+
+    var mod;
+    if (Module.Meta.isCompiled(moduleMeta)) {
       mod = new Module(moduleMeta);
     }
 
