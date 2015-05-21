@@ -1,6 +1,7 @@
-var fetchFactory = require('./fetch');
-var Bitloader    = require('bit-loader');
-var Utils        = Bitloader.Utils;
+var Bitloader  = require("../../dist/bit-loader.js");
+var fileReader = require("./fileReader");
+var Utils      = Bitloader.Utils;
+var Promise    = Bitloader.Promise;
 
 
 /**
@@ -17,10 +18,13 @@ function Task(taskrunner, name, deps, cb) {
       loader.clear();
     }
 
-    loader = new Bitloader({}, {fetch: fetchFactory});
-    src    = [];
+    loader = new Bitloader({
+      fetch: fileReader
+    });
 
-    if (typeof(cb) === 'function') {
+    src = [];
+
+    if (typeof(cb) === "function") {
       cb.apply(task, args);
     }
 
@@ -31,7 +35,7 @@ function Task(taskrunner, name, deps, cb) {
     if (deps.length) {
       var sequence = deps.reduce(function(runner, name) {
           return runner.then(runDeferred(name), Utils.printError);
-        }, Bitloader.Promise.resolve());
+        }, Promise.resolve());
 
       return sequence.then(function() {
           if (src.length) {
@@ -50,7 +54,7 @@ function Task(taskrunner, name, deps, cb) {
   }
 
   function then(cb) {
-    loader.transform.use(cb);
+    loader.pipelines.transform.use(cb);
     return task;
   }
 
