@@ -1,58 +1,64 @@
-var fs = require('fs');
-var Bitloader = require('../../dist/bit-loader.js');
+var fs = require("fs");
+var Bitloader = require("../../dist/bit-loader.js");
+var Promise = Bitloader.Promise;
 var Utils = Bitloader.Utils;
-var loader = new Bitloader({}, {fetch: fetchFactory});
 
-// Load two modules
-loader.import(["js/sample1.js", "js/sample2.js"]).then(function(r1, r2) {
-  console.log(r1, r2);
+
+var loader = new Bitloader({
+  resolve: resolveName,
+  fetch: loadFile,
+  compile: compileModule
 });
 
 
-/**
- * FetchFactory provides a fetch interface that is used by bit loader
- * to load files from storage.
- *
- * @param {Bitloader} loader - bit loader instance
- */
-function fetchFactory(loader) {
-  // Compile is called with the module meta as the context.
-  function compile() {
-    var moduleMeta = this;
-    // Evaluate module meta source and return module instance
-    return new loader.Module({code: evaluate(moduleMeta)});
-  }
+// Load two modules
+loader
+  .import(["js/sample1.js", "js/sample2.js"])
+  .then(function(result) {
+    console.log(result);
+  }, Utils.forwardError);
 
 
-  // Execute source
-  function evaluate(moduleMeta) {
-    var _exports = {};
-    var _module = {exports: _exports};
-    /* jshint -W054 */
-    (new Function("module", "exports", moduleMeta.source))(_module, _exports);
-    /* jshint +W054 */
-    return _module;
-  }
-
-
-  // Creates module meta objects that bit loader gets back
-  function moduleMetaFactory(source) {
-    return {
-      compile: compile,
-      source: source
-    };
-  }
-
-
-  // Return fetch interface
+function resolveName(moduleMeta) {
   return {
-    // The only interface that is needed by bit loader
-    fetch: function(name) {
-      // Read file from disk and return a module meta
-      return readFile(name)
-        .then(moduleMetaFactory, Utils.forwardError);
-    }
+    path: moduleMeta.name
   };
+}
+
+
+/**
+ * File reader
+ */
+function loadFile(moduleMeta) {
+  // Read file from disk and return a module meta
+  return readFile(moduleMeta.name).then(function(text) {
+    return {
+      source: text
+    };
+  }, Utils.forwardError);
+}
+
+
+/**
+ * Module compiler that convert source to runnable code.
+ */
+function compileModule(moduleMeta) {
+  return {
+    code: evaluate(moduleMeta)
+  };
+}
+
+
+/**
+ * Helper method that evaluates source to generate runnable code
+ */
+function evaluate(moduleMeta) {
+  var _exports = {};
+  var _module = {exports: _exports};
+  /* jshint -W054 */
+  (new Function("module", "exports", moduleMeta.source))(_module, _exports);
+  /* jshint +W054 */
+  return _module;
 }
 
 
@@ -61,22 +67,24 @@ function fetchFactory(loader) {
  * loads data using XHR.
  */
 function readFile(fileName) {
-  return new Bitloader.Promise(function(resolve, reject) {
-    var filecontent = '';
-    var stream = fs.createReadStream(__dirname + '/' + fileName);
-    stream.setEncoding('utf8');
+  return new Promise(function(resolve, reject) {
+    var filecontent = "";
+    var stream = fs
+      .createReadStream(__dirname + "/" + fileName)
+      .setEncoding("utf8");
 
-    stream.on('readable', function() {
+    stream.on("readable", function() {
       filecontent += stream.read();
     });
 
-    stream.on('end', function() {
+    stream.on("end", function() {
       resolve(filecontent);
     });
 
-    stream.on('error', reject);
+    stream.on("error", reject);
   });
 }
 
 
-module.exports = loader;
+//loader.Logger.enableAll();
+//module.exports = loader;
