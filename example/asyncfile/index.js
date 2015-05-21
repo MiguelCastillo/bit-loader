@@ -1,5 +1,5 @@
 var fs = require("fs");
-var Bitloader = require("../../dist/bit-loader.js");
+var Bitloader = require("bit-loader");
 var Promise = Bitloader.Promise;
 var Utils = Bitloader.Utils;
 
