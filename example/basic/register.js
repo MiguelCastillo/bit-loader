@@ -8,6 +8,6 @@ loader.register("like2", [], Utils.noop);
 
 loader
   .import(["like1", "like2"])
-  .then(function(r1, r2) {
-    console.log(r1, r2);
+  .then(function(result) {
+    console.log(result);
   });
