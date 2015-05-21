@@ -4,9 +4,9 @@
 
 ## What is this??
 
-To be absolutely clear, bit loader is a framework that can be very easily configured to build your own module loader. It is modeled after [this](http://wiki.ecmascript.org/doku.php?id=harmony:module_loaders) module loader sudo spec that has been bounced to possibly ES7.
+bit loader is a framework that can be very easily configured to build your own module loader. It is modeled after [this](http://wiki.ecmascript.org/doku.php?id=harmony:module_loaders) module loader sudo spec that has been bounced to possibly ES7.
 
-Below you will find examples on how to set `fetch`, `transform`, `compile`, and other plugins and hooks to enable you to create a module loader with little effort. So the expection is that you can configure bit loader to do your work.
+Below you will find examples on how to set `fetch`, `transform`, `compile`, and other plugins and hooks to enable you to create a module loader with little effort. So the expectation is that you can configure bit loader to load and process modules.
 
 You can take a look at [bit imports](https://github.com/MiguelCastillo/bit-imports), which is a module loader built on top of bit loader, with support for `AMD`, `CJS`, and `ES2015` modules via babel or any other transpiler.
 
