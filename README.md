@@ -25,7 +25,7 @@ Please checkout the [exmaples](./example).  There you will find different recipe
 
 ## Build and other tasks
 
-### build
+#### build
 ```
 $ npm install
 $ grunt build
@@ -34,7 +34,7 @@ $ grunt build
 All build artifacts will be in the `dist` folder.
 
 
-### test
+#### test
 ```
 $ grunt test
 ```
@@ -132,7 +132,7 @@ bitloader.plugin("css", {
 
 So, it is valid to register other handlers into a previously registered plugin using the plugin name, which is the primary reason plugins have names in the first place. But the more common use case is to configure plugins in a single call:
 
-### Plugin example
+#### Plugin example
 
 ``` javascript
 var bitloader = new Bitloader();
@@ -163,7 +163,7 @@ All plugins run in the first stage, which is *asynchronous* and runs before the 
 
 Checkout [bit imports](https://github.com/MiguelCastillo/bit-imports) for an implementation of these core function hooks.
 
-### Example
+#### Core hooks example
 ``` javascript
 function resolvePath(moduleMeta) {
   return {
