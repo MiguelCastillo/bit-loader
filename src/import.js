@@ -1,11 +1,11 @@
 (function() {
   "use strict";
 
-  var Promise  = require('promise');
-  var Utils    = require('./utils');
-  var Registry = require('./registry');
+  var Promise  = require("./promise");
+  var Utils    = require("./utils");
+  var Registry = require("./registry");
 
-  var getRegistryId = Registry.idGenerator('import');
+  var getRegistryId = Registry.idGenerator("import");
 
   var ModuleState = {
     IMPORTING: "importing"

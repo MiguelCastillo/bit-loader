@@ -1,10 +1,10 @@
 (function() {
   "use strict";
 
-  var Promise     = require('promise'),
-      runPipeline = require('./runPipeline'),
-      Utils       = require('../utils'),
-      logger      = require('logger').factory("Meta/Fetch");
+  var runPipeline = require("./runPipeline");
+  var Promise     = require("../promise");
+  var Utils       = require("../utils");
+  var logger      = require("../logger").factory("Meta/Fetch");
 
 
   function MetaFetch() {

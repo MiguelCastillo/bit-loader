@@ -1,10 +1,10 @@
 (function() {
   "use strict";
 
-  var Promise     = require("promise");
+  var Promise     = require("./promise");
   var Utils       = require("./utils");
   var RuleMatcher = require("./rule-matcher");
-  var logger      = require("./logger").factory('Plugin');
+  var logger      = require("./logger").factory("Plugin");
 
   var pluginId = 0;
 
@@ -272,4 +272,4 @@
   Plugin.canExecute       = canExecute;
   Plugin.createCanExecute = createCanExecute;
   module.exports = Plugin;
-}());
+})();

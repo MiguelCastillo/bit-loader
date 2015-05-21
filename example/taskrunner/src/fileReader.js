@@ -1,5 +1,5 @@
 var fs        = require("fs");
-var Bitloader = require("../../dist/bit-loader.js");
+var Bitloader = require("bit-loader");
 var Utils     = Bitloader.Utils;
 var Promise   = Bitloader.Promise;
 
@@ -14,7 +14,7 @@ var Promise   = Bitloader.Promise;
  */
 function fileReader(moduleMeta) {
   // Read file from disk and return a module meta
-  return readFile(moduleMeta.name)
+  return readFile(moduleMeta.path)
     .then(function(text) {
       return {
         source: text
@@ -37,7 +37,7 @@ function readFile(fileName) {
   return new Promise(function(resolve, reject) {
     var filecontent = "";
     var stream = fs
-      .createReadStream(__dirname + "/" + fileName)
+      .createReadStream(__dirname + "/../" + fileName)
       .setEncoding("utf8");
 
     stream

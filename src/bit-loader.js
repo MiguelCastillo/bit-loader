@@ -1,21 +1,21 @@
 (function () {
   "use strict";
 
-  var Promise     = require('promise'),
-      Logger      = require('logger'),
-      Utils       = require('./utils'),
-      Fetcher     = require('./interfaces/fetcher'),
-      Compiler    = require('./interfaces/compiler'),
-      Resolver    = require('./interfaces/resolver'),
-      Import      = require('./import'),
-      Loader      = require('./loader'),
-      Module      = require('./module'),
-      Plugin      = require('./plugin'),
-      Registry    = require('./registry'),
-      RuleMatcher = require('./rule-matcher'),
-      Middleware  = require('./middleware');
+  var Logger      = require("./logger");
+  var Promise     = require("./promise");
+  var Utils       = require("./utils");
+  var Fetcher     = require("./interfaces/fetcher");
+  var Compiler    = require("./interfaces/compiler");
+  var Resolver    = require("./interfaces/resolver");
+  var Import      = require("./import");
+  var Loader      = require("./loader");
+  var Module      = require("./module");
+  var Plugin      = require("./plugin");
+  var Registry    = require("./registry");
+  var RuleMatcher = require("./rule-matcher");
+  var Middleware  = require("./middleware");
 
-  var getRegistryId = Registry.idGenerator('bitloader');
+  var getRegistryId = Registry.idGenerator("bitloader");
 
   var ModuleState = {
     LOADED: "loaded"

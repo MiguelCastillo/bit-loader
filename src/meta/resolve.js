@@ -1,10 +1,10 @@
 (function() {
   "use strict";
 
-  var Promise = require('promise'),
-      Module  = require('../module'),
-      Utils   = require('../utils'),
-      logger  = require('logger').factory("Meta/Resolve");
+  var Promise = require("../promise");
+  var Module  = require("../module");
+  var Utils   = require("../utils");
+  var logger  = require("../logger").factory("Meta/Resolve");
 
 
   function MetaResolve() {

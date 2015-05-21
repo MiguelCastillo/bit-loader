@@ -1,8 +1,8 @@
 (function() {
   "use strict";
 
-  var Utils     = require('./utils');
-  var minimatch = require('minimatch');
+  var Utils     = require("./utils");
+  var minimatch = require("minimatch");
 
 
   /**

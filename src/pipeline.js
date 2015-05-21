@@ -1,8 +1,8 @@
 (function() {
   "use strict";
 
-  var Promise = require('promise'),
-      Utils   = require('./utils');
+  var Promise = require("./promise");
+  var Utils   = require("./utils");
 
   function Pipeline(assets) {
     this.assets = assets;
