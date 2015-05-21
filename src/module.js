@@ -1,7 +1,7 @@
 (function() {
   "use strict";
 
-  var Utils = require('./utils');
+  var Utils = require("./utils");
 
   var Type = {
     "UNKNOWN" : "UNKNOWN",

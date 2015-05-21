@@ -1,7 +1,7 @@
 (function() {
   "use strict";
 
-  var Plugin = require('../plugin');
+  var Plugin = require("../plugin");
 
   function runPipeline(pipeline, moduleMeta) {
     if (runPlugins(moduleMeta.plugins)) {
@@ -17,4 +17,4 @@
   }
 
   module.exports = runPipeline;
-}());
+})();

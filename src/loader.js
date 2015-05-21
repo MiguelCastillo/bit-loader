@@ -1,19 +1,19 @@
 (function() {
   "use strict";
 
-  var Promise        = require('promise'),
-      Module         = require('./module'),
-      Utils          = require('./utils'),
-      Pipeline       = require('./pipeline'),
-      Registry       = require('./registry'),
-      moduleLinker   = require('./module/linker'),
-      metaResolve    = require('./meta/resolve'),
-      metaFetch      = require('./meta/fetch'),
-      metaTransform  = require('./meta/transform'),
-      metaDependency = require('./meta/dependency'),
-      metaCompile    = require('./meta/compile');
+  var Promise        = require("./promise");
+  var Module         = require("./module");
+  var Utils          = require("./utils");
+  var Pipeline       = require("./pipeline");
+  var Registry       = require("./registry");
+  var moduleLinker   = require("./module/linker");
+  var metaResolve    = require("./meta/resolve");
+  var metaFetch      = require("./meta/fetch");
+  var metaTransform  = require("./meta/transform");
+  var metaDependency = require("./meta/dependency");
+  var metaCompile    = require("./meta/compile");
 
-  var getRegistryId = Registry.idGenerator('loader');
+  var getRegistryId = Registry.idGenerator("loader");
 
 
   /**

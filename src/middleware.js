@@ -1,9 +1,9 @@
 (function() {
   "use strict";
 
-  var Promise = require('promise'),
-      Utils   = require('./utils'),
-      logger  = require('logger').factory("Middleware");
+  var Promise = require("./promise");
+  var Utils   = require("./utils");
+  var logger  = require("./logger").factory("Middleware");
 
 
   /**
@@ -361,4 +361,4 @@
 
   Middleware.Provider = Provider;
   module.exports = Middleware;
-}());
+})();

@@ -1,7 +1,7 @@
 (function() {
   "use strict";
 
-  var StatefulItems = require('./stateful-items');
+  var StatefulItems = require("./stateful-items");
   var storage = {};
 
 
@@ -93,7 +93,7 @@
    *   unique id.
    */
   Registry.idGenerator = function(name, seed) {
-    name = (name || 'generic') + '-';
+    name = (name || "generic") + "-";
     var id = seed || 0;
     return function getId() {
       return name + id++;

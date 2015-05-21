@@ -195,7 +195,7 @@
    */
   function getConsole() {
     var _result;
-    if (typeof(console) !== 'undefined') {
+    if (typeof(console) !== "undefined") {
       _result = console;
     }
     else {
@@ -235,4 +235,4 @@
    * Default logger instance available
    */
   module.exports = new Logger();
-}());
+})();

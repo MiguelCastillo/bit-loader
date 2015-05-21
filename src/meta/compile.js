@@ -1,11 +1,11 @@
 (function() {
   "use strict";
 
-  var Promise     = require('promise'),
-      runPipeline = require('./runPipeline'),
-      Module      = require('../module'),
-      Utils       = require('../utils'),
-      logger      = require('logger').factory("Meta/Compiler");
+  var runPipeline = require("./runPipeline");
+  var Promise     = require("../promise");
+  var Module      = require("../module");
+  var Utils       = require("../utils");
+  var logger      = require("../logger").factory("Meta/Compiler");
 
 
   function MetaCompile() {

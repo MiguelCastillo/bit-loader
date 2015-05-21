@@ -1,4 +1,4 @@
-var taskRunner = require("./taskrunner");
+var taskRunner = require("./src/taskrunner");
 
 
 /**
@@ -21,7 +21,7 @@ function jsPipeline() {
  */
 function coffeePipeline() {
   this
-    .load("taskrunner.js")
+    .load("src/taskrunner.js")
     .then(function(moduleMeta) {
       console.log(moduleMeta);
     });
