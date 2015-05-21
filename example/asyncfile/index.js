@@ -5,7 +5,6 @@ var Utils = Bitloader.Utils;
 
 
 var loader = new Bitloader({
-  resolve: resolveName,
   fetch: loadFile,
   compile: compileModule
 });
@@ -17,13 +16,6 @@ loader
   .then(function(result) {
     console.log(result);
   }, Utils.forwardError);
-
-
-function resolveName(moduleMeta) {
-  return {
-    path: moduleMeta.name
-  };
-}
 
 
 /**
@@ -86,5 +78,4 @@ function readFile(fileName) {
 }
 
 
-//loader.Logger.enableAll();
-//module.exports = loader;
+module.exports = loader;
