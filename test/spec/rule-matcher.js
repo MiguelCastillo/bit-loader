@@ -17,7 +17,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
 
         it("then the name of the rule is `rule-0`", function() {
-          expect(rule.getName()).to.equal("rule-0");
+          expect(rule.getName().substr(0, 5)).to.equal("rule-");
         });
       });
 
