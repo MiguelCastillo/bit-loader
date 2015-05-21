@@ -1,8 +1,11 @@
-## bit-loader [![Build Status](https://travis-ci.org/MiguelCastillo/bit-loader.svg?branch=master)](https://travis-ci.org/MiguelCastillo/bit-loader) [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/MiguelCastillo/bit-loader?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+<img src="img/bit-loader_white.png" width="50%"></img>
+
+[![Build Status](https://travis-ci.org/MiguelCastillo/bit-loader.svg?branch=master)](https://travis-ci.org/MiguelCastillo/bit-loader) [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/MiguelCastillo/bit-loader?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+
+## Introduction
 
 > Framework for building module loaders with *very* little effort.
-
-## What is this??
 
 bit loader is a framework that can be very easily configured to build your own module loader. It is modeled after [this](http://wiki.ecmascript.org/doku.php?id=harmony:module_loaders) module loader sudo spec that has been bounced to possibly ES7.
 
@@ -18,7 +21,7 @@ This is an overloaded question...
 2. Its flexible processing [pipelines](#pipelines) with a [plugin](#plugins) system.
 3. Its designed to run in the browser and nodejs. So you can set things up to run directly in the browser during your development cycles without needing a "compile -> bundle -> deploy" step.
 
-## Examples.
+## Examples
 
 Please checkout the [exmaples](./example).  There you will find different recipes for settings things up.
 
