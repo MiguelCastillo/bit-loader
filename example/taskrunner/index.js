@@ -1,4 +1,4 @@
-var taskRunner = require('./taskrunner');
+var taskRunner = require("./taskrunner");
 
 
 /**
@@ -33,7 +33,7 @@ function coffeePipeline() {
  */
 function minifyPipeline() {
   this
-    .load('.jshintrc')
+    .load(".jshintrc")
     .then(function(moduleMeta) {
       console.log(moduleMeta);
     });
@@ -41,8 +41,8 @@ function minifyPipeline() {
 
 
 taskRunner
-  .register('javascript', ['coffeescript', 'minify'], jsPipeline)
-  .register('coffeescript', coffeePipeline)
-  .register('minify', minifyPipeline)
-  .run('minify')
-  .run('javascript');
+  .register("javascript", ["coffeescript", "minify"], jsPipeline)
+  .register("coffeescript", coffeePipeline)
+  .register("minify", minifyPipeline)
+  .run("minify")
+  .run("javascript");

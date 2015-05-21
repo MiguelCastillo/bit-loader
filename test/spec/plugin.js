@@ -531,13 +531,12 @@ define(['dist/bit-loader'], function(Bitloader) {
 
 
     describe("When registering a `less` plugin for `transform` and importing a module", function() {
-      var lessTransformStub1, lessTransformStub2, resolveStub, fetchStub, compileStub, moduleMeta, compiledModule;
+      var lessTransformStub1, lessTransformStub2, resolveStub, fetchStub, compileStub, moduleMeta;
       beforeEach(function() {
         moduleMeta = new Bitloader.Module.Meta({"name": "test", "plugins": ["less"], "source":""});
-        compiledModule = new Bitloader.Module(moduleMeta);
         resolveStub = sinon.stub().returns(moduleMeta);
         fetchStub = sinon.stub();
-        compileStub = sinon.stub().returns(compiledModule);
+        compileStub = sinon.stub().returns({code: "whatever"});
         lessTransformStub1 = sinon.stub();
         lessTransformStub2 = sinon.stub();
 

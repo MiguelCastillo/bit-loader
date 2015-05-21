@@ -4,7 +4,7 @@
   var Promise     = require('promise'),
       runPipeline = require('./runPipeline'),
       Utils       = require('../utils'),
-      logger      = require('logger').factory("Meta/Tranform");
+      logger      = require('logger').factory("Meta/Transform");
 
   function MetaTransform() {
   }

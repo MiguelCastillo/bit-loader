@@ -20,7 +20,7 @@
       .then(function(meta) {
         meta = meta || {};
         if (!meta.cname) {
-          meta.cname = meta.name;
+          meta.cname = meta.name || meta.path;
         }
 
         delete meta.name;

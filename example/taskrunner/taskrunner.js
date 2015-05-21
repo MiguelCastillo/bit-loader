@@ -1,6 +1,7 @@
-var Task      = require('./task');
-var Bitloader = require('bit-loader');
+var Bitloader = require("../../dist/bit-loader.js");
+var Task      = require("./task");
 var Utils     = Bitloader.Utils;
+var Promise   = Bitloader.Promise;
 
 
 /**
@@ -19,7 +20,7 @@ function TaskRunner() {
 
 
 /** Convenieve promise provider */
-TaskRunner.prototype.Promise = Bitloader.Promise;
+TaskRunner.prototype.Promise = Promise;
 
 /** Convenience utilities */
 TaskRunner.prototype.util = Utils;
