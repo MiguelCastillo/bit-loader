@@ -7,6 +7,7 @@
   },
   "devDependencies": {
     "babel-bits": "0.0.13",
-    "babel-core": "^5.4.7"
+    "babel-core": "^5.4.7",
+    "browser-pack": "^5.0.0"
   }
 }

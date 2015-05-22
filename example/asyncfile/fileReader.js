@@ -26,15 +26,15 @@ function fileReader(moduleMeta) {
  *
  * @private
  *
- * @param {string} fileName - Name of the file to read
+ * @param {string} filePath - Full path for the file to be read
  *
  * @returns {Promise}
  */
-function readFile(fileName) {
+function readFile(filePath) {
   return new Promise(function(resolve, reject) {
     var filecontent = "";
     var stream = fs
-      .createReadStream(__dirname + "/" + fileName)
+      .createReadStream(filePath)
       .setEncoding("utf8");
 
     stream
