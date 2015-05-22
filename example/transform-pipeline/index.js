@@ -10,7 +10,7 @@ loader.pipelines.transform.use(addStrict);
 
 
 loader.import(["like1", "like2"]).then(function(result) {
-  console.log(result);
+  console.log(result[0] + "\n" + result[1]);
 });
 
 
@@ -18,8 +18,10 @@ loader.import(["like1", "like2"]).then(function(result) {
  * File reader
  */
 function loadFile(moduleMeta) {
-  // Read file from disk and return a module meta
-  moduleMeta.configure({source: "fetch module: " + moduleMeta.name});
+  // Read file and set the source in the module meta
+  moduleMeta.configure({
+    source: "fetch module: " + moduleMeta.path
+  });
 }
 
 
@@ -27,6 +29,7 @@ function loadFile(moduleMeta) {
  * Add strict to the module before it is executed.
  */
 function addStrict(moduleMeta) {
-  console.log("transform '" + moduleMeta.name + "'");
-  moduleMeta.configure({source: "'use strict;'\n" + moduleMeta.source});
+  moduleMeta.configure({
+    source: ";\"use strict\";\n" + moduleMeta.source
+  });
 }

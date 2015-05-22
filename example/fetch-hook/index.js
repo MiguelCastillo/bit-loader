@@ -6,7 +6,7 @@ var loader = new Bitloader({
 
 
 loader.import(["like1", "like2"]).then(function(result) {
-  console.log(result);
+  console.log(result[0] + "\n" + result[1]);
 });
 
 

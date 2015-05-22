@@ -10,7 +10,7 @@ var Promise   = Bitloader.Promise;
  * @param {object} moduleMeta - Module meta with information about the module being loaded
  */
 function fileReader(moduleMeta) {
-  // Read file from disk and set the source in the module meta
+  // Read file from disk and return a module meta
   return readFile(moduleMeta.path)
     .then(function(text) {
       moduleMeta.configure({
@@ -26,7 +26,7 @@ function fileReader(moduleMeta) {
  *
  * @private
  *
- * @param {string} filePath - File to be loaded
+ * @param {string} filePath - Full path for the file to be read
  *
  * @returns {Promise}
  */
