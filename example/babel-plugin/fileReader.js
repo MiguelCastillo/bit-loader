@@ -1,44 +1,7 @@
-var fs = require("fs");
+var fs        = require("fs");
 var Bitloader = require("bit-loader");
-var Promise = Bitloader.Promise;
-var Utils = Bitloader.Utils;
-
-
-var loader = new Bitloader({
-  fetch: fileReader,
-  compile: compileModule
-});
-
-
-// Load two modules
-loader
-  .import(["js/sample1.js", "js/sample2.js"])
-  .then(function(result) {
-    console.log(result);
-  }, Utils.forwardError);
-
-
-/**
- * Module compiler that convert source to runnable code.
- */
-function compileModule(moduleMeta) {
-  return {
-    code: evaluate(moduleMeta)
-  };
-}
-
-
-/**
- * Helper method that evaluates source to generate runnable code
- */
-function evaluate(moduleMeta) {
-  var _exports = {};
-  var _module = {exports: _exports};
-  /* jshint -W054 */
-  (new Function("module", "exports", moduleMeta.source))(_module, _exports);
-  /* jshint +W054 */
-  return _module;
-}
+var Utils     = Bitloader.Utils;
+var Promise   = Bitloader.Promise;
 
 
 /**
@@ -89,4 +52,4 @@ function readFile(fileName) {
 }
 
 
-module.exports = loader;
+module.exports = fileReader;
