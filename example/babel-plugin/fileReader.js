@@ -13,9 +13,9 @@ function fileReader(moduleMeta) {
   // Read file from disk and return a module meta
   return readFile(moduleMeta.path)
     .then(function(text) {
-      return {
+      moduleMeta.configure({
         source: text
-      };
+      });
     }, Utils.forwardError);
 }
 

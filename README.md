@@ -169,24 +169,24 @@ Checkout [bit imports](https://github.com/MiguelCastillo/bit-imports) for an imp
 #### Core hooks example
 ``` javascript
 function resolvePath(moduleMeta) {
-  return {
+  moduleMeta.configure({
     path: "path/to/module/" + moduleMeta.name
-  };
+  });
 }
 
 function loadFile(moduleMeta) {
   return Promise.resolve(ajax(moduleMeta.path))
     .then(function(text) {
-      return {
+      moduleMeta.configure({
         source: text
-      }
+      });
     });
 }
 
 function compileModule(moduleMeta) {
-  return {
+  moduleMeta.configure({
     code: eval(moduleMeta.source)
-  };
+  });
 }
 
 
