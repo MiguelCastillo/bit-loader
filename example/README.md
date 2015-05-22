@@ -13,10 +13,6 @@ That will install the dependencies and run the `asyncfile` example.  Now that yo
 
 ```
 $ node taskrunner
-```
-
-Or
-
-```
 $ node fetch-hook
+$ node babel-plugin
 ```
