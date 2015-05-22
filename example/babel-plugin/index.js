@@ -6,15 +6,14 @@ var babel      = require("babel-bits");
 /**
  * Create bit loader with a fetch core hook for reading files from storage
  */
-var bitloader = new Bitloader({
-  fetch: fileReader
-});
+var bitloader = new Bitloader();
 
 
 /**
  * Setup a babel transform
  */
 bitloader.plugin("js", {
+  fetch: fileReader,
   transform: babel
 });
 

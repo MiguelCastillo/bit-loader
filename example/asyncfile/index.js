@@ -22,9 +22,9 @@ loader
  * Module compiler that convert source to runnable code.
  */
 function compileModule(moduleMeta) {
-  return {
+  moduleMeta.configure({
     code: evaluate(moduleMeta)
-  };
+  });
 }
 
 
@@ -50,9 +50,9 @@ function fileReader(moduleMeta) {
   // Read file from disk and return a module meta
   return readFile(moduleMeta.path)
     .then(function(text) {
-      return {
+      moduleMeta.configure({
         source: text
-      };
+      });
     }, Utils.forwardError);
 }
 

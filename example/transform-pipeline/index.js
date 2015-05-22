@@ -1,5 +1,4 @@
 var Bitloader = require("bit-loader");
-var Promise = Bitloader.Promise;
 
 var loader = new Bitloader({
   fetch: loadFile
@@ -20,7 +19,7 @@ loader.import(["like1", "like2"]).then(function(result) {
  */
 function loadFile(moduleMeta) {
   // Read file from disk and return a module meta
-  return Promise.resolve({source: "fetch module: " + moduleMeta.name});
+  moduleMeta.configure({source: "fetch module: " + moduleMeta.name});
 }
 
 
