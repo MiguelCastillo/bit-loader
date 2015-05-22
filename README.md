@@ -23,7 +23,7 @@ This is an overloaded question...
 
 ## Examples
 
-Please checkout the [exmaples](./example).  There you will find different recipes for settings things up.
+Please checkout the [examples](./example).  There you will find different recipes for settings things up.
 
 
 ## Build and other tasks
