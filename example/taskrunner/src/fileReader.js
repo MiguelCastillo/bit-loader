@@ -5,12 +5,9 @@ var Promise   = Bitloader.Promise;
 
 
 /**
- * FetchFactory provides a fetch interface that is used by bit loader
- * to load files from storage.
+ * Function that reads file from disk
  *
- * @private
- *
- * @param {Bitloader} loader - bit loader instance
+ * @param {object} moduleMeta - Module meta with information about the module being loaded
  */
 function fileReader(moduleMeta) {
   // Read file from disk and return a module meta
@@ -29,20 +26,23 @@ function fileReader(moduleMeta) {
  *
  * @private
  *
- * @param {string} fileName - Name of the file to read
+ * @param {string} filePath - File to be loaded
  *
  * @returns {Promise}
  */
-function readFile(fileName) {
+function readFile(filePath) {
   return new Promise(function(resolve, reject) {
     var filecontent = "";
     var stream = fs
-      .createReadStream(__dirname + "/../" + fileName)
+      .createReadStream(filePath)
       .setEncoding("utf8");
 
     stream
       .on("readable", function() {
-        filecontent += stream.read();
+        var chunk = stream.read();
+        if (chunk !== null) {
+          filecontent += chunk;
+        }
       })
       .on("end", function() {
         resolve(filecontent);
