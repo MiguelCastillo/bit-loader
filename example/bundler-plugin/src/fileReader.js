@@ -1,7 +1,7 @@
 var fs        = require("fs");
+var pstream   = require("./pstream");
 var Bitloader = require("bit-loader");
 var Utils     = Bitloader.Utils;
-var Promise   = Bitloader.Promise;
 
 
 /**
@@ -31,24 +31,11 @@ function fileReader(moduleMeta) {
  * @returns {Promise}
  */
 function readFile(filePath) {
-  return new Promise(function(resolve, reject) {
-    var filecontent = "";
     var stream = fs
       .createReadStream(filePath)
       .setEncoding("utf8");
 
-    stream
-      .on("readable", function() {
-        var chunk = stream.read();
-        if (chunk !== null) {
-          filecontent += chunk;
-        }
-      })
-      .on("end", function() {
-        resolve(filecontent);
-      })
-      .on("error", reject);
-  });
+  return pstream(stream);
 }
 
 
