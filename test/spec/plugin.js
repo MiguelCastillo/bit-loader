@@ -1,4 +1,4 @@
-define(['dist/bit-loader'], function(Bitloader) {
+define(["dist/bit-loader"], function(Bitloader) {
 
   describe("Plugin Test Suite", function() {
     var bitloader;
@@ -36,10 +36,10 @@ define(['dist/bit-loader'], function(Bitloader) {
         pluginName = "testName";
 
         services = {
-          'transform': {
+          "transform": {
             use: transformStub
           },
-          'dependency': {
+          "dependency": {
             use: dependencyStub
           }
         };
@@ -52,7 +52,7 @@ define(['dist/bit-loader'], function(Bitloader) {
         var handlerStub;
         beforeEach(function() {
           handlerStub = sinon.stub();
-          plugin.addHandlers('transform', handlerStub);
+          plugin.addHandlers("transform", handlerStub);
         });
 
         it("then plugin delegate handler is registered `transform` service", function() {
@@ -64,7 +64,7 @@ define(['dist/bit-loader'], function(Bitloader) {
         });
 
         it("then expect plugin handlers to be an `array`", function() {
-          expect(plugin._handlers.transform).to.be.an('array');
+          expect(plugin._handlers.transform).to.be.an("array");
         });
 
         it("then there is only one plugin handler", function() {
@@ -82,8 +82,8 @@ define(['dist/bit-loader'], function(Bitloader) {
         beforeEach(function() {
           handlerStub1 = sinon.stub();
           handlerStub2 = sinon.stub();
-          plugin.addHandlers('transform', handlerStub1);
-          plugin.addHandlers('transform', handlerStub2);
+          plugin.addHandlers("transform", handlerStub1);
+          plugin.addHandlers("transform", handlerStub2);
         });
 
         it("then plugin delegate handler is registered `transform` service only once", function() {
@@ -95,7 +95,7 @@ define(['dist/bit-loader'], function(Bitloader) {
         });
 
         it("then expect plugin handlers to be an `array`", function() {
-          expect(plugin._handlers.transform).to.be.an('array');
+          expect(plugin._handlers.transform).to.be.an("array");
         });
 
         it("then there is only one plugin handler", function() {
@@ -117,7 +117,7 @@ define(['dist/bit-loader'], function(Bitloader) {
         beforeEach(function() {
           handlerStub1 = sinon.stub();
           handlerStub2 = sinon.stub();
-          plugin.addHandlers('transform', [handlerStub1, handlerStub2]);
+          plugin.addHandlers("transform", [handlerStub1, handlerStub2]);
         });
 
         it("then plugin delegate handler is registered `transform` service only once", function() {
@@ -129,7 +129,7 @@ define(['dist/bit-loader'], function(Bitloader) {
         });
 
         it("then expect plugin handlers to be an `array`", function() {
-          expect(plugin._handlers.transform).to.be.an('array');
+          expect(plugin._handlers.transform).to.be.an("array");
         });
 
         it("then there is only one plugin handler", function() {
@@ -153,7 +153,7 @@ define(['dist/bit-loader'], function(Bitloader) {
           addHandlersSpy = sinon.spy(plugin, "addHandlers");
 
           try {
-            plugin.addHandlers('transform', [null, handlerStub]);
+            plugin.addHandlers("transform", [null, handlerStub]);
           }
           catch(ex) {
           }
@@ -164,7 +164,7 @@ define(['dist/bit-loader'], function(Bitloader) {
         });
 
         it("then plugin handlers to be an `array`", function() {
-          expect(plugin._handlers.transform).to.be.an('undefined');
+          expect(plugin._handlers.transform).to.be.an("undefined");
         });
 
         it("then an exception to be thrown of type `TypeError`", function() {
@@ -172,7 +172,7 @@ define(['dist/bit-loader'], function(Bitloader) {
         });
 
         it("then an exception to be thrown", function() {
-          expect(addHandlersSpy.exceptions[0].toString()).to.equal(TypeError('Plugin handler must be a string, a function, or an object with a handler that is a string or a function').toString());
+          expect(addHandlersSpy.exceptions[0].toString()).to.equal(TypeError("Plugin handler must be a string, a function, or an object with a handler that is a string or a function").toString());
         });
       });
 
@@ -183,13 +183,17 @@ define(['dist/bit-loader'], function(Bitloader) {
       var handlerStub1, handlerStub2, handlerStub1Options, handlerStub2Options, moduleMeta, plugin;
       beforeEach(function() {
         bitloader = new Bitloader();
+        moduleMeta = new Bitloader.Module.Meta({
+          name: "name",
+          source: ""
+        });
+
         handlerStub1Options = {name: "dracular is pretty crazy"};
         handlerStub2Options = {args: "pass it back"};
         handlerStub1 = sinon.stub();
         handlerStub2 = sinon.stub();
-        moduleMeta = {"source": ""};
 
-        plugin = bitloader.plugin().addHandlers('transform', [
+        plugin = bitloader.plugin().addHandlers("transform", [
           {
             handler: handlerStub1,
             options: handlerStub1Options
@@ -204,7 +208,7 @@ define(['dist/bit-loader'], function(Bitloader) {
 
 
       it("then expect plugin handlers to be an `array`", function() {
-        expect(plugin._handlers.transform).to.be.an('array');
+        expect(plugin._handlers.transform).to.be.an("array");
       });
 
       it("then there is only one plugin handler", function() {
@@ -230,11 +234,10 @@ define(['dist/bit-loader'], function(Bitloader) {
 
 
     describe("When registering a single `transform` plugin with invalid handler", function() {
-      var moduleMeta, pluginSpy;
+      var pluginSpy;
       beforeEach(function() {
-        moduleMeta = {"source": ""};
         bitloader = new Bitloader();
-        pluginSpy = sinon.spy(bitloader, 'plugin');
+        pluginSpy = sinon.spy(bitloader, "plugin");
 
         try {
           bitloader.plugin({
@@ -252,7 +255,7 @@ define(['dist/bit-loader'], function(Bitloader) {
       });
 
       it("then an exception to be thrown", function() {
-        expect(pluginSpy.exceptions[0].toString()).to.equal(TypeError('Plugin handler must be a function or a string').toString());
+        expect(pluginSpy.exceptions[0].toString()).to.equal(TypeError("Plugin handler must be a function or a string").toString());
       });
     });
 
@@ -261,7 +264,11 @@ define(['dist/bit-loader'], function(Bitloader) {
       var transformStub, moduleMeta;
       beforeEach(function() {
         bitloader = new Bitloader();
-        moduleMeta = {"source": ""};
+        moduleMeta = new Bitloader.Module.Meta({
+          "name": "name",
+          "source": ""
+        });
+
         transformStub = sinon.stub();
 
         bitloader.plugin({
@@ -285,7 +292,11 @@ define(['dist/bit-loader'], function(Bitloader) {
       var dependencyStub, moduleMeta;
       beforeEach(function() {
         bitloader = new Bitloader();
-        moduleMeta = {"source": ""};
+        moduleMeta = new Bitloader.Module.Meta({
+          "name": "name",
+          "source": ""
+        });
+
         dependencyStub = sinon.stub();
 
         bitloader.plugin({
@@ -305,26 +316,38 @@ define(['dist/bit-loader'], function(Bitloader) {
     });
 
 
-    describe("When registering a `fetch`, `transform`, `dependency`, and `compile` plugin", function() {
-      var fetchStub, transformStub, dependencyStub, compileStub, moduleMeta;
+    describe("When registering a `resolve`, `fetch`, `transform`, `dependency`, and `compile` plugin", function() {
+      var resolveStub, fetchStub, transformStub, dependencyStub, compileStub, moduleMeta;
       beforeEach(function() {
         bitloader  = new Bitloader();
-        moduleMeta = {};
+        moduleMeta = new Bitloader.Module.Meta({
+          "name": "name"
+        });
+
+        resolveStub    = sinon.spy(function(moduleMeta) {moduleMeta.path = "some path";});
+        fetchStub      = sinon.spy(function(moduleMeta) {moduleMeta.source = "some source";});
+        transformStub  = sinon.spy(function(moduleMeta) {moduleMeta.source = "transformed source";});
+        dependencyStub = sinon.spy(function(moduleMeta) {moduleMeta.deps = [];});
+        compileStub    = sinon.spy(function(moduleMeta) {moduleMeta.code = "compiled code";});
 
         var pluginDefinition = {
-          "fetch":      function(moduleMeta) {moduleMeta.source = "some source";},
-          "transform":  function(moduleMeta) {moduleMeta.source = "transformed source";},
-          "dependency": function(moduleMeta) {moduleMeta.deps = [];},
-          "compile":    function(moduleMeta) {moduleMeta.code = "compiled code";}
+          "resolve":    resolveStub,
+          "fetch":      fetchStub,
+          "transform":  transformStub,
+          "dependency": dependencyStub,
+          "compile":    compileStub
         };
-
-        fetchStub      = sinon.spy(pluginDefinition, "fetch");
-        transformStub  = sinon.spy(pluginDefinition, "transform");
-        dependencyStub = sinon.spy(pluginDefinition, "dependency");
-        compileStub    = sinon.spy(pluginDefinition, "compile");
 
         bitloader.plugin(pluginDefinition);
         return bitloader.providers.loader.runPipeline(moduleMeta);
+      });
+
+      it("then the `resolve` handler is called once", function() {
+        expect(resolveStub.callCount).to.equal(1);
+      });
+
+      it("then then `resolve` handler is called with appropriate module meta", function(){
+        expect(resolveStub.calledWithExactly(moduleMeta, undefined)).to.equal(true);
       });
 
       it("then the `fetch` handler is called once", function() {
@@ -332,7 +355,7 @@ define(['dist/bit-loader'], function(Bitloader) {
       });
 
       it("then then `fetch` handler is called with appropriate module meta", function(){
-        expect(transformStub.calledWithExactly(moduleMeta, undefined)).to.equal(true);
+        expect(fetchStub.calledWithExactly(moduleMeta, undefined)).to.equal(true);
       });
 
       it("then the `transform` handler is called once", function() {
@@ -361,13 +384,17 @@ define(['dist/bit-loader'], function(Bitloader) {
     });
 
 
-    describe("When registering a plugin with multiple `fetch`, `transform`, `dependency`, and `compile` handlers and match path pattern", function() {
-      var fetchStub1, fetchStub2, transformStub1, transformStub2, transformStub3, dependencyStub1, dependencyStub2, compileStub1, compileStub2, moduleMeta, transformStub1Options, transformStub2Options;
+    describe("When registering a plugin with multiple `resolve`, `fetch`, `transform`, `dependency`, and `compile` handlers and match path pattern", function() {
+      var resolveStub1, fetchStub1, fetchStub2, transformStub1, transformStub2, transformStub3, dependencyStub1, dependencyStub2, compileStub1, compileStub2, moduleMeta, transformStub1Options, transformStub2Options;
       beforeEach(function() {
         bitloader = new Bitloader();
-        moduleMeta = {"path": "test.js"};
+        moduleMeta = new Bitloader.Module.Meta({
+          "name": "name"
+        });
+
         transformStub1Options = {"some data": "for the win"};
         transformStub2Options = {"race": 1};
+        resolveStub1    = sinon.spy(function(moduleMeta){moduleMeta.path = "test.js";});
         fetchStub1      = sinon.spy(function(moduleMeta){moduleMeta.source = "fetch 1";});
         fetchStub2      = sinon.spy(function(moduleMeta){moduleMeta.source = "fetch 2";});
         transformStub1  = sinon.spy(function(moduleMeta){moduleMeta.source = "transform 1";});
@@ -382,6 +409,7 @@ define(['dist/bit-loader'], function(Bitloader) {
           "match": {
             "path": ["**/*.js"]
           },
+          "resolve": [resolveStub1],
           "fetch": [
             fetchStub1, fetchStub2
           ],
@@ -408,6 +436,14 @@ define(['dist/bit-loader'], function(Bitloader) {
         });
 
         return bitloader.providers.loader.runPipeline(moduleMeta);
+      });
+
+      it("then the `resolve` handler1 is called for pattern **/*.js", function() {
+        expect(resolveStub1.callCount).to.equal(1);
+      });
+
+      it("then the `resolve` handler1 is called for pattern **/*.js with the appropriate module meta and options", function() {
+        expect(resolveStub1.calledWithExactly(moduleMeta, undefined)).to.equal(true);
       });
 
       it("then the `fetch` handler1 is called for pattern **/*.js", function() {
@@ -473,9 +509,14 @@ define(['dist/bit-loader'], function(Bitloader) {
 
 
     describe("When registering a named plugin for `transform` and `dependency`", function() {
-      var transformStub, dependencyStub;
+      var moduleMeta, transformStub, dependencyStub;
       beforeEach(function() {
         bitloader = new Bitloader();
+        moduleMeta = new Bitloader.Module.Meta({
+          "name": "name",
+          "source": ""
+        });
+
         transformStub = sinon.stub();
         dependencyStub = sinon.stub();
 
@@ -484,7 +525,7 @@ define(['dist/bit-loader'], function(Bitloader) {
           "dependency": dependencyStub
         });
 
-        return bitloader.providers.loader.runPipeline({"source":""});
+        return bitloader.providers.loader.runPipeline(moduleMeta);
       });
 
       it("then the `transform` plugin is called", function() {
@@ -498,9 +539,15 @@ define(['dist/bit-loader'], function(Bitloader) {
 
 
     describe("When registering plugin `less` for `transform`", function() {
-      var lessTransformStub1, lessTransformStub2, textTransformStub;
+      var moduleMeta, lessTransformStub1, lessTransformStub2, textTransformStub;
       beforeEach(function() {
         bitloader = new Bitloader();
+        moduleMeta = new Bitloader.Module.Meta({
+          "name": "name",
+          "source": "",
+          "plugins": ["less"]
+        });
+
         lessTransformStub1 = sinon.stub();
         lessTransformStub2 = sinon.stub();
         textTransformStub  = sinon.stub();
@@ -513,7 +560,7 @@ define(['dist/bit-loader'], function(Bitloader) {
           "transform": textTransformStub
         });
 
-        return bitloader.providers.loader.runPipeline({"plugins": ["less"], "source":""});
+        return bitloader.providers.loader.runPipeline(moduleMeta);
       });
 
       it("then the `less` plugin handler1 for `transform` is called", function() {
@@ -533,7 +580,12 @@ define(['dist/bit-loader'], function(Bitloader) {
     describe("When registering a `less` plugin for `transform` and importing a module", function() {
       var lessTransformStub1, lessTransformStub2, resolveStub, fetchStub, compileStub, moduleMeta;
       beforeEach(function() {
-        moduleMeta = new Bitloader.Module.Meta({"name": "test", "plugins": ["less"], "source":""});
+        moduleMeta = new Bitloader.Module.Meta({
+          "name": "test",
+          "plugins": ["less"],
+          "source":""
+        });
+
         resolveStub = sinon.stub().returns(moduleMeta);
         fetchStub = sinon.stub();
         compileStub = sinon.stub().returns({code: "whatever"});
@@ -574,8 +626,13 @@ define(['dist/bit-loader'], function(Bitloader) {
     describe("When registering a plugin named `less` for `transform` and `dependency`", function() {
       var lessTransformStub, lessDependencyStub, textTransformStub, textDependencyStub, moduleMeta;
       beforeEach(function() {
-        moduleMeta = {"plugins": ["less"], "source":""};
         bitloader = new Bitloader();
+        moduleMeta = new Bitloader.Module.Meta({
+          "name": "name",
+          "source": "",
+          "plugins": ["less"]
+        });
+
         lessTransformStub  = sinon.stub();
         lessDependencyStub = sinon.stub();
         textTransformStub  = sinon.stub();
@@ -621,9 +678,14 @@ define(['dist/bit-loader'], function(Bitloader) {
 
 
     describe("When registering a plugin for a pipeline that does not exist", function() {
-      var tranformStub, bitloaderSpy;
+      var moduleMeta, tranformStub, bitloaderSpy;
       beforeEach(function() {
         bitloader = new Bitloader();
+        moduleMeta = new Bitloader.Module.Meta({
+          "name": "name",
+          "source": ""
+        });
+
         tranformStub = sinon.stub();
         bitloaderSpy = sinon.spy(bitloader, "plugin");
 
@@ -635,7 +697,7 @@ define(['dist/bit-loader'], function(Bitloader) {
         catch(e) {
         }
 
-        return bitloader.providers.loader.runPipeline({"source":""});
+        return bitloader.providers.loader.runPipeline(moduleMeta);
       });
 
       it("then an exception is thrown", function() {
