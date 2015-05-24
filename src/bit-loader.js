@@ -203,7 +203,7 @@
       throw new TypeError("Module `" + name + "` is not an instance of Module");
     }
 
-    if (!name || typeof(name) !== 'string') {
+    if (!name || typeof(name) !== "string") {
       throw new TypeError("Module must have a name");
     }
 

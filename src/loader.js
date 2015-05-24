@@ -1,6 +1,7 @@
 (function() {
   "use strict";
 
+  var logger         = require("./logger").factory("Loader");
   var Promise        = require("./promise");
   var Module         = require("./module");
   var Utils          = require("./utils");
@@ -370,7 +371,7 @@
     // can behave synchronously.
     ////
     if (this.isPending(mod.name)) {
-      console.warn("Module '" + mod.name + "' is being dynamically registered while being loaded.", "You don't need to call 'System.register' when the module is already being loaded.");
+      logger.warn("Module '" + mod.name + "' is being dynamically registered while being loaded.", "You don't need to call 'System.register' when the module is already being loaded.");
     }
 
     // Run the Module instance through the module linker
