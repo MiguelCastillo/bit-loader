@@ -10,8 +10,7 @@ var Utils       = Bitloader.Utils;
 /**
  * Create bit loader with a fetch core hook for reading files from storage
  */
-var bitloader = new Bitloader({
-});
+var bitloader = new Bitloader();
 
 
 /**
