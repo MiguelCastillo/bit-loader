@@ -8,7 +8,7 @@ module.exports = function(grunt) {
       test: {
         options: {
           port: 8052,
-          hostname: "localhost"
+          hostname: 'localhost'
         }
       },
       keepalive: {
@@ -34,8 +34,8 @@ module.exports = function(grunt) {
     },
     watch: {
       test: {
-        files: ["src/**/*.js", "test/**/*.js", "*.js"],
-        tasks: ["build"],
+        files: ['src/**/*.js', 'test/**/*.js', '*.js'],
+        tasks: ['build'],
         options: {
           livereload: 32000
         }
@@ -45,14 +45,14 @@ module.exports = function(grunt) {
       all: {
         options: {
           jshintrc: true,
-          reporter: require("jshint-stylish")
+          reporter: require('jshint-stylish')
         },
-        src: ["src/**/*.js", "test/**/*.js", "*.js"]
+        src: ['src/**/*.js', 'test/**/*.js', '*.js']
       }
     },
     concurrent: {
       test: {
-        tasks: ["connect:keepalive", "watch:test"],
+        tasks: ['connect:keepalive', 'watch:test'],
         options: {
           logConcurrentOutput: true
         }
@@ -73,7 +73,7 @@ module.exports = function(grunt) {
     uglify: {
       "build": {
         options: {
-          preserveComments: "some",
+          preserveComments: 'some',
           sourceMap: true
         },
         files: {
@@ -83,21 +83,21 @@ module.exports = function(grunt) {
     },
     release: {
       options: {
-        tagName: "v<%= version %>",
-        tagMessage: "Version <%= version %>",
-        commitMessage: "Release v<%= version %>",
-        afterBump: ["build"]
+        tagName: 'v<%= version %>',
+        tagMessage: 'Version <%= version %>',
+        commitMessage: 'Release v<%= version %>',
+        afterBump: ['build']
       }
     },
     usebanner: {
       "build": {
         options: {
-          position: "top",
+          position: 'top',
           banner: "/*! <%= pkg.name %> v<%= pkg.version %> - <%= grunt.template.today('yyyy-mm-dd') %>. (c) <%= grunt.template.today('yyyy') %> Miguel Castillo. Licensed under MIT */",
           linebreak: true
         },
         files: {
-          src: ["dist/**.js"]
+          src: ['dist/**.js']
         }
       }
     }
