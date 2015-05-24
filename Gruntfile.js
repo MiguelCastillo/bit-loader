@@ -116,5 +116,5 @@ module.exports = function(grunt) {
   grunt.registerTask("build", ["jshint:all", "browserify:build", "usebanner:build", "uglify:build"]);
   grunt.registerTask("server", ["connect:keepalive"]);
   grunt.registerTask("test", ["connect:test", "mocha:test"]);
-  grunt.registerTask("dev", ["build", "concurrent:test"]);
+  grunt.registerTask("serve", ["build", "concurrent:test"]);
 };
