@@ -28,6 +28,7 @@
   "homepage": "https://github.com/MiguelCastillo/bit-loader",
   "devDependencies": {
     "bit-imports": "",
+    "bluebird": "^2.9.25",
     "browserify": "~10.1.3",
     "chai": "~2.3.0",
     "grunt": "~0.4.5",

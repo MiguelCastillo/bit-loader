@@ -218,10 +218,10 @@ define(['dist/bit-loader'], function(Bitloader) {
         });
 
         describe("and running all providers", function() {
-          var deferred, error;
+          var error;
           beforeEach(function() {
             return new Promise(function(resolve) {
-              deferred = middleware.runAll().then(function(err) {
+              middleware.runAll().then(function(err) {
                 error = err;
                 resolve();
               });
@@ -242,10 +242,6 @@ define(['dist/bit-loader'], function(Bitloader) {
 
           it("then `chicken` provider is never called", function() {
             expect(chickenMiddlewareStub.called).to.equal(false);
-          });
-
-          it("then promise sequence is rejected", function() {
-            expect(deferred.state()).to.equal("rejected");
           });
 
           it("then promise sequence reports error", function() {
