@@ -1,22 +1,36 @@
 (function() {
   "use strict";
 
-  var Promise = require("../promise");
-  var Module  = require("../module");
-  var Utils   = require("../utils");
-  var logger  = require("../logger").factory("Meta/Resolve");
+  var runPipeline = require("./runPipeline");
+  var Promise     = require("../promise");
+  var Utils       = require("../utils");
+  var logger      = require("../logger").factory("Meta/Resolve");
 
 
   function MetaResolve() {
   }
 
 
-  MetaResolve.resolve = function(manager, name, parentMeta) {
-    logger.log(name);
+  MetaResolve.pipeline = function(manager, moduleMeta) {
+    logger.log(moduleMeta.name, moduleMeta);
 
-    var moduleMeta = new Module.Meta(name);
+    function resolveFinished() {
+      if (moduleMeta.hasOwnProperty("path")) {
+        return moduleMeta;
+      }
 
-    return Promise.resolve(manager.resolve(moduleMeta, parentMeta))
+      return MetaResolve.resolve(manager, moduleMeta);
+    }
+
+    return runPipeline(manager.pipelines.resolve, moduleMeta)
+      .then(resolveFinished, Utils.forwardError);
+  };
+
+
+  MetaResolve.resolve = function(manager, moduleMeta) {
+    logger.log(moduleMeta);
+
+    return Promise.resolve(manager.resolve(moduleMeta))
       .then(function(meta) {
         meta = meta || {};
         if (!meta.cname) {

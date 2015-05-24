@@ -11,7 +11,6 @@ var Utils       = Bitloader.Utils;
  * Create bit loader with a fetch core hook for reading files from storage
  */
 var bitloader = new Bitloader({
-  resolve: resolvePath.configure({baseUrl: __dirname})
 });
 
 
@@ -19,6 +18,7 @@ var bitloader = new Bitloader({
  * Setup a babel transform
  */
 bitloader.plugin("js", {
+  resolve: resolvePath.configure({baseUrl: __dirname}),
   fetch: fileReader,
   transform: [babel, bundler.transform]
 });

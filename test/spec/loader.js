@@ -157,7 +157,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         var manager = {};
         loader = new Loader(manager);
         loader.pipeline.assets = [pipelineAssetStub];
-        return loader._pipelineModuleMeta(yes).then(pipelineFinishedStub);
+        return loader.runPipeline(yes).then(pipelineFinishedStub);
       });
 
       it("then the pipeline runs successfully", function() {

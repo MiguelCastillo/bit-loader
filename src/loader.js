@@ -58,6 +58,7 @@
 
     // Setup the pipeline
     this.pipeline = new Pipeline([
+      metaResolve.pipeline,
       metaFetch.pipeline,
       metaTransform.pipeline,
       metaDependency.pipeline,
@@ -148,17 +149,16 @@
     }
 
 
-    function moduleMetaPipeline(moduleMeta) {
-      return loader.runPipeline(moduleMeta);
-    }
-
     function moduleMetaFinished(moduleMeta) {
       return loader.setLoaded(moduleMeta.name, moduleMeta);
     }
 
+    // Create module meta, set the parent, and start processing it.
+    var moduleMeta = new Module.Meta(name);
+    moduleMeta.parent = parentMeta;
+
     var loading = loader
-      ._resolveModuleMeta(name, parentMeta)
-      .then(moduleMetaPipeline, Utils.printError)
+      ._pipelineModuleMeta(moduleMeta)
       .then(moduleMetaFinished, Utils.printError);
 
     return loader.setLoading(name, loading);
@@ -300,21 +300,6 @@
     function pipelineFinished() {
       return moduleMeta;
     }
-  };
-
-
-  /**
-   * Method that converts module names to a module meta objects that is then fetched,
-   * fed through the pipeline, and eventually built into a Module instance.
-   *
-   * @param {string} name - Module name for which to build the module meta for.
-   * @param {Module.Meta} parentMeta - Is the module meta object that is initiating the
-   *   current transaction
-   *
-   * @returns {Promise} When resolved, a module meta instance is returned
-   */
-  Loader.prototype._resolveModuleMeta = function(name, parentMeta) {
-    return metaResolve.resolve(this.manager, name, parentMeta);
   };
 
 

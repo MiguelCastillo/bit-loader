@@ -243,7 +243,7 @@
     var ruleLength, allLength = 0;
 
     for (var match in matches) {
-      if (!matches.hasOwnProperty(match)) {
+      if (!moduleMeta.hasOwnProperty(match) || !matches.hasOwnProperty(match)) {
         continue;
       }
 
