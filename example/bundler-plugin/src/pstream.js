@@ -1,15 +1,17 @@
-var Promise       = require("bit-loader").Promise;
 var StringDecoder = require("string_decoder").StringDecoder;
 
 
-function pstream(stream) {
-  return pstream.toPromise(stream);
+function pstream(stream, options) {
+  return pstream.toPromise(stream, options);
 }
 
 
-pstream.toPromise = function(stream) {
+pstream.toPromise = function(stream, options) {
+  options = options || {};
+  options.encoding = options.encoding || "utf8";
+
   return new Promise(function(resolve, reject) {
-    var decoder = new StringDecoder("utf8");
+    var decoder = new StringDecoder(options.encoding);
     var buffer  = "";
 
     stream.on("data", function onData(chunk) {

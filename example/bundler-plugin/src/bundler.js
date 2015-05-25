@@ -2,46 +2,50 @@ var browserPack = require("browser-pack");
 var pstream     = require("./pstream");
 
 
-function bundlerFactory(loader) {
+/**
+ * Convenience factory for specifying the instance of bit loader to bundle up
+ */
+function bundlerFactory(loader, options) {
   return function bundlerDelegate(modules) {
-    return bundler(loader, modules);
+    return bundler(loader, options, modules);
   };
 }
 
 
 /**
- * Bundles up incoming modules
+ * Bundles up incoming modules. This will process all dependencies and will create
+ * a bundle using browser-pack.
+ *
+ * @returns {Promise} When resolve, the full bundle buffer is returned
  */
-function bundler(loader, modules) {
-  var stack = modules.slice(0);
-  var mods = [];
+function bundler(loader, options, modules) {
+  var stack    = modules.slice(0);
+  var mods     = [];
   var finished = {};
-  var total = 0;
 
   function processModule(mod) {
-    if (finished.hasOwnProperty(mod.name)) {
+    if (finished.hasOwnProperty(mod.id)) {
       return;
     }
 
-    var depsNames = {};
-    var moduleMeta = mod.meta;
-    var deps = mod.deps;
+    var meta = mod.meta;
+
+    // browser pack chunk
+    var browserpack = {
+      id     : meta.id,
+      source : meta.source,
+      deps   : {}
+    };
 
     // Gather up all dependencies
     var i, length, dep;
-    for (i = 0, length = deps.length; i < length; i++) {
-      dep = deps[i];
-      stack.push(loader.getModule(dep));
-      depsNames[dep] = total++;
+    for (i = 0, length = mod.deps.length; i < length; i++) {
+      dep = loader.getModule(mod.deps[i]);
+      stack.push(dep);
+      browserpack.deps[dep.id] = dep.id;
     };
 
-    var browserpack = {
-      id: moduleMeta.name,
-      source: moduleMeta.source,
-      deps: depsNames
-    };
-
-    finished[moduleMeta.name] = browserpack;
+    finished[meta.id] = browserpack;
     mods.unshift(browserpack);
   }
 
@@ -50,7 +54,7 @@ function bundler(loader, modules) {
     processModule(stack.pop());
   }
 
-  var stream  = browserPack();
+  var stream  = browserPack(options);
   var promise = pstream(stream);
   stream.end(JSON.stringify(mods));
   return promise;
