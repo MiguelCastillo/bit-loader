@@ -1,3 +1,6 @@
+import Header from "./Header.jsx";
+import Body from "./Body.jsx";
+
 class HelloWorld extends React.Component {
   constructor() {
     super();
@@ -5,7 +8,11 @@ class HelloWorld extends React.Component {
 
   render() {
     return (
-      <div>Hello World!</div>
+      <div>
+        <Header/>
+        <Body/>
+        <div>Hello World!</div>
+      </div>
     );
   }
 }

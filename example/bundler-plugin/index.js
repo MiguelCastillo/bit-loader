@@ -3,6 +3,7 @@ var fileReader  = require("./src/fileReader");
 var resolvePath = require("./src/resolvePath");
 var Bitloader   = require("bit-loader");
 var babel       = require("babel-bits");
+var umd_deps    = require("deps-bits");
 var Promise     = Bitloader.Promise;
 var Utils       = Bitloader.Utils;
 
@@ -19,16 +20,17 @@ var bitloader = new Bitloader();
 bitloader.plugin("js", {
   resolve: resolvePath.configure({baseUrl: __dirname}),
   fetch: fileReader,
-  transform: [babel, bundler.transform]
+  transform: [babel],
+  dependency: [umd_deps]
 });
 
 
 /**
  * Import two modules. One with just ES2015 and the other with React JSX and ES2015
  */
-loadModules(["js/Name.js", "js/HelloWorld.jsx"])
-  .then(bundler)
-  .then(toConsole);
+loadModules(["./js/Name.js"])
+  .then(bundler(bitloader), Utils.forwardError)
+  .then(toConsole, Utils.forwardError);
 
 
 function toConsole(buffer) {
