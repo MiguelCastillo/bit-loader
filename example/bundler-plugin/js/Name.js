@@ -1,4 +1,4 @@
-import HelloWorld from "js/HelloWorld.jsx";
+import HelloWorld from "./HelloWorld.jsx";
 
 class Name {
   constructor(name) {

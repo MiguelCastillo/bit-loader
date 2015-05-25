@@ -4,7 +4,7 @@ This example shows a way to configure bit loader to process your JavaScript asse
 
 In this particular example we are configuring `resolve` and `fetch` as plugins rather than as core hooks (default handlers).
 
-If you would like to run browserify to compare result, you can run this command
+If you would like to run browserify to compare results, you can run this command
 
 ```
 browserify --extension "jsx" -r "./js/Name.js" -t "babelify" --basedir "./bundler-plugin/"
