@@ -8,11 +8,11 @@
   "devDependencies": {
     "babel-bits": "0.0.13",
     "babel-core": "^5.4.7",
-    "deps-bits": "0.0.3",
+    "babelify": "^6.1.1",
     "browser-pack": "^5.0.0",
     "browser-resolve": "^1.9.0",
-    "react": "^0.13.3",
-    "babelify": "^6.1.1"
+    "deps-bits": "0.0.3",
+    "react": "^0.13.3"
   },
   "browser": {
     "react": "./node_modules/react/dist/react.min.js"
