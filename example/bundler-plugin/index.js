@@ -4,7 +4,6 @@ var resolvePath = require("./src/resolvePath");
 var Bitloader   = require("bit-loader");
 var babel       = require("babel-bits");
 var umd_deps    = require("deps-bits");
-var Promise     = Bitloader.Promise;
 var Utils       = Bitloader.Utils;
 
 
@@ -18,10 +17,19 @@ var bitloader = new Bitloader();
  * Setup a babel transform
  */
 bitloader.plugin("js", {
-  resolve: resolvePath.configure({baseUrl: __dirname}),
+  resolve: resolvePath.configure({baseUrl: __filename}),
   fetch: fileReader,
   transform: [babel],
   dependency: [umd_deps]
+});
+
+
+/**
+ * Add any modules that shouldn't be processed by the `transform` and `dependency`
+ * pipelines right here.  The match is done on the module id being imported
+ */
+bitloader.ignore({
+  match: ["react"]
 });
 
 

@@ -1,13 +1,29 @@
-var path = require("path");
+var browserResolve = require("browser-resolve");
+var Bitloader      = require("bit-loader");
+var Utils          = Bitloader.Utils;
 
-function resolvePath(moduleMeta) {
-  return resolve(moduleMeta, {baseUrl: __dirname});
+
+/**
+ * Resolves the path for the moduleMeta object.  It uses process.cwd as the baseUrl
+ */
+function resolver(moduleMeta) {
+  return resolve(moduleMeta, {baseUrl: process.cwd()});
 }
 
 
-resolvePath.configure = function(options) {
+/**
+ * Configurator for resolver. This will create and return a resolve function to be
+ * called with the moduleMeta, which will be processed with the options passed in
+ * when configure was called.
+ */
+resolver.configure = function(options) {
   options = options || {};
-  return function resolver(moduleMeta) {
+
+  if (!options.baseUrl) {
+    options.baseUrl = process.cwd();
+  }
+
+  return function resolveDelegate(moduleMeta) {
     return resolve(moduleMeta, options);
   };
 };
@@ -17,20 +33,46 @@ resolvePath.configure = function(options) {
  * Convert module name to full module path
  */
 function resolve(moduleMeta, options) {
-  var parent = moduleMeta.parent;
-  var filePath;
-
-  if (path.isAbsolute(moduleMeta.name)) {
-    filePath = moduleMeta.name;
-  }
-  else {
-    filePath = path.join((parent && path.dirname(parent.path)) || options.baseUrl,  moduleMeta.name);
+  function setPath(path) {
+    moduleMeta.configure({
+      path: path
+    });
   }
 
-  moduleMeta.configure({
-    path: filePath
+  return resolvePath(moduleMeta, options).then(setPath, Utils.forwardError);
+}
+
+
+/**
+ * Figures out the path for the moduleMeta so that the module file can be loaded from storage.
+ *
+ * We use browser-resolve to do the heavy lifting for us, so all this module is really doing
+ * is wrapping browser-resolve so that it can be used by bit loader in a convenient way.
+ */
+function resolvePath(moduleMeta, options) {
+  var parentPath = getParentPath(moduleMeta, options);
+
+  return new Promise(function(resolve, reject) {
+    browserResolve(moduleMeta.name, {filename: parentPath}, function(err, path) {
+      if (err) {
+        reject(err);
+      }
+      else {
+        resolve(path);
+      }
+    });
   });
 }
 
 
-module.exports = resolvePath;
+/**
+ * Gets the path for the module requesting the moduleMeta being resolved.  This is what
+ * happens when a dependency is loaded.
+ */
+function getParentPath(moduleMeta, options) {
+  var parent = moduleMeta.parent;
+  return (parent && moduleMeta !== parent) ? parent.path : options.baseUrl;
+}
+
+
+module.exports = resolver;
