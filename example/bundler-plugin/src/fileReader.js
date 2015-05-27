@@ -10,13 +10,14 @@ var Utils     = Bitloader.Utils;
  * @param {object} moduleMeta - Module meta with information about the module being loaded
  */
 function fileReader(moduleMeta) {
+  function fileRead(text) {
+    moduleMeta.configure({
+      source: text
+    });
+  }
+
   // Read file from disk and return a module meta
-  return readFile(moduleMeta.path)
-    .then(function(text) {
-      moduleMeta.configure({
-        source: text
-      });
-    }, Utils.forwardError);
+  return readFile(moduleMeta.path).then(fileRead, Utils.forwardError);
 }
 
 
@@ -31,9 +32,9 @@ function fileReader(moduleMeta) {
  * @returns {Promise}
  */
 function readFile(filePath) {
-    var stream = fs
-      .createReadStream(filePath)
-      .setEncoding("utf8");
+  var stream = fs
+    .createReadStream(filePath)
+    .setEncoding("utf8");
 
   return pstream(stream);
 }

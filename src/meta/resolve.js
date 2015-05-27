@@ -28,7 +28,7 @@
 
 
   MetaResolve.resolve = function(manager, moduleMeta) {
-    logger.log(moduleMeta);
+    logger.log(moduleMeta.name, moduleMeta);
 
     return Promise.resolve(manager.resolve(moduleMeta))
       .then(function(meta) {

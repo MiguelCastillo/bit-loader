@@ -1,7 +1,7 @@
 var fs        = require("fs");
+var pstream   = require("./pstream");
 var Bitloader = require("bit-loader");
 var Utils     = Bitloader.Utils;
-var Promise   = Bitloader.Promise;
 
 
 /**
@@ -10,13 +10,14 @@ var Promise   = Bitloader.Promise;
  * @param {object} moduleMeta - Module meta with information about the module being loaded
  */
 function fileReader(moduleMeta) {
+  function fileRead(text) {
+    moduleMeta.configure({
+      source: text
+    });
+  }
+
   // Read file from disk and return a module meta
-  return readFile(moduleMeta.path)
-    .then(function(text) {
-      moduleMeta.configure({
-        source: text
-      });
-    }, Utils.forwardError);
+  return readFile(moduleMeta.path).then(fileRead, Utils.forwardError);
 }
 
 
@@ -31,24 +32,11 @@ function fileReader(moduleMeta) {
  * @returns {Promise}
  */
 function readFile(filePath) {
-  return new Promise(function(resolve, reject) {
-    var filecontent = "";
-    var stream = fs
-      .createReadStream(filePath)
-      .setEncoding("utf8");
+  var stream = fs
+    .createReadStream(filePath)
+    .setEncoding("utf8");
 
-    stream
-      .on("readable", function() {
-        var chunk = stream.read();
-        if (chunk !== null) {
-          filecontent += chunk;
-        }
-      })
-      .on("end", function() {
-        resolve(filecontent);
-      })
-      .on("error", reject);
-  });
+  return pstream(stream);
 }
 
 
