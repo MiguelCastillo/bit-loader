@@ -3,7 +3,6 @@
 
   var _enabled = false;
   var _only    = false;
-  var noop     = function noop() {};
 
 
   /**
@@ -14,9 +13,11 @@
    */
   function Logger(name, options) {
     options = options || {};
-    this.name     = name;
-    this._enabled = true;
-    this._target  = ensureTarget(options._target);
+    this._enabled  = true;
+    this.name      = name;
+
+    configureStream(this, options);
+    configureSerializer(this, options);
   }
 
 
@@ -39,22 +40,8 @@
       return;
     }
 
-    this._target.log.apply(this._target, [getDate(), this.name].concat(arguments));
-  };
-
-
-  /**
-   * Method to log JSON.
-   *
-   * Verifies that the logger is enabled. If it is enabled, then the input JSON
-   * is logged.  Otherwise ignored.
-   */
-  Logger.prototype.dir = function() {
-    if (!this.isEnabled()) {
-      return;
-    }
-
-    this._target.dir.apply(this._target, arguments);
+    var data = {date: getDate(), type: "log", name: this.name, data: arguments};
+    (Logger.stream || this.stream).write((Logger.serialize || this.serialize)(data));
   };
 
 
@@ -69,7 +56,48 @@
       return;
     }
 
-    this._target.error.apply(this._target, arguments);
+    var data = {date: getDate(), type: "error", name: this.name, data: arguments};
+    (Logger.stream || this.stream).write((Logger.serialize || this.serialize)(data));
+  };
+
+
+  /**
+   * Method to log warnings.
+   *
+   * Verifies that the logger is enabled. If it is enabled, then the warnings(s)
+   * are logged.  Otherwise ignored.
+   */
+  Logger.prototype.warn = function() {
+    if (!this.isEnabled()) {
+      return;
+    }
+
+    var data = {date: getDate(), type: "warn", name: this.name, data: arguments};
+    (Logger.stream || this.stream).write((Logger.serialize || this.serialize)(data));
+  };
+
+
+  /**
+   * Method to log informational message.
+   *
+   * Verifies that the logger is enabled. If it is enabled, then the info(s)
+   * are logged.  Otherwise ignored.
+   */
+  Logger.prototype.info = function() {
+    if (!this.isEnabled()) {
+      return;
+    }
+
+    var data = {date: getDate(), type: "info", name: this.name, data: arguments};
+    (Logger.stream || this.stream).write((Logger.serialize || this.serialize)(data));
+  };
+
+
+  /**
+   * Method to be overiden to give custom behavior.
+   */
+  Logger.prototype.serialize = function(data) {
+    return data;
   };
 
 
@@ -141,7 +169,7 @@
 
   // Expose the constructor to be able to create new instances from an
   // existing instance.
-  Logger.prototype.Logger = Logger;
+  Logger.prototype.default = Logger;
 
 
   /**
@@ -187,21 +215,47 @@
 
   /**
    * Returns a valid console interface with three methods:
-   * - log, which logs raw text messages.
-   * - error, which logs errors including exceptions.
-   * - dir, which logs JSON
    *
-   * @returns {{log: function, error: function, dir: function}}
+   * @returns {{write: function}}
    */
-  function getConsole() {
-    var _result;
+  function getConsoleStream() {
+    var result;
     if (typeof(console) !== "undefined") {
-      _result = console;
+      result = console;
     }
-    else {
-      _result = {log: noop, error: noop, dir: noop};
+
+    return result && {
+      write: function(data) {
+        result.log(data);
+      }
+    };
+  }
+
+
+  /**
+   * Gets defaul process.stdout when running in node.
+   */
+  function getProcessStream() {
+    var result;
+    if (typeof(process) !== "undefined" && process.stdout) {
+      result = process.stdout;
     }
-    return _result;
+
+    return result && {
+      write: function(data) {
+        result.write(data);
+      }
+    };
+  }
+
+
+  /**
+   * Get a noop stream
+   */
+  function getNoopStream() {
+    return {
+      write: function() {}
+    };
   }
 
 
@@ -209,15 +263,26 @@
    * Method that fills in the target object to make sure we have a valid target
    * we are writing to.
    */
-  function ensureTarget(target) {
-    if (!target) {
-      return getConsole();
-    }
+  function configureStream(logger, options) {
+    logger.stream = options.stream || getConsoleStream() || getProcessStream() || getNoopStream();
+  }
 
-    target.log   = target.log   || noop;
-    target.error = target.error || noop;
-    target.dir   = target.dir   || noop;
-    return target;
+
+  /**
+   * Handler custom serializers
+   */
+  function configureSerializer(logger, options) {
+    if (options.serialize) {
+      logger.serialize = options.serialize;
+    }
+    else if (typeof(process) !== "undefined" && process.stdout) {
+      logger.serialize = function(data) {
+        if (typeof(data) !== "string") {
+          data = JSON.stringify(data);
+        }
+        return data;
+      };
+    }
   }
 
 
