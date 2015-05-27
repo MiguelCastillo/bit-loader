@@ -38,7 +38,7 @@ bitloader.ignore({
  */
 loadModules(["./js/Name.js"])
   .then(bundler(bitloader), Utils.forwardError)
-  .then(toConsole, Utils.forwardError);
+  .then(toConsole, Utils.reportError);
 
 
 function toConsole(buffer) {

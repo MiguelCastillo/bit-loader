@@ -150,7 +150,6 @@
     }
 
     return handlers.map(function handlerIterator(handlerConfig) {
-      var deferred;
       var handlerName;
 
       if (!handlerConfig) {
@@ -173,22 +172,19 @@
         throw new TypeError("Plugin handler must be a function or a string");
       }
 
-
       function deferredHandler(moduleMeta) {
-//        if (moduleMeta.name === handlerName) {
-//          return Promise.resolve({});
-//        }
+        // A plugin cannot process itself while it is being loaded...
+        if (moduleMeta.name === handlerName) {
+          return;
+        }
 
         function handlerReady(newhandler) {
           handlerConfig.handler = newhandler;
           return newhandler.call(handlerConfig, moduleMeta, handlerConfig.options);
         }
 
-        if (!deferred) {
-          deferred = deferredPluginHandler(plugin, handlerName);
-        }
-
-        return deferred.then(handlerReady, Utils.reportError);
+        return deferredPluginHandler(plugin, handlerName)
+          .then(handlerReady, Utils.reportError);
       }
 
       return handlerConfig;
