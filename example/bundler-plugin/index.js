@@ -8,13 +8,17 @@ var Utils       = Bitloader.Utils;
 
 
 /**
- * Create bit loader with a fetch core hook for reading files from storage
+ * Create bit loader. We register a single plugin for processing module files
  */
 var bitloader = new Bitloader();
 
 
 /**
- * Setup a babel transform
+ * Setup plugin with:
+ * - resolve to convert module ids to module paths
+ * - fetch to load module files from storage
+ * - transform to convert module files to other formats. E.g. JSX to JavaScript
+ * - dependency to process and load module dependencies
  */
 bitloader.plugin("js", {
   resolve: resolvePath.configure({baseUrl: __filename}),
