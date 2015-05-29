@@ -39,7 +39,7 @@ function resolve(moduleMeta, options) {
     });
   }
 
-  return resolvePath(moduleMeta, options).then(setPath, Utils.printError);
+  return resolvePath(moduleMeta, options).then(setPath, Utils.reportError);
 }
 
 

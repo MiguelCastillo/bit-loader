@@ -28,7 +28,7 @@
     }
 
     return runPipeline(manager.pipelines.compile, moduleMeta)
-      .then(compilationFinished, Utils.printError);
+      .then(compilationFinished, Utils.reportError);
   };
 
 

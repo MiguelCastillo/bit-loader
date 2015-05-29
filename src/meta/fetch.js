@@ -33,7 +33,7 @@
     }
 
     return runPipeline(manager.pipelines.fetch, moduleMeta)
-      .then(fetchFinished, Utils.printError);
+      .then(fetchFinished, Utils.reportError);
   };
 
 
@@ -50,7 +50,7 @@
     return Promise.resolve(manager.fetch(moduleMeta))
       .then(function(meta) {
         return moduleMeta.configure(meta);
-      }, Utils.printError);
+      }, Utils.reportError);
   };
 
 

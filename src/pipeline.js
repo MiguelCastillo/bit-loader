@@ -17,7 +17,7 @@
     }
 
     return this.assets.reduce(function(prev, curr) {
-      return prev.then(cb(curr), Utils.printError);
+      return prev.then(cb(curr), Utils.reportError);
     }, Promise.resolve());
   };
 

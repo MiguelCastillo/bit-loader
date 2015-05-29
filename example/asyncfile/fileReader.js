@@ -16,7 +16,7 @@ function fileReader(moduleMeta) {
       moduleMeta.configure({
         source: text
       });
-    }, Utils.printError);
+    }, Utils.reportError);
 }
 
 
