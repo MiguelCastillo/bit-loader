@@ -27,7 +27,7 @@
     }
 
     return runPipeline(manager.pipelines.transform, moduleMeta)
-      .then(transformationFinished, Utils.forwardError);
+      .then(transformationFinished, Utils.printError);
   };
 
 

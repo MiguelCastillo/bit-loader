@@ -33,7 +33,7 @@
     }
 
     return runPipeline(manager.pipelines.fetch, moduleMeta)
-      .then(fetchFinished, Utils.forwardError);
+      .then(fetchFinished, Utils.printError);
   };
 
 

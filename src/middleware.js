@@ -349,7 +349,7 @@
 
       function providerSequenceError(err) {
         cancelled = true;
-        return err;
+        return Utils.printError(err);
       }
 
       return result.then(providerSequenceRun, providerSequenceError);

@@ -23,7 +23,6 @@ pstream.toPromise = function(stream, options) {
       resolve(buffer);
     })
     .on("error", function onError(error) {
-      console.error(error);
       reject(error);
     });
   });
