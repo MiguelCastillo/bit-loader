@@ -116,7 +116,7 @@
 
     return loader
       .fetch(name, parentMeta)
-      .then(build, Utils.forwardError);
+      .then(build, Utils.printError);
   };
 
 
@@ -218,8 +218,8 @@
     // Right here is where we handle dynamic registration of modules while are being loaded.
     // E.g. System.register to register a module that's being loaded
     return metaDependency.pipeline(loader.manager, loader.deleteModule(name))
-      .then(buildDependencies, Utils.forwardError)
-      .then(linkModuleMeta, Utils.forwardError);
+      .then(buildDependencies, Utils.printError)
+      .then(linkModuleMeta, Utils.printError);
 
 
     //
@@ -234,7 +234,7 @@
       return Promise.all(pending)
         .then(function dependenciesBuilt() {
           return moduleMeta;
-        }, Utils.forwardError);
+        }, Utils.printError);
     }
 
     function linkModuleMeta(moduleMeta) {
@@ -296,7 +296,7 @@
   Loader.prototype.runPipeline = function(moduleMeta) {
     return this.pipeline
       .run(this.manager, moduleMeta)
-      .then(pipelineFinished, Utils.forwardError);
+      .then(pipelineFinished, Utils.printError);
 
     function pipelineFinished() {
       return moduleMeta;

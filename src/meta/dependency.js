@@ -35,7 +35,7 @@
     }
 
     return runPipeline(manager.pipelines.dependency, moduleMeta)
-      .then(dependenciesFinished, Utils.forwardError);
+      .then(dependenciesFinished, Utils.printError);
   };
 
 
@@ -50,7 +50,7 @@
       return moduleMeta;
     }
 
-    return Promise.all(loading).then(dependenciesFetched, Utils.forwardError);
+    return Promise.all(loading).then(dependenciesFetched, Utils.printError);
   }
 
 

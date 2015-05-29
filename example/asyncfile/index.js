@@ -17,7 +17,7 @@ loader
   .import(["js/sample1.js", "js/sample2.js"])
   .then(function(result) {
     console.log(result[0], result[1]);
-  }, Utils.forwardError);
+  }, Utils.printError);
 
 
 module.exports = loader;

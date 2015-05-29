@@ -7,6 +7,9 @@ var umd_deps    = require("deps-bits");
 var Utils       = Bitloader.Utils;
 
 
+//Bitloader.Logger.default.enable();
+
+
 /**
  * Create bit loader. We register a single plugin for processing module files
  */
@@ -41,8 +44,8 @@ bitloader.ignore({
  * Import two modules. One with just ES2015 and the other with React JSX and ES2015
  */
 loadModules(["./js/Name.js"])
-  .then(bundler(bitloader), Utils.forwardError)
-  .then(toConsole, Utils.reportError);
+  .then(bundler(bitloader), Utils.printError)
+  .then(toConsole, Utils.printError);
 
 
 function toConsole(buffer) {

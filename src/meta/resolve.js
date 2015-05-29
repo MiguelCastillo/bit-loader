@@ -23,7 +23,7 @@
     }
 
     return runPipeline(manager.pipelines.resolve, moduleMeta)
-      .then(resolveFinished, Utils.forwardError);
+      .then(resolveFinished, Utils.printError);
   };
 
 
@@ -39,7 +39,7 @@
 
         delete meta.name;
         return moduleMeta.configure(meta);
-      }, Utils.reportError);
+      }, Utils.printError);
   };
 
 
