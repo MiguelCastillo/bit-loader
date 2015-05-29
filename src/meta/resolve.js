@@ -39,7 +39,7 @@
 
         delete meta.name;
         return moduleMeta.configure(meta);
-      }, Utils.reportError);
+      }, Utils.printError);
   };
 
 

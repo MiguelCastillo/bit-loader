@@ -290,7 +290,7 @@
         logger.log("import [start]", provider);
         provider.__deferred = middleware.settings
           .import(provider.name)
-          .then(providerImported, Utils.reportError);
+          .then(providerImported, Utils.printError);
       }
       else {
         logger.log("import [pending]", provider);
@@ -314,7 +314,7 @@
         return provider.execute(data);
       }
 
-      return importProvider().then(providerReady, Utils.reportError);
+      return importProvider().then(providerReady, Utils.printError);
     };
   };
 

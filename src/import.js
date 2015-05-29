@@ -72,7 +72,7 @@
     // https://github.com/MiguelCastillo/spromise/issues/35
     return new Promise(function deferredModuleResolver(resolve, reject) {
       function moduleError(error) {
-        reject(Utils.reportError(error));
+        reject(Utils.printError(error));
       }
 
       function moduleLoaded(mod) {
@@ -112,4 +112,3 @@
 
   module.exports = Import;
 })();
-

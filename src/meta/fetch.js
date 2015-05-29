@@ -50,7 +50,7 @@
     return Promise.resolve(manager.fetch(moduleMeta))
       .then(function(meta) {
         return moduleMeta.configure(meta);
-      }, Utils.reportError);
+      }, Utils.printError);
   };
 
 

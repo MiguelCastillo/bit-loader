@@ -127,7 +127,7 @@
         function pluginHandler() {
           return handlerConfig.handler.call(handlerConfig, moduleMeta, handlerConfig.options);
         }
-        return prev.then(pluginHandler, Utils.reportError);
+        return prev.then(pluginHandler, Utils.printError);
       }
 
       return plugin._handlers[serviceName].reduce(handlerIterator, Promise.resolve());
@@ -184,7 +184,7 @@
         }
 
         return deferredPluginHandler(plugin, handlerName)
-          .then(handlerReady, Utils.reportError);
+          .then(handlerReady, Utils.printError);
       }
 
       return handlerConfig;
