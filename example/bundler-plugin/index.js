@@ -44,8 +44,8 @@ bitloader.ignore({
  * Import two modules. One with just ES2015 and the other with React JSX and ES2015
  */
 loadModules(["./js/Name.js"])
-  .then(bundler(bitloader), Utils.printError)
-  .then(toConsole, Utils.printError);
+  .then(bundler(bitloader), Utils.reportError)
+  .then(toConsole, Utils.reportError);
 
 
 function toConsole(buffer) {

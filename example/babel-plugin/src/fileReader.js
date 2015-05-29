@@ -17,7 +17,7 @@ function fileReader(moduleMeta) {
   }
 
   // Read file from disk and return a module meta
-  return readFile(moduleMeta.path).then(fileRead, Utils.printError);
+  return readFile(moduleMeta.path).then(fileRead, Utils.reportError);
 }
 
 

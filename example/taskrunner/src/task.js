@@ -34,14 +34,14 @@ function Task(taskrunner, name, deps, cb) {
   function run() {
     if (deps.length) {
       var sequence = deps.reduce(function(runner, name) {
-          return runner.then(runDeferred(name), Utils.printError);
+          return runner.then(runDeferred(name), Utils.reportError);
         }, Promise.resolve());
 
       return sequence.then(function() {
           if (src.length) {
             return loader.import(src);
           }
-        }, Utils.printError);
+        }, Utils.reportError);
     }
     else if (src.length) {
       return loader.import(src);

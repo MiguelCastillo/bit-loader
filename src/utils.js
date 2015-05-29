@@ -97,7 +97,7 @@
   }
 
 
-  function printError(error) {
+  function reportError(error) {
     if (error && !error.handled) {
       error.handled = true;
       if (error.stack) {
@@ -135,7 +135,7 @@
     result: result,
     extend: extend,
     merge: merge,
-    printError: printError,
+    reportError: reportError,
     forwardError: forwardError,
     notImplemented: notImplemented
   };
