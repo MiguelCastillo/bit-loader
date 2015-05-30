@@ -24,11 +24,10 @@
       this.factory = options.factory;
     }
 
-    this.type     = options.type || Type.UNKNOWN;
-    this.id       = options.id || options.name;
-    this.name     = options.name;
-    this.deps     = options.deps ? options.deps.slice(0) : [];
-    this.settings = Utils.extend({}, options);
+    this.type = options.type || Type.UNKNOWN;
+    this.id   = options.id || options.name;
+    this.name = options.name;
+    this.deps = options.deps ? options.deps.slice(0) : [];
   }
 
 
