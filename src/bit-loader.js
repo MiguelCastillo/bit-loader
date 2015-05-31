@@ -351,7 +351,21 @@
       this.plugins[plugin.name] = plugin;
     }
 
-    return plugin.configure(options);
+    var handlers = [];
+    function handlerVisitor(handlerConfig) {
+      if (handlerConfig.deferred) {
+        handlers.push(handlerConfig.deferred);
+      }
+    }
+
+    plugin.configure(options, handlerVisitor);
+
+    // Add plugin handlers to ignore list.
+    if (handlers.length) {
+      this.ignore({match: handlers});
+    }
+
+    return plugin;
   };
 
 
