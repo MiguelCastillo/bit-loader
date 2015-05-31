@@ -173,12 +173,15 @@
       }
 
       function deferredHandler(moduleMeta) {
-        // A plugin cannot process itself while it is being loaded...
-        if (moduleMeta.name === handlerName) {
+        if (handlerConfig.pending) {
           return;
         }
 
+        // Set a pending flag so that we do not add this same deferred handler to
+        // the same sequence, which causes a deadlock.
+        handlerConfig.pending = handlerName;
         function handlerReady(newhandler) {
+          delete handlerConfig.pending; // Cleanup the pending field.
           handlerConfig.handler = newhandler;
           return newhandler.call(handlerConfig, moduleMeta, handlerConfig.options);
         }
