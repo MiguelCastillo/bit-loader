@@ -179,7 +179,7 @@ define(["dist/bit-loader"], function(Bitloader) {
     });
 
 
-    describe("When adding an array of two handlers with options calling `addHandlers'", function() {
+    describe("When adding an array of two handlers with options calling `addHandlers' and running the processing `pipelines`", function() {
       var handlerStub1, handlerStub2, handlerStub1Options, handlerStub2Options, moduleMeta, plugin;
       beforeEach(function() {
         bitloader = new Bitloader();
@@ -260,7 +260,7 @@ define(["dist/bit-loader"], function(Bitloader) {
     });
 
 
-    describe("When registering a single `transform` plugin", function() {
+    describe("When registering a single `transform` plugin and running the processing `pipeline`", function() {
       var transformStub, moduleMeta;
       beforeEach(function() {
         bitloader = new Bitloader();
@@ -288,7 +288,7 @@ define(["dist/bit-loader"], function(Bitloader) {
     });
 
 
-    describe("When registering a single `dependency` plugin", function() {
+    describe("When registering a single `dependency` plugin and running the processing pipeline", function() {
       var dependencyStub, moduleMeta;
       beforeEach(function() {
         bitloader = new Bitloader();
@@ -316,7 +316,7 @@ define(["dist/bit-loader"], function(Bitloader) {
     });
 
 
-    describe("When registering a `resolve`, `fetch`, `transform`, `dependency`, and `compile` plugin", function() {
+    describe("When registering a `resolve`, `fetch`, `transform`, `dependency`, and `compile` plugin and running the processing `pipeline`", function() {
       var resolveStub, fetchStub, transformStub, dependencyStub, compileStub, moduleMeta;
       beforeEach(function() {
         bitloader  = new Bitloader();
@@ -384,7 +384,7 @@ define(["dist/bit-loader"], function(Bitloader) {
     });
 
 
-    describe("When registering a plugin with multiple `resolve`, `fetch`, `transform`, `dependency`, and `compile` handlers and match path pattern", function() {
+    describe("When registering a plugin with multiple `resolve`, `fetch`, `transform`, `dependency`, and `compile` handlers and match path pattern and running the processing `pipeline`", function() {
       var resolveStub1, fetchStub1, fetchStub2, transformStub1, transformStub2, transformStub3, dependencyStub1, dependencyStub2, compileStub1, compileStub2, moduleMeta, transformStub1Options, transformStub2Options;
       beforeEach(function() {
         bitloader = new Bitloader();
@@ -508,7 +508,7 @@ define(["dist/bit-loader"], function(Bitloader) {
     });
 
 
-    describe("When registering a named plugin for `transform` and `dependency`", function() {
+    describe("When registering a named plugin for `transform` and `dependency` and running the processing `pipeline`", function() {
       var moduleMeta, transformStub, dependencyStub;
       beforeEach(function() {
         bitloader = new Bitloader();
@@ -538,7 +538,7 @@ define(["dist/bit-loader"], function(Bitloader) {
     });
 
 
-    describe("When registering plugin `less` for `transform`", function() {
+    describe("When registering plugin `less` for `transform` and running the processing `pipeline`", function() {
       var moduleMeta, lessTransformStub1, lessTransformStub2, textTransformStub;
       beforeEach(function() {
         bitloader = new Bitloader();
@@ -623,7 +623,7 @@ define(["dist/bit-loader"], function(Bitloader) {
     });
 
 
-    describe("When registering a plugin named `less` for `transform` and `dependency`", function() {
+    describe("When registering a plugin named `less` for `transform` and `dependency` and running the processing `pipeline`", function() {
       var lessTransformStub, lessDependencyStub, textTransformStub, textDependencyStub, moduleMeta;
       beforeEach(function() {
         bitloader = new Bitloader();
@@ -677,7 +677,7 @@ define(["dist/bit-loader"], function(Bitloader) {
     });
 
 
-    describe("When registering a plugin for a pipeline that does not exist", function() {
+    describe("When registering a plugin for a pipeline that does not exist and running the processing `pipeline`", function() {
       var moduleMeta, tranformStub, bitloaderSpy;
       beforeEach(function() {
         bitloader = new Bitloader();
@@ -709,6 +709,63 @@ define(["dist/bit-loader"], function(Bitloader) {
       });
     });
 
-  });
 
+    describe("When registering dynamic plugins with the `plugin` method", function() {
+      var transformHandlers, ignoreSpy;
+      beforeEach(function() {
+        transformHandlers = ["test1", "test2"];
+
+        bitloader = new Bitloader();
+        ignoreSpy = sinon.spy(bitloader, "ignore");
+
+        bitloader.plugin({
+          transform: transformHandlers
+        });
+      });
+
+      it("then the `ignore` method is called", function() {
+        expect(ignoreSpy.called).to.equal(true);
+      });
+
+      it("then the plugins are added to the ignore list", function() {
+        expect(ignoreSpy.calledWith({match: transformHandlers})).to.equal(true);
+      });
+    });
+
+
+    describe("When registering dynamic plugins with `addHandlers` and a `visitor`", function() {
+      var transformHandlers, transformStub, visitorStub, plugin, services;
+      beforeEach(function() {
+        transformHandlers = ["test1", "test2"];
+        transformStub = sinon.stub();
+        visitorStub = sinon.stub();
+
+        services = {
+          "transform": {
+            use: transformStub
+          }
+        };
+
+        plugin = new Bitloader.Plugin("js", {services: services});
+        plugin.addHandlers("transform", transformHandlers, visitorStub);
+      });
+
+      it("then the `visitor` is called", function() {
+        expect(visitorStub.called).to.equal(true);
+      });
+
+      it("then visitor is called with handler configuration for `test1`", function() {
+        expect(visitorStub.calledWith(sinon.match({deferred: "test1"}))).to.equal(true);
+      });
+
+      it("then visitor is called with handler configuration for `test2`", function() {
+        expect(visitorStub.calledWith(sinon.match({deferred: "test2"}))).to.equal(true);
+      });
+
+      it("then visitor is NOT called with handler configuration for `test3`", function() {
+        expect(visitorStub.calledWith(sinon.match({deferred: "test3"}))).to.equal(false);
+      });
+    });
+
+  });
 });

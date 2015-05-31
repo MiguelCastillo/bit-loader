@@ -26,7 +26,7 @@
   /**
    * Configure plugin
    */
-  Plugin.prototype.configure = function(options) {
+  Plugin.prototype.configure = function(options, handlerVisitor) {
     var settings = Utils.merge({}, options);
 
     // Add matching rules
@@ -44,7 +44,7 @@
         continue;
       }
 
-      this.addHandlers(serviceName, settings[serviceName]);
+      this.addHandlers(serviceName, settings[serviceName], handlerVisitor);
     }
 
     return this;
@@ -69,13 +69,13 @@
   /**
    * Adds handlers for the particular service.
    */
-  Plugin.prototype.addHandlers = function(serviceName, handlers) {
+  Plugin.prototype.addHandlers = function(serviceName, handlers, visitor) {
     if (!this.services.hasOwnProperty(serviceName)) {
       throw new TypeError("Unable to register plugin for '" + serviceName + "'. '" + serviceName + "' is not found");
     }
 
     // Make sure we have a good plugin's configuration settings for the service.
-    this._handlers[serviceName] = configurePluginHandlers(this, handlers);
+    this._handlers[serviceName] = configurePluginHandlers(this, handlers, visitor);
 
     // Register service delegate if one does not exist.  Delegates are the callbacks
     // registered with the service that when called, the plugins executes all the
@@ -140,7 +140,7 @@
    * where handle things like if a handler is a string, then we assume it is the
    * name of a module that we need to load...
    */
-  function configurePluginHandlers(plugin, handlers) {
+  function configurePluginHandlers(plugin, handlers, visitor) {
     if (!handlers) {
       throw new TypeError("Plugin must have 'handlers' defined");
     }
@@ -165,6 +165,7 @@
       // Handle dynamic handler loading
       if (Utils.isString(handlerConfig.handler)) {
         handlerName = handlerConfig.handler;
+        handlerConfig.deferred = handlerName;
         handlerConfig.handler = deferredHandler;
       }
 
@@ -188,6 +189,11 @@
 
         return deferredPluginHandler(plugin, handlerName)
           .then(handlerReady, Utils.reportError);
+      }
+
+      // Once the plugin handler is configured, call the visitor callback if one is provided.
+      if (visitor) {
+        visitor(handlerConfig);
       }
 
       return handlerConfig;
