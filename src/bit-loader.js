@@ -293,6 +293,14 @@
     }
 
     var i, length, ruleNames;
+
+    // Simplify the arguments that can be passed in to the ignore method
+    if (rule instanceof Array || typeof(rule) === "string") {
+      rule = {
+        match: rule
+      };
+    }
+
     if (!rule.name) {
       ruleNames = ["transform", "dependency"];
     }

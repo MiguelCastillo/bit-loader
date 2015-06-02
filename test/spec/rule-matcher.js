@@ -50,6 +50,18 @@ define(["dist/bit-loader"], function(Bitloader) {
         it("then match for `notfound.js` is false", function() {
           expect(matcher.match("notfound.js")).to.equal(false);
         });
+
+        it("then match for undefined is false", function() {
+          expect(matcher.match()).to.equal(false);
+        });
+
+        it("then match for true is false", function() {
+          expect(matcher.match(true)).to.equal(false);
+        });
+
+        it("then match for empty string is false", function() {
+          expect(matcher.match("")).to.equal(false);
+        });
       });
 
 

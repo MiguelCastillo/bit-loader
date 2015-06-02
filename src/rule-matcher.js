@@ -106,6 +106,12 @@
    * Function that runs the rule matching logic
    */
   Rule.prototype.matchCriteria = function(criteria, match) {
+    // When the criteria is not a string or the string is empty, we can just
+    // return false to indicate that we don't have a match.
+    if (criteria === "" || typeof(criteria) !== "string") {
+      return false;
+    }
+
     // Minimatch it!
     return minimatch(criteria, match);
   };
