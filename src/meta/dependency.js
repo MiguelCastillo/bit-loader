@@ -43,7 +43,7 @@
     var i, length, loading = new Array(moduleMeta.deps.length);
 
     for (i = 0, length = moduleMeta.deps.length; i < length; i++) {
-      loading[i] = manager.providers.loader.fetch(moduleMeta.deps[i], moduleMeta);
+      loading[i] = manager.providers.loader.fetch(moduleMeta.deps[i], moduleMeta.path);
     }
 
     function dependenciesFetched() {

@@ -85,16 +85,17 @@
    * fetch     -> module name {string}
    * transform -> module meta {compile:fn, source:string}
    * load deps -> module meta {compile:fn, source:string}
-   * compile moduleMeta
+   * compile module meta
    * link module
    *
    * @param {string} name - The name of the module to load.
+   * @param {string} referer - Location of the requesting module.
    *
    * @returns {Promise} - Promise that will resolve to a Module instance
    */
-  Loader.prototype.load = function(name, parentMeta) {
-    var loader  = this,
-        manager = this.manager;
+  Loader.prototype.load = function(name, referer) {
+    var loader  = this;
+    var manager = this.manager;
 
     if (!name) {
       return Promise.reject(new TypeError("Must provide the name of the module to load"));
@@ -115,7 +116,7 @@
     }
 
     return loader
-      .fetch(name, parentMeta)
+      .fetch(name, referer)
       .then(build, Utils.reportError);
   };
 
@@ -128,12 +129,14 @@
    * Use this method if the intent is to preload dependencies without actually compiling
    * module meta objects to instances of Module.
    *
-   * @param {string} name - The name of the module to fetch
+   * @param {string} name - The name of the module to fetch.
+   * @param {string} referer - Location of the requesting module.
+   *
    * @returns {Promise}
    */
-  Loader.prototype.fetch = function(name, parentMeta) {
-    var loader  = this,
-        manager = this.manager;
+  Loader.prototype.fetch = function(name, referer) {
+    var loader  = this;
+    var manager = this.manager;
 
     if (!name) {
       return Promise.reject(new TypeError("Must provide the name of the module to fetch"));
@@ -154,9 +157,11 @@
       return loader.setLoaded(moduleMeta.name, moduleMeta);
     }
 
-    // Create module meta, set the parent, and start processing it.
-    var moduleMeta = new Module.Meta(name);
-    moduleMeta.parent = parentMeta;
+    // Create module meta, set the referer, and start processing it.
+    var moduleMeta = new Module.Meta({
+      name: name,
+      referer: referer
+    });
 
     var loading = loader
       ._pipelineModuleMeta(moduleMeta)
@@ -174,6 +179,7 @@
    * @returns {Module} Module instance from the conversion of module meta
    */
   Loader.prototype.syncBuild = function(name) {
+    // Evaluates source
     var mod = this._compileModuleMeta(name);
 
     if (!mod) {
@@ -185,6 +191,7 @@
       }
     }
 
+    // Calls module factory
     return this._linkModule(mod);
   };
 
@@ -212,7 +219,9 @@
     // If the module evaluation didn't register a new module, then we return whatever
     // was produced.
     if (!loader.isPending(name)) {
-      return Promise.resolve(loader._linkModule(mod));
+      return Promise.resolve().then(function() {
+        return loader._linkModule(mod);
+      }, Utils.reportError);
     }
 
     // Right here is where we handle dynamic registration of modules while are being loaded.
@@ -307,6 +316,9 @@
   /**
    * Verifies the state of the module meta object, and puts it though the processing
    * pipeline if it needs to be processed.
+   *
+   * If the module meta object has already been compiled, then we do not execute the
+   * processing pipeline.
    *
    * @param {Module.Meta} moduleMeta - Module meta object to run through the pipeline.
    *
