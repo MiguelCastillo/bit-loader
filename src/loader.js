@@ -89,7 +89,8 @@
    * link module
    *
    * @param {string} name - The name of the module to load.
-   * @param {string} referer - Location of the requesting module.
+   * @param {{path: string, name: string}} referer - Object with the
+   *  location and name of the requesting module.
    *
    * @returns {Promise} - Promise that will resolve to a Module instance
    */
@@ -130,7 +131,8 @@
    * module meta objects to instances of Module.
    *
    * @param {string} name - The name of the module to fetch.
-   * @param {string} referer - Location of the requesting module.
+   * @param {{path: string, name: string}} referer - Object with the
+   *  location and name of the requesting module.
    *
    * @returns {Promise}
    */

@@ -84,7 +84,8 @@
    * Method that converts a module name to a path to the module file.
    *
    * @param {string} name - Name of the module to generate a path for
-   * @param {string} referer - Location of the requesting module.
+   * @param {{path: string, name: string}} referer - Object with the
+   *  location and name of the requesting module.
    *
    * @returns {Promise} Promise that when resolved, will return an object with
    *  a required field `path` where we can load the module file from.
@@ -98,7 +99,8 @@
    *
    * @param {string} name - Name of the module whose file content needs to be
    *  fetched.
-   * @param {string} referer - Location of the requesting module.
+   * @param {{path: string, name: string}} referer - Object with the
+   *  location and name of the requesting module.
    *
    * @returns {Promise} Promise that when resolved, a module meta object
    *  with a "source" property is returned. The "source" property is where
