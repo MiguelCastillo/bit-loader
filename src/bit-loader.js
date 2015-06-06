@@ -305,7 +305,12 @@
       ruleNames = ["transform", "dependency"];
     }
     else {
-      ruleNames = Utils.isArray(rule.name) ? rule.name : [rule.name];
+      if (rule.name === "*") {
+        ruleNames = Object.keys(this.pipelines);
+      }
+      else {
+        ruleNames = Utils.isArray(rule.name) ? rule.name : [rule.name];
+      }
     }
 
     for (i = 0, length = ruleNames.length; i < length; i++) {
