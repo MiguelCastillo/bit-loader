@@ -10,7 +10,7 @@
    */
   function Registry(options) {
     options = options || {};
-    this._id     = options.id || getRegistryId();
+    this._id     = options.id || generateId();
     this.modules = options.modules || new StatefulItems();
   }
 
@@ -63,7 +63,7 @@
    */
   Registry.getById = function(id) {
     if (!id) {
-      id = getRegistryId();
+      id = generateId();
     }
 
     return storage[id] || (storage[id] = new Registry({id: id}));
@@ -95,12 +95,12 @@
   Registry.idGenerator = function(name, seed) {
     name = (name || "generic") + "-";
     var id = seed || 0;
-    return function getId() {
+    return function createId() {
       return name + id++;
     };
   };
 
 
-  var getRegistryId = Registry.idGenerator();
+  var generateId = Registry.idGenerator();
   module.exports = Registry;
 })();
