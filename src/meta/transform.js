@@ -6,6 +6,7 @@
   var Utils       = require("../utils");
   var logger      = require("../logger").factory("Meta/Transform");
 
+
   function MetaTransform() {
   }
 
@@ -18,7 +19,7 @@
   MetaTransform.pipeline = function(manager, moduleMeta) {
     logger.log(moduleMeta.name, moduleMeta);
 
-    if (manager.rules.ignore.match(moduleMeta.name, "transform")) {
+    if (!canProcess(manager, moduleMeta)) {
       return Promise.resolve(moduleMeta);
     }
 
@@ -29,6 +30,11 @@
     return runPipeline(manager.pipelines.transform, moduleMeta)
       .then(transformationFinished, Utils.reportError);
   };
+
+
+  function canProcess(manager, moduleMeta) {
+    return Utils.isString(moduleMeta.source) && !manager.rules.ignore.match(moduleMeta.name, "transform");
+  }
 
 
   module.exports = MetaTransform;

@@ -25,7 +25,7 @@
       // If a pipeline item has added source to the module meta, then we
       // are done with this stage.  Otherwise, we will run the default
       // fetch provider
-      if (moduleMeta.hasOwnProperty("source")) {
+      if (Utils.isString(moduleMeta.source)) {
         return moduleMeta;
       }
 
@@ -55,7 +55,7 @@
 
 
   function canProcess(manager, moduleMeta) {
-    return !(moduleMeta.hasOwnProperty("source") || manager.rules.ignore.match(moduleMeta.name, "fetch"));
+    return !Utils.isString(moduleMeta.source) && !manager.rules.ignore.match(moduleMeta.name, "fetch");
   }
 
 

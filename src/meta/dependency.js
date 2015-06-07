@@ -21,7 +21,7 @@
   MetaDependency.pipeline = function(manager, moduleMeta) {
     logger.log(moduleMeta.name, moduleMeta);
 
-    if (manager.rules.ignore.match(moduleMeta.name, "dependency")) {
+    if (!canProcess(manager, moduleMeta)) {
       return Promise.resolve(moduleMeta);
     }
 
@@ -51,6 +51,11 @@
     }
 
     return Promise.all(loading).then(dependenciesFetched, Utils.reportError);
+  }
+
+
+  function canProcess(manager, moduleMeta) {
+    return !manager.rules.ignore.match(moduleMeta.name, "dependency");
   }
 
 
