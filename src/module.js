@@ -36,6 +36,7 @@
    */
   function Meta(options) {
     options = options || {};
+
     if (Utils.isString(options)) {
       options = {
         name: options
@@ -45,7 +46,7 @@
     // Make sure we have a an ID for the module meta
     options.id = options.id || options.name;
 
-    if (!Utils.isString(options.id)) {
+    if (!Utils.isString(options.name)) {
       throw new TypeError("Must provide a name, which is used by the resolver to create a location for the resource");
     }
 
@@ -59,11 +60,15 @@
 
 
   Meta.prototype.configure = function(options) {
-    Utils.extend(this, options);
-    return this;
+    return Utils.extend(this, options);
   };
 
 
+  /**
+   * Verifies that the module meta object is either already compiled or can be compiled.
+   *
+   * @returns {boolean}
+   */
   Meta.validate = function(moduleMeta) {
     if (!moduleMeta) {
       throw new TypeError("Must provide options");
@@ -75,18 +80,36 @@
   };
 
 
+  /**
+   * Verifies is the module meta object has dependencies.
+   *
+   * @returns {boolean}
+   */
   Meta.hasDependencies = function(moduleMeta) {
     return moduleMeta.deps && moduleMeta.deps.length;
   };
 
 
+  /**
+   * A module meta object is considered compiled if it has a `code` or `factory` method.
+   * That's because those are the two things that the compile step actually generates
+   * before creating a Module instance.
+   *
+   * @returns {boolean}
+   */
   Meta.isCompiled = function(moduleMeta) {
-    return moduleMeta.hasOwnProperty("code") || typeof(moduleMeta.factory) === "function";
+    return moduleMeta.hasOwnProperty("code") || Utils.isFunction(moduleMeta.factory);
   };
 
 
+  /**
+   * Checks if the module meta object can be compiled by verifying that it has NOT
+   * already been compiled and that it has a `source` property that need to be compiled.
+   *
+   * @returns {boolean}
+   */
   Meta.canCompile = function(moduleMeta) {
-    return !Meta.isCompiled(moduleMeta) && typeof(moduleMeta.source) === "string";
+    return !Meta.isCompiled(moduleMeta) && Utils.isString(moduleMeta.source);
   };
 
 
