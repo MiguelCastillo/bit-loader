@@ -154,9 +154,16 @@
       return loader.getLoading(name);
     }
 
-
     function moduleMetaFinished(moduleMeta) {
       return loader.setLoaded(moduleMeta.name, moduleMeta);
+    }
+
+    // Make sure we have the props we need.
+    if (referer) {
+      referer = {
+        name: referer.name,
+        path: referer.path
+      };
     }
 
     // Create module meta, set the referer, and start processing it.
@@ -262,12 +269,12 @@
       throw new TypeError("Module '" + name + "' is already loaded");
     }
 
-    this.setPending(name, {
+    this.setPending(name, new Module.Meta({
       name    : name,
       deps    : deps,
       factory : factory,
       type    : type
-    });
+    }));
   };
 
 
@@ -287,7 +294,7 @@
       return Promise.reject(new TypeError("Must provide a module meta object"));
     }
 
-    if (typeof(moduleMeta.source) !== "string") {
+    if (!Utils.isString(moduleMeta.source)) {
       throw Promise.reject(new TypeError("Must provide a source string property with the content to transform"));
     }
 
