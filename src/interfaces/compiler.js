@@ -1,14 +1,10 @@
-(function() {
-  "use strict";
+function Compiler() {
+}
 
-  function Compiler() {
-  }
+Compiler.prototype.compile = function(moduleMeta) {
+  moduleMeta.configure({
+    code: moduleMeta.source
+  });
+};
 
-  Compiler.prototype.compile = function(moduleMeta) {
-    return {
-      code: moduleMeta.source
-    };
-  };
-
-  module.exports = Compiler;
-})();
+module.exports = Compiler;
