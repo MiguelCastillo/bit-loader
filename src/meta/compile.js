@@ -1,67 +1,72 @@
-(function() {
-  "use strict";
-
-  var runPipeline = require("./runPipeline");
-  var Promise     = require("../promise");
-  var Module      = require("../module");
-  var Utils       = require("../utils");
-  var logger      = require("../logger").factory("Meta/Compiler");
+var runPipeline = require("./runPipeline");
+var Promise     = require("../promise");
+var Module      = require("../module");
+var Utils       = require("../utils");
+var logger      = require("../logger").factory("Meta/Compiler");
 
 
-  function MetaCompile() {
+function MetaCompile() {
+}
+
+
+/**
+ * Runs compiler pipeline to give plugins a chances to compile the meta module
+ * if one is registered.
+ *
+ * This step is asynchronous.
+ */
+MetaCompile.pipeline = function(manager, moduleMeta) {
+  logger.log(moduleMeta.name, moduleMeta);
+
+  if (!Module.Meta.canCompile(moduleMeta) || !canProcess(manager, moduleMeta)) {
+    return Promise.resolve(moduleMeta);
   }
 
+  function compilationFinished() {
+    return moduleMeta;
+  }
 
-  /**
-   * Runs compiler pipeline to give plugins a chances to compile the meta module
-   * if one is registered.
-   */
-  MetaCompile.pipeline = function(manager, moduleMeta) {
-    logger.log(moduleMeta.name, moduleMeta);
-
-    if (manager.rules.ignore.match(moduleMeta.name, "compile")) {
-      return Promise.resolve(moduleMeta);
-    }
-
-    function compilationFinished() {
-      return moduleMeta;
-    }
-
-    return runPipeline(manager.pipelines.compile, moduleMeta)
-      .then(compilationFinished, Utils.reportError);
-  };
+  return runPipeline(manager.pipelines.compile, moduleMeta)
+    .then(compilationFinished, Utils.reportError);
+};
 
 
-  /**
-   * The compile step is to convert the moduleMeta to an instance of Module.
-   */
-  MetaCompile.compile = function(manager, moduleMeta) {
-    logger.log(moduleMeta.name, moduleMeta);
+/**
+ * The compile step is to convert the moduleMeta to an instance of Module.
+ *
+ * This step is synchronous.
+ */
+MetaCompile.compile = function(manager, moduleMeta) {
+  logger.log(moduleMeta.name, moduleMeta);
 
-    if (manager.rules.ignore.match(moduleMeta.name, "compile")) {
-      return Promise.resolve();
-    }
+  if (!canProcess(manager, moduleMeta)) {
+    return;
+  }
 
-    if (Module.Meta.canCompile(moduleMeta)) {
-      moduleMeta.configure(manager.compile(moduleMeta));
-    }
+  if (Module.Meta.canCompile(moduleMeta)) {
+    moduleMeta.configure(manager.compile(moduleMeta));
+  }
 
-    var mod;
-    if (Module.Meta.isCompiled(moduleMeta)) {
-      mod = new Module(moduleMeta);
-    }
+  if (!Module.Meta.isCompiled(moduleMeta)) {
+    throw new TypeError("Module " + moduleMeta.name + " is not compiled");
+  }
 
-    if (mod) {
-      // We will coerce the name no matter what name (if one at all) the Module was
-      // created with. This will ensure a consistent state in the loading engine.
-      mod.name = moduleMeta.name;
+  // Create Module instance!  This is what we have been processing all this data for.
+  var mod = new Module(moduleMeta);
 
-      // Set the mod.meta for convenience
-      mod.meta = moduleMeta;
-      return mod;
-    }
-  };
+  // We will coerce the name no matter what name (if one at all) the Module was
+  // created with. This will ensure a consistent state in the loading engine.
+  mod.name = moduleMeta.name;
+
+  // Set the mod.meta for convenience
+  mod.meta = moduleMeta;
+  return mod;
+};
 
 
-  module.exports = MetaCompile;
-})();
+function canProcess(manager, moduleMeta) {
+  return !manager.rules.ignore.match(moduleMeta.name, "compile");
+}
+
+
+module.exports = MetaCompile;
