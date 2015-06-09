@@ -117,7 +117,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
 
         it("then fetch is called with `I really like`", function() {
-          expect(fetchStub.calledWithExactly(sinon.match({name: "I really like"}))).to.equal(true);
+          expect(fetchStub.calledWithExactly(sinon.match({ name: "I really like" }))).to.equal(true);
         });
 
         it("then result from fetch is module meta", function() {

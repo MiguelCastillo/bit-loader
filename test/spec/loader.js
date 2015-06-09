@@ -260,10 +260,6 @@ define(["dist/bit-loader"], function(Bitloader) {
         expect(factoryStub.called).to.equal(false);
       });
 
-      it("then manager `hasModule` is called", function() {
-        expect(hasModuleStub.called).to.equal(true);
-      });
-
       it("then manager `setModule` is not called", function() {
         expect(setModuleStub.called).to.equal(false);
       });

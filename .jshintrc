@@ -1,4 +1,5 @@
 {
+  "debug":false,
   "undef":true,
   "unused":true,
   "curly":true,
