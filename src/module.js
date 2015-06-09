@@ -8,6 +8,24 @@ var Type = {
 };
 
 
+/**
+ * - Loading means that the module meta is currently being loaded. Only for ASYNC
+ *  processing.
+ *
+ * - Loaded means that the module meta is all processed and it is ready to be
+ *  built into a Module instance. Only for SYNC processing.
+ *
+ * - Pending means that the module meta is already loaded, but it needs it's
+ *  dependencies processed, which might lead to further loading of module meta
+ *  objects. Only for ASYNC processing.
+ */
+var State = {
+  LOADING: "loading",
+  LOADED:  "loaded",
+  PENDING: "pending"
+};
+
+
 function Module(options) {
   if (!options) {
     throw new TypeError("Must provide options to create the module");
@@ -110,6 +128,7 @@ Meta.canCompile = function(moduleMeta) {
 };
 
 
-Module.Meta = Meta;
-Module.Type = Type;
+Module.Meta  = Meta;
+Module.Type  = Type;
+Module.State = State;
 module.exports = Module;

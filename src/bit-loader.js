@@ -14,10 +14,6 @@ var Middleware  = require("./middleware");
 
 var getRegistryId = Registry.idGenerator("bitloader");
 
-var ModuleState = {
-  LOADED: "loaded"
-};
-
 
 /**
  * @class
@@ -178,7 +174,7 @@ Bitloader.prototype.getModule = function(name) {
   }
 
   if (!this.context.hasModule(name)) {
-    return this.context.setModule(ModuleState.LOADED, name, this.providers.loader.syncBuild(name));
+    return this.context.setModule(Module.State.LOADED, name, this.providers.loader.syncBuild(name));
   }
 
   return this.context.getModule(name);
@@ -208,7 +204,7 @@ Bitloader.prototype.setModule = function(mod) {
     throw new TypeError("Module instance `" + name + "` already exists");
   }
 
-  return this.context.setModule(ModuleState.LOADED, name, mod);
+  return this.context.setModule(Module.State.LOADED, name, mod);
 };
 
 
