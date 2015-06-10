@@ -231,8 +231,8 @@ So what exactly are the pipelines and core hooks processing around, anyways? The
   * parse out dependencies from moduleMeta.source and set moduleMeta.deps
   * start pipeline flow for each item in moduleMeta.deps before moving on to the next pipeline
 * build (moduleMeta)
-  * compile - evalutes moduleMeta.source and create module instance
-  * link - call factory and set module.code
+  * compile - evalutes moduleMeta.source
+  * link - calls factory, creates module instance, and sets module.code
 
 <!--
 ## Reference diagrams
