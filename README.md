@@ -124,19 +124,20 @@ bitloader.plugin("css", {
 });
 ```
 
-You can configure matching rules in a plugin to specify which module files it can process. Below is an example configuring the `css` plugin to only process files with `.css` and `.less` extensions:
+You can configure matching rules in a plugin to specify which module files the plugin can process. Below is an example configuring the `css` plugin to only process files with `.css` and `.less` extensions:
 
 ``` javascript
 var bitloader = new Bitloader();
+var extension = Bitloader.Rule.matcher.extension;
 
 bitloader.plugin("css", {
   match: {
-    path: ["**/*.css", "**/*.less"]
+    path: extension("css|less")
   }
 });
 ```
 
-> Matching rules are globs.
+> There are several built in matching rules.  One for file extensions, one for string matching, another for regex, and one for generic strict equality comparison.
 
 So, it is valid to register other handlers into a previously registered plugin using the plugin name, which is the primary reason plugins have names in the first place. But the more common use case is to configure plugins in a single call:
 
@@ -144,10 +145,11 @@ So, it is valid to register other handlers into a previously registered plugin u
 
 ``` javascript
 var bitloader = new Bitloader();
+var extension = Bitloader.Rule.matcher.extension;
 
 bitloader.plugin("css", {
   match: {
-    path: ["**/*.css", "**/*.less"]
+    path: extension("css|less")
   },
   fetch: fetchCss,
   transform: [cssTransform1, cssTransform2]
