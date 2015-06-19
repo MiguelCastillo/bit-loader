@@ -52,7 +52,7 @@ MetaFetch.fetch = function(manager, moduleMeta) {
 
 
 function canProcess(manager, moduleMeta) {
-  return !Utils.isString(moduleMeta.source) && !manager.rules.ignore.match(moduleMeta.name, "fetch");
+  return !Utils.isString(moduleMeta.source) && !manager.rules.ignore.fetch.match(moduleMeta.name);
 }
 
 

@@ -1,36 +1,37 @@
 function noop() {
 }
 
-function isNull(item) {
+function isNil(item) {
   return item === null || item === (void 0);
 }
 
+function isNull(item) {
+  return item === null;
+}
+
 function isArray(item) {
-  return item instanceof(Array);
+  return item instanceof Array;
 }
 
 function isString(item) {
-  return typeof(item) === "string";
+  return typeof item === "string";
 }
 
 function isObject(item) {
-  return typeof(item) === "object";
+  return typeof item === "object";
 }
 
+var ObjectSignature = Object.prototype.toString();
 function isPlainObject(item) {
-  return !!item && !isArray(item) && (item.toString() === isPlainObject.signature);
+  return !!item && !isArray(item) && item.toString() === ObjectSignature;
 }
-
-// Cache result for quicker check
-isPlainObject.signature = Object.prototype.toString();
-
 
 function isFunction(item) {
-  return !isNull(item) && item.constructor === Function;
+  return !isNil(item) && item.constructor === Function;
 }
 
 function isDate(item) {
-  return item instanceof(Date);
+  return item instanceof Date;
 }
 
 function result(input, args, context) {
@@ -55,11 +56,11 @@ function toArray(items) {
  */
 function extend(target) {
   var source, length, i;
-  var sources = Array.prototype.slice.call(arguments, 1);
+  var sources = arguments;
   target = target || {};
 
   // Allow n params to be passed in to extend this object
-  for (i = 0, length  = sources.length; i < length; i++) {
+  for (i = 1, length  = sources.length; i < length; i++) {
     source = sources[i];
     for (var property in source) {
       if (source.hasOwnProperty(property)) {
@@ -72,24 +73,26 @@ function extend(target) {
 }
 
 /**
- * Deep copy of all properties insrouces into target
+ * Deep copy of all properties into target
  */
 function merge(target) {
   var source, length, i;
-  var sources = Array.prototype.slice.call(arguments, 1);
+  var sources = arguments;
   target = target || {};
 
   // Allow `n` params to be passed in to extend this object
-  for (i = 0, length  = sources.length; i < length; i++) {
+  for (i = 1, length  = sources.length; i < length; i++) {
     source = sources[i];
     for (var property in source) {
-      if (source.hasOwnProperty(property)) {
-        if (isPlainObject(source[property])) {
-          target[property] = merge(target[property], source[property]);
-        }
-        else {
-          target[property] = source[property];
-        }
+      if (!source.hasOwnProperty(property)) {
+        continue;
+      }
+
+      if (isPlainObject(source[property])) {
+        target[property] = merge(target[property], source[property]);
+      }
+      else {
+        target[property] = source[property];
       }
     }
   }
@@ -98,6 +101,9 @@ function merge(target) {
 }
 
 
+/**
+ * Logs error to the console and makes sure it is only logged once.
+ */
 function reportError(error) {
   if (error && !error.handled) {
     error.handled = true;
@@ -118,12 +124,13 @@ function forwardError(error) {
 }
 
 
-function notImplemented() {
-  throw new TypeError("Not implemented");
+function notImplemented(msg) {
+  throw new TypeError("Not implemented. " + msg);
 }
 
 
 module.exports = {
+  isNil: isNil,
   isNull: isNull,
   isArray: isArray,
   isString: isString,

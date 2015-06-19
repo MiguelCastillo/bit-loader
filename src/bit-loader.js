@@ -1,16 +1,16 @@
-var Logger      = require("./logger");
-var Promise     = require("./promise");
-var Utils       = require("./utils");
-var Fetcher     = require("./interfaces/fetcher");
-var Compiler    = require("./interfaces/compiler");
-var Resolver    = require("./interfaces/resolver");
-var Import      = require("./import");
-var Loader      = require("./loader");
-var Module      = require("./module");
-var Plugin      = require("./plugin");
-var Registry    = require("./registry");
-var RuleMatcher = require("./rule-matcher");
-var Middleware  = require("./middleware");
+var Logger     = require("./logger");
+var Promise    = require("./promise");
+var Utils      = require("./utils");
+var Fetcher    = require("./interfaces/fetcher");
+var Compiler   = require("./interfaces/compiler");
+var Resolver   = require("./interfaces/resolver");
+var Import     = require("./import");
+var Loader     = require("./loader");
+var Module     = require("./module");
+var Plugin     = require("./plugin");
+var Registry   = require("./registry");
+var Rule       = require("./rule-matcher");
+var Middleware = require("./middleware");
 
 var getRegistryId = Registry.idGenerator("bitloader");
 
@@ -28,7 +28,12 @@ function Bitloader(options) {
   this.plugins  = {};
 
   this.rules = {
-    ignore: new RuleMatcher()
+    ignore: {
+      fetch: new Rule(),
+      transform: new Rule(),
+      dependency: new Rule(),
+      compile: new Rule()
+    }
   };
 
   this.pipelines = {
@@ -299,7 +304,7 @@ Bitloader.prototype.ignore = function(rule) {
   }
   else {
     if (rule.name === "*") {
-      ruleNames = Object.keys(this.pipelines);
+      ruleNames = Object.keys(this.rules.ignore);
     }
     else {
       ruleNames = Utils.isArray(rule.name) ? rule.name : [rule.name];
@@ -307,10 +312,7 @@ Bitloader.prototype.ignore = function(rule) {
   }
 
   for (i = 0, length = ruleNames.length; i < length; i++) {
-    this.rules.ignore.add({
-      name: ruleNames[i],
-      match: rule.match
-    });
+    this.rules.ignore[ruleNames[i]].addMatch(rule.match);
   }
 
   return this;
@@ -402,17 +404,17 @@ Bitloader.prototype.Logger     = Logger;
 Bitloader.prototype.Middleware = Middleware;
 
 // Expose constructors and utilities
-Bitloader.Promise     = Promise;
-Bitloader.Utils       = Utils;
-Bitloader.Registry    = Registry;
-Bitloader.Loader      = Loader;
-Bitloader.Import      = Import;
-Bitloader.Module      = Module;
-Bitloader.Plugin      = Plugin;
-Bitloader.Resolver    = Resolver;
-Bitloader.Fetcher     = Fetcher;
-Bitloader.Compiler    = Compiler;
-Bitloader.Middleware  = Middleware;
-Bitloader.RuleMatcher = RuleMatcher;
-Bitloader.Logger      = Logger;
-module.exports        = Bitloader;
+Bitloader.Promise    = Promise;
+Bitloader.Utils      = Utils;
+Bitloader.Registry   = Registry;
+Bitloader.Loader     = Loader;
+Bitloader.Import     = Import;
+Bitloader.Module     = Module;
+Bitloader.Plugin     = Plugin;
+Bitloader.Resolver   = Resolver;
+Bitloader.Fetcher    = Fetcher;
+Bitloader.Compiler   = Compiler;
+Bitloader.Middleware = Middleware;
+Bitloader.Rule       = Rule;
+Bitloader.Logger     = Logger;
+module.exports       = Bitloader;

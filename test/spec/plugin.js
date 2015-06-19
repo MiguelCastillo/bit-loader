@@ -1,4 +1,5 @@
 define(["dist/bit-loader"], function(Bitloader) {
+  var matcher = Bitloader.Rule.matcher;
 
   describe("Plugin Test Suite", function() {
     var bitloader;
@@ -17,12 +18,12 @@ define(["dist/bit-loader"], function(Bitloader) {
         var matchingRules, ruleName;
         beforeEach(function() {
           ruleName = "test";
-          matchingRules = ["**.js", "1.js"];
+          matchingRules = [matcher.extension("js"), matcher.string("1.js")];
           plugin.addMatchingRules(ruleName, matchingRules);
         });
 
         it("then `rules` are added to the plugin", function() {
-          expect(plugin._matches[ruleName]).to.be.an.instanceof(Bitloader.RuleMatcher);
+          expect(plugin._matches[ruleName]).to.be.an.instanceof(Bitloader.Rule);
         });
       });
     });
@@ -407,7 +408,7 @@ define(["dist/bit-loader"], function(Bitloader) {
 
         bitloader.plugin({
           "match": {
-            "path": ["**/*.js"]
+            "path": [matcher.extension("js")]
           },
           "resolve": [resolveStub1],
           "fetch": [
@@ -428,7 +429,7 @@ define(["dist/bit-loader"], function(Bitloader) {
 
         bitloader.plugin({
           "match": {
-            "path": ["**/*.jsx"]
+            "path": [matcher.extension("jsx")]
           },
           "transform": transformStub3,
           "dependency": dependencyStub2,
