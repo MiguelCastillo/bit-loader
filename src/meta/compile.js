@@ -46,7 +46,7 @@ MetaCompile.compile = function(manager, moduleMeta) {
 
 
 function canProcess(manager, moduleMeta) {
-  return !manager.rules.ignore.match(moduleMeta.name, "compile");
+  return !manager.rules.ignore.compile.match(moduleMeta.name);
 }
 
 

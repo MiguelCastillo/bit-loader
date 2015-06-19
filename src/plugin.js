@@ -1,6 +1,6 @@
-var Promise     = require("./promise");
-var Utils       = require("./utils");
-var RuleMatcher = require("./rule-matcher");
+var Promise = require("./promise");
+var Utils   = require("./utils");
+var Rule    = require("./rule-matcher");
 
 var pluginId = 0;
 
@@ -16,7 +16,6 @@ function Plugin(name, options) {
   this._matches   = {};
   this._delegates = {};
   this._handlers  = {};
-  this._deferred  = {};
 }
 
 
@@ -55,8 +54,8 @@ Plugin.prototype.configure = function(options, handlerVisitor) {
 Plugin.prototype.addMatchingRules = function(matchName, matches) {
   var rules;
   if (matches && matches.length) {
-    rules = this._matches[matchName] || (this._matches[matchName] = new RuleMatcher());
-    rules.add(configureMatchingRules(matches));
+    rules = this._matches[matchName] || (this._matches[matchName] = new Rule({name: matchName}));
+    rules.addMatch(configureMatchingRules(matches));
   }
 
   return this;

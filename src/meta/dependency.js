@@ -52,7 +52,7 @@ function loadDependencies(manager, moduleMeta) {
 
 
 function canProcess(manager, moduleMeta) {
-  return !manager.rules.ignore.match(moduleMeta.name, "dependency");
+  return !manager.rules.ignore.dependency.match(moduleMeta.name);
 }
 
 

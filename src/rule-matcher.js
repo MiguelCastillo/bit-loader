@@ -1,18 +1,17 @@
-var Utils     = require("./utils");
-var minimatch = require("minimatch");
-
-
 /**
- * Rule is a convenience class for encapsulating a rule name and
- * the match criteria to test against.
+ * Provides functioanlity for aggregating matching rules that can
+ * then be compared against a criteria to determine if the criteria
+ * is met. The matching rules can be customied beyond simple string
+ * comparison. Please take a look at {@link matchers}
+ *
+ * @class
  *
  * @param {Object} [options={}] - Settings for the rule to be created
  */
 function Rule(options) {
   options = options || {};
-  this.settings = options;
-  this._name    = Rule.configureName(options.name);
-  this._match   = Rule.configureMatch(options.match);
+  this._name  = Rule.configureName(options.name);
+  this._match = Rule.configureMatch(options.match);
 }
 
 
@@ -29,13 +28,24 @@ Rule.configureName = function(name) {
 
 
 /**
- * Helper method to make sure matches are an array
+ * Helper method to generate rules that can be executed to match criteria.
  *
- * @returns {Array.<string>} Array of matching string
+ * @param {*} match - If match is a function, then we just call that function
+ *  to do the comparison for us. Provide a function when looking to customize
+ *  how criteria are matched to rules. If match is not a function, the rule
+ *  matcher is used. The default rule matcher is generally sufficient. But if
+ *  it is not, then provide a function.  Furthermore, match can be an array
+ *  of matching rules.
+ *
+ * @returns {Array.<Rule>} array of configured rule matchers.
  */
 Rule.configureMatch = function(match) {
   match = match || [];
-  return !(match instanceof Array) ? [match] : match;
+  match = !(match instanceof Array) ? [match] : match;
+
+  return match.map(function(item) {
+    return (item && item.constructor === Function) ? item : matcher(item);
+  });
 };
 
 
@@ -49,30 +59,37 @@ Rule.prototype.getName = function() {
 };
 
 
-/**
- * Method to add a match to the list of matches
- *
- * @param {string | Array.<string>} match - String or collection of strings to match
- *   against.
- */
-Rule.prototype.addMatch = function(match) {
-  match = Rule.configureMatch(match);
-  this._match = this._match.concat(match);
+Rule.prototype.getLength = function() {
+  return this._match.length;
 };
 
 
 /**
- * Method to match only one rule
+ * Method to add a match to the list of matching rules
+ *
+ * @param {*} match - Matching rules to add. Can any type.
+ *
+ * @returns {Rule} this instance.
+ */
+Rule.prototype.addMatch = function(match) {
+  this._match = this._match.concat(Rule.configureMatch(match));
+  return this;
+};
+
+
+
+/**
+ * Method to match only *one* rule
  *
  * @param {string} criteria - Input to test against.
  *
  * @returns {boolean} True if any rule is matched, false otherwise
  */
-Rule.prototype.matchOne = function(criteria) {
+Rule.prototype.match = Rule.prototype.matchAny = function(criteria) {
   var matches = this._match;
   var i, length;
   for (i = 0, length = matches.length; i < length; i++) {
-    if (this.matchCriteria(criteria, matches[i])) {
+    if (matches[i](criteria)) {
       return true;
     }
   }
@@ -91,7 +108,7 @@ Rule.prototype.matchAll = function(criteria) {
   var matches = this._match;
   var i, length;
   for (i = 0, length = matches.length; i < length; i++) {
-    if (!this.matchCriteria(criteria, matches[i])) {
+    if (!matches[i](criteria)) {
       return false;
     }
   }
@@ -100,144 +117,93 @@ Rule.prototype.matchAll = function(criteria) {
 
 
 /**
- * Function that runs the rule matching logic
+ * Default matching rule with strict comparison. Or if the match is a regex
+ * then the comparison is done by calling the `test` method on the regex.
+ *
+ * @param {*} match - If the input is a regex, then matches will be done using
+ *  the regex itself. Otherwise, the comparison is done with strict comparison.
+ *
+ * @returns {boolean}
  */
-Rule.prototype.matchCriteria = function(criteria, match) {
-  // When the criteria is not a string or the string is empty, we can just
-  // return false to indicate that we don't have a match.
-  if (criteria === "" || typeof(criteria) !== "string") {
-    return false;
+function matcher(match) {
+  if (match instanceof RegExp) {
+    return function(criteria) {
+      return match.test(criteria);
+    };
   }
 
-  // Minimatch it!
-  return minimatch(criteria, match);
-};
-
-
-/**
- * Rule matching engine
- */
-function RuleMatcher(config) {
-  if (!(this instanceof RuleMatcher)) {
-    return new RuleMatcher(config);
-  }
-
-  this._rules = {};
-
-  if (config) {
-    this.add(config);
-  }
+  return function(criteria) {
+    return criteria === match;
+  };
 }
 
 
-RuleMatcher.configureRule = function(config) {
-  if (Utils.isString(config)) {
-    config = {
-      name: config
-    };
-  }
-  else if (Utils.isArray(config)) {
-    config = {
-      match: config
-    };
-  }
-  return config;
-};
-
-
-RuleMatcher.prototype.add = function(config) {
-  config = RuleMatcher.configureRule(config);
-
-  var rule = this.find(config.name);
-  if (rule) {
-    rule.addMatch(config.match);
-  }
-  else {
-    rule = new Rule(config);
-    this._rules[rule.getName()] = rule;
+/**
+ * Matcher for file extensions.
+ *
+ * @param {string} match - extensions to match. You can provide a pipe delimeted
+ *  string to specify multiple extensions.  E.g. "js|jsx" will match js and jsx
+ *  file extensions.
+ *
+ * @returns {function} Predicate that takes the criteria to match and returns
+ *  true or false.
+ */
+matcher.extension = function(match) {
+  if (match === "" || typeof match !== "string") {
+    throw new TypeError("Matching rule must be a string");
   }
 
-  return rule;
+  match = new RegExp("\\.(" + match + ")$");
+  return function(criteria) {
+    return match.test(criteria);
+  };
 };
 
 
-RuleMatcher.prototype.all = function() {
-  return this._rules;
-};
-
-
-RuleMatcher.prototype.find = function(ruleName) {
-  return this._rules[ruleName];
-};
-
-
-RuleMatcher.prototype.filter = function(ruleNames) {
-  var rules = {};
-  for (var name in ruleNames) {
-    if (this.hasRule(ruleNames[name])) {
-      rules[name] = this.find(name);
-    }
-  }
-  return rules;
-};
-
-
-RuleMatcher.prototype.getLength = function() {
-  return Object.keys(this._rules).length;
-};
-
-
-RuleMatcher.prototype.match = function(criteria, ruleNames) {
-  return typeof ruleNames === "string" ?
-    this.matchOne(criteria, ruleNames) :
-    this.matchAny(criteria, ruleNames);
-};
-
-
-RuleMatcher.prototype.matchOne = function(criteria, ruleName) {
-  // Make sure the rule exists
-  if (!this.hasRule(ruleName)) {
-    return false;
+/**
+ * Matcher for strings. Use this to do strict comparison on strings.
+ *
+ * @param {string} match - String to match a criteria against.
+ *
+ * @returns {function} Predicate that takes the criteria to match and returns
+ *  true or false.
+ */
+matcher.string = function(match) {
+  if (typeof match !== "string") {
+    throw new TypeError("Match type must be a string");
   }
 
-  var rule = this.find(ruleName);
-  return rule && rule.matchOne(criteria);
+  return function(criteria) {
+    return match === criteria;
+  };
 };
 
 
-RuleMatcher.prototype.matchAny = function(criteria, filter) {
-  var rules = filter ? this.filter(filter) : this._rules;
-  for (var ruleName in rules) {
-    if (rules[ruleName] && rules[ruleName].matchOne(criteria)) {
-      return true;
-    }
+/**
+ * Matcher for regex. Use this to create regex that can be used for matching
+ * criteria.
+ *
+ * @param {string|RegExp} match - The input can be a string, which is converted
+ *  to a regex. The input can also be a regex. This matcher will make sure we
+ *  are working with regex matching rules.
+ *
+ * @returns {function} Predicate that takes the criteria to match and returns
+ *  true or false.
+ */
+matcher.regex = function(match) {
+  if (match !== "" && typeof match === "string") {
+    match = new RegExp(match);
   }
-  return false;
-};
 
-
-RuleMatcher.prototype.matchAll = function(criteria, filter) {
-  var rules = filter ? this.filter(filter) : this._rules;
-  for (var ruleName in rules) {
-    if (rules[ruleName] && !rules[ruleName].matchOne(criteria)) {
-      return false;
-    }
+  if (!(match instanceof RegExp)) {
+    throw new TypeError("Match type must be a string or a regex");
   }
-  return true;
+
+  return function(criteria) {
+    return match.test(criteria);
+  };
 };
 
 
-RuleMatcher.prototype.hasRule = function(ruleName) {
-  return this._rules.hasOwnProperty(ruleName);
-};
-
-
-RuleMatcher.prototype.ensureRule = function(ruleName) {
-  if (!this.hasRule(ruleName)) {
-    throw new TypeError("Rule '" + ruleName + "' was not found");
-  }
-  return true;
-};
-
-
-module.exports = RuleMatcher;
+Rule.matcher = matcher;
+module.exports = Rule;

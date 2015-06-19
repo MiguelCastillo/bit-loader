@@ -4,12 +4,13 @@ var require = (function() {
   var importer = bitimports.config({
     "baseUrl": "../",
     "paths": {
-      "chai": "../node_modules/chai/chai"
+      "chai": "node_modules/chai/chai",
+      "minimatch": "node_modules/minimatch/browser"
     }
   });
 
   importer.ignore({
-    match: ["chai", "dist/bit-loader"]
+    match: ["chai", "minimatch", "dist/bit-loader"]
   });
 
   bitimports.Logger.enableAll();

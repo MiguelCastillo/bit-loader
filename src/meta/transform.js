@@ -30,7 +30,7 @@ MetaTransform.pipeline = function(manager, moduleMeta) {
 
 
 function canProcess(manager, moduleMeta) {
-  return Utils.isString(moduleMeta.source) && !manager.rules.ignore.match(moduleMeta.name, "transform");
+  return Utils.isString(moduleMeta.source) && !manager.rules.ignore.transform.match(moduleMeta.name);
 }
 
 
