@@ -1,4 +1,3 @@
-var fileReader = require("./fileReader");
 var Bitloader  = require("bit-loader");
 var Utils      = Bitloader.Utils;
 var Promise    = Bitloader.Promise;
@@ -9,9 +8,12 @@ var Promise    = Bitloader.Promise;
  *
  * Task that can be executed by the task runner
  */
-function Task(taskrunner, name, deps, cb) {
+function Task(taskrunner, options) {
   var task  = this;
   var src, loader;
+  var name = options.name;
+  var deps = options.deps;
+  var cb   = options.cb;
 
   function init(args) {
     if (loader) {
@@ -19,7 +21,8 @@ function Task(taskrunner, name, deps, cb) {
     }
 
     loader = new Bitloader({
-      fetch: fileReader
+      resolve: options.resolve,
+      fetch: options.fetch
     });
 
     src = [];
@@ -60,7 +63,7 @@ function Task(taskrunner, name, deps, cb) {
 
   function runDeferred(name) {
     return function() {
-      return taskrunner.deferred(name);
+      return taskrunner.asyncRun(name);
     };
   }
 

@@ -20,7 +20,7 @@ loader.import(["like1", "like2"]).then(function(result) {
 function loadFile(moduleMeta) {
   // Read file and set the source in the module meta
   moduleMeta.configure({
-    source: "fetch module: " + moduleMeta.path
+    source: "fetch module: " + moduleMeta.name
   });
 }
 

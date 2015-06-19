@@ -1,7 +1,8 @@
-var Task      = require("./task");
-var Bitloader = require("bit-loader");
+var fileReader  = require("./fileReader");
+var resolvePath = require("./resolvePath");
+var Task        = require("./task");
+var Bitloader   = require("bit-loader");
 var Utils     = Bitloader.Utils;
-var Promise   = Bitloader.Promise;
 
 
 /**
@@ -9,48 +10,28 @@ var Promise   = Bitloader.Promise;
  *
  * Interface for registering and running tasks
  */
-function TaskRunner() {
+function TaskRunner(options) {
   this._tasks  = {};
-
-  // Bind so that we do not lose the context
-  this.register = register.bind(this);
-  this.run      = syncRun.bind(this);
-  this.deferred = asyncRun.bind(this);
+  this.options = options || {};
 }
 
 
-/** Convenieve promise provider */
-TaskRunner.prototype.Promise = Promise;
-
-/** Convenience utilities */
-TaskRunner.prototype.util = Utils;
-
-/** Method to register a task */
-TaskRunner.prototype.register = function() {};
+/**
+ * Method to create new task runner with the particular settings.
+ *
+ * @returns {TaskRunner} New task runner instance
+ */
+TaskRunner.prototype.configure = function(options) {
+  return new TaskRunner(options);
+};
 
 
 /**
- * Method to run a task
+ * Method to register a task
  *
- * @param {string} name - Name of the task to run
- *
- * @returns {TaskRunner}
+ * @returns {TaskRunner} Task runner instance
  */
-TaskRunner.prototype.run = function() {};
-
-
-/**
- * Method to run a task and returns a promise
- *
- * @param {string} name - Name of the task to run
- *
- * @returns {Promise}
- */
-TaskRunner.prototype.deferred = function() {};
-
-
-/** @private */
-function register(name, deps, cb) {
+TaskRunner.prototype.register = function(name, deps, cb) {
   if (!Utils.isString(name)) {
     throw new TypeError("Must provide a name for the task");
   }
@@ -60,20 +41,40 @@ function register(name, deps, cb) {
     deps = [];
   }
 
-  this._tasks[name] = new Task(this, name, deps, cb);
+  this._tasks[name] = new Task(this, {
+    name: name,
+    deps: deps,
+    cb: cb,
+    resolve: resolvePath.configure({baseUrl: (this.options.baseUrl)}),
+    fetch: fileReader
+  });
+
   return this;
-}
+};
 
 
-/** @private */
-function syncRun() {
-  this.deferred.apply(this, arguments);
+/**
+ * Method to run a task
+ *
+ * @param {string} name - Name of the task to run
+ *
+ * @returns {TaskRunner} Task runner instance
+ */
+TaskRunner.prototype.syncRun = TaskRunner.prototype.run = function() {
+  this.asyncRun.apply(this, arguments);
   return this;
-}
+};
 
 
-/** @private */
-function asyncRun(name) {
+/**
+ * Method to run a task and returns a promise
+ *
+ * @param {string} name - Name of the task to run
+ *
+ * @returns {Promise} Promise from the task, which resolves when the task is
+ *  finished executing and rejects if the task failed to run.
+ */
+TaskRunner.prototype.asyncRun = function(name) {
   var task = this._tasks[name];
 
   if (!task) {
@@ -83,7 +84,7 @@ function asyncRun(name) {
   return task
     .init(Array.prototype.slice.call(arguments, 1))
     .run();
-}
+};
 
 
 module.exports = new TaskRunner();

@@ -12,6 +12,6 @@ loader.import(["like1", "like2"]).then(function(result) {
 
 function loadFile(moduleMeta) {
   moduleMeta.configure({
-    source: "fetch module: " + moduleMeta.path
+    source: "fetch module: " + moduleMeta.name
   });
 }
