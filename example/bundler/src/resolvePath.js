@@ -70,8 +70,8 @@ function resolvePath(moduleMeta, options) {
  * happens when a dependency is loaded.
  */
 function getParentPath(moduleMeta, options) {
-  var parent = moduleMeta.parent;
-  return (parent && moduleMeta !== parent) ? parent.path : options.baseUrl;
+  var referer = moduleMeta.referer;
+  return (referer && moduleMeta !== referer) ? referer.path : options.baseUrl;
 }
 
 

@@ -43,7 +43,7 @@ function bundler(loader, options, modules) {
       dep = loader.getModule(mod.deps[i]);
       stack.push(dep);
       browserpack.deps[dep.id] = dep.id;
-    };
+    }
 
     finished[meta.id] = browserpack;
     mods.unshift(browserpack);

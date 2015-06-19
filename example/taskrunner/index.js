@@ -6,7 +6,7 @@ var taskRunner = require("./src/taskrunner");
  */
 function jsPipeline() {
   this
-    .load(__dirname + "/index.js")
+    .load("./index.js")
     .then(function(moduleMeta) {
       console.log(moduleMeta);
     })
@@ -21,7 +21,7 @@ function jsPipeline() {
  */
 function coffeePipeline() {
   this
-    .load(__dirname + "/src/taskrunner.js")
+    .load("./src//taskrunner.js")
     .then(function(moduleMeta) {
       console.log(moduleMeta);
     });
@@ -33,14 +33,14 @@ function coffeePipeline() {
  */
 function minifyPipeline() {
   this
-    .load(__dirname + "/../.jshintrc")
+    .load("../.jshintrc")
     .then(function(moduleMeta) {
       console.log(moduleMeta);
     });
 }
 
 
-taskRunner
+taskRunner.configure({baseUrl: __filename})
   .register("javascript", ["coffeescript", "minify"], jsPipeline)
   .register("coffeescript", coffeePipeline)
   .register("minify", minifyPipeline)
