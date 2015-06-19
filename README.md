@@ -163,15 +163,15 @@ You can take a look at [this](https://gist.github.com/MiguelCastillo/37944827c0c
 
 bit loader is a *JavaScript module loader* first, and plugins are a way to augment the types of modules that can be loaded and consumed by the host application.  So, while bit loader provides you with a very flexible plugin system for processing modules, there is a layer of core function hooks that are the default handlers when plugins can't process a particular module.
 
-- **resolve** - function that converts module names (ids) to paths. Paths are used plugins and the `fetch` hook to load module files.
-- **fetch** - function that loads module files from storage. These files are processed by plugins and the `compile` hook to build modules.
-- **compile** - function that evaluates module files with `eval`, or some other equivalent mechanism to create code that can be consumed by the host application.
+- **resolve** - *function* that converts module names (ids) to paths. Paths are used by `fetch` plugins and core hooks to load module files.
+- **fetch** - *function* that loads module files from storage. These files are processed by `compile` plugins and core hooks to build modules.
+- **compile** - *function* that evaluates module files with `eval`, or other equivalent mechanism to create code that can be consumed by the host application.
 
-So, plugins and their core function hook counterparts have fundamentally the same responsibilities. However, the one function hook that has real implications is `compile`; they primarly differ in when and how they run.
+So, plugins and their core function hook counterparts have fundamentally the same responsibilities. However, the one function hook that has real implications is `compile`; `compile` core hook and plugins primarly differ in when and how they run.
 
-All plugins run in the first stage, which is *asynchronous* and runs before the build stage. This means that `compile` plugins are *asynchronous* and run before the `compile` handler in the build stage. Furthermore, there can only be one `compile` handler in the build stage, and its intended use case is for *synchronously* building JavaScript modules when the host application requires them.  Think `CJS`... All other function hooks run *asynchronously* when there are no plugins that can process a module.
+All plugins run in the first stage, which is *asynchronous* and runs before the build stage. This means that `compile` plugins are *asynchronous* and run before the `compile` core hook in the build stage, which is *synchronous*.
 
-Checkout [bit imports](https://github.com/MiguelCastillo/bit-imports) for an implementation of these core function hooks.
+> [bit imports](https://github.com/MiguelCastillo/bit-imports) implements these core hooks to provide a base layer for processing JavaScript modules.
 
 #### Core hooks example
 ``` javascript
@@ -198,7 +198,7 @@ function compileModule(moduleMeta) {
 
 
 //
-// Instantiate bitloader
+// Instantiate bitloader providing core hooks.
 //
 var bitloader = new Bitloader({
   resolve : resolvePath,
@@ -213,8 +213,7 @@ So what exactly are the pipelines and core hooks processing around, anyways? The
 
 > Modifying module meta objects is the primary responsibility of the different pipelines and core hooks.
 
-- **load** - creates module meta objects with the name of the module being loaded
-- **resolve** - uses the module meta `name` from `load` to create and set the module meta `path`.
+- **resolve** - uses the module meta `name` to create and set the module meta `path`.
 - **fetch** - loads the module file using the `path` from `resolve`, and sets the module meta `source`.
 - **transform** - processes the module `source` from `fetch`, and sets the module meta `source`.
 - **dependency** - processes the module `source` from `fetch`, and sets the module meta `deps`.
