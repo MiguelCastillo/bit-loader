@@ -1,3 +1,4 @@
+var Rule       = require("roolio");
 var Logger     = require("./logger");
 var Promise    = require("./promise");
 var Utils      = require("./utils");
@@ -9,7 +10,6 @@ var Loader     = require("./loader");
 var Module     = require("./module");
 var Plugin     = require("./plugin");
 var Registry   = require("./registry");
-var Rule       = require("./rule-matcher");
 var Middleware = require("./middleware");
 
 var getRegistryId = Registry.idGenerator("bitloader");

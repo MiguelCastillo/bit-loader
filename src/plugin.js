@@ -1,6 +1,6 @@
 var Promise = require("./promise");
 var Utils   = require("./utils");
-var Rule    = require("./rule-matcher");
+var Rule    = require("roolio");
 
 var pluginId = 0;
 
@@ -55,7 +55,7 @@ Plugin.prototype.addMatchingRules = function(matchName, matches) {
   var rules;
   if (matches && matches.length) {
     rules = this._matches[matchName] || (this._matches[matchName] = new Rule({name: matchName}));
-    rules.addMatch(configureMatchingRules(matches));
+    rules.addMatch(matches);
   }
 
   return this;
@@ -83,18 +83,6 @@ Plugin.prototype.addHandlers = function(serviceName, handlers, visitor) {
 
   return this;
 };
-
-
-/**
- * Configures matches
- */
-function configureMatchingRules(matches) {
-  if (Utils.isString(matches)) {
-    matches = [matches];
-  }
-
-  return Utils.isArray(matches) ? matches : [];
-}
 
 
 /**
