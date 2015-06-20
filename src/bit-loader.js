@@ -1,6 +1,5 @@
 var Rule       = require("roolio");
 var Logger     = require("./logger");
-var Promise    = require("./promise");
 var Utils      = require("./utils");
 var Fetcher    = require("./interfaces/fetcher");
 var Compiler   = require("./interfaces/compiler");
@@ -397,14 +396,7 @@ Bitloader.prototype.getPlugin = function(name) {
 };
 
 
-Bitloader.prototype.Promise    = Promise;
-Bitloader.prototype.Module     = Module;
-Bitloader.prototype.Utils      = Utils;
-Bitloader.prototype.Logger     = Logger;
-Bitloader.prototype.Middleware = Middleware;
-
 // Expose constructors and utilities
-Bitloader.Promise    = Promise;
 Bitloader.Utils      = Utils;
 Bitloader.Registry   = Registry;
 Bitloader.Loader     = Loader;
