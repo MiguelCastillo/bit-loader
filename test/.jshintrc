@@ -8,6 +8,7 @@
     "define": true,
     "require": true,
     "bitimports": true,
+    "Promise": true,
     "window": true,
     "describe": true,
     "it": true,

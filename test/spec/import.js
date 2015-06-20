@@ -1,6 +1,5 @@
 define(["dist/bit-loader"], function(Bitloader) {
-  var Importer = Bitloader.Import,
-      Promise  = Bitloader.Promise;
+  var Importer = Bitloader.Import;
 
   describe("Import Suite", function() {
 
@@ -224,9 +223,9 @@ define(["dist/bit-loader"], function(Bitloader) {
 
           loadDeferred       = Promise.resolve(modYes);
           moduleImportedStub = sinon.stub();
-          hasModuleStub = sinon.stub().returns(false);
+          hasModuleStub      = sinon.stub().returns(false);
           getModuleCodeStub  = sinon.stub().returns(modYes.code);
-          loadStub = sinon.stub().returns(loadDeferred);
+          loadStub           = sinon.stub().returns(loadDeferred);
 
           importer = new Importer({
             load: loadStub,
@@ -237,7 +236,8 @@ define(["dist/bit-loader"], function(Bitloader) {
           setModuleSpy = sinon.spy(importer, "setModule");
           deleteModuleSpy = sinon.spy(importer, "deleteModule");
 
-          return importer.import("yes")
+          return importer
+            .import("yes")
             .then(moduleImportedStub);
         });
 

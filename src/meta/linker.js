@@ -40,7 +40,7 @@ function MetaLinker(manager, moduleMeta) {
   }
 
   // Create module instance...
-  var _module = new manager.Module(moduleMeta);
+  var _module = new Module(moduleMeta);
 
   // We will coerce the name no matter what name (if one at all) the Module was
   // created with. This will ensure a consistent state in the loading engine.

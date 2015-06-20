@@ -1,6 +1,5 @@
 define(['dist/bit-loader'], function(Bitloader) {
-  var Middleware = Bitloader.Middleware,
-      Promise    = Bitloader.Promise;
+  var Middleware = Bitloader.Middleware;
 
   describe("Middleware Test Suite", function() {
 
