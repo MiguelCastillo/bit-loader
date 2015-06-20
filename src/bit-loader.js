@@ -312,7 +312,7 @@ Bitloader.prototype.ignore = function(rule) {
   }
 
   for (i = 0, length = ruleNames.length; i < length; i++) {
-    this.rules.ignore[ruleNames[i]].addMatch(rule.match);
+    this.rules.ignore[ruleNames[i]].addMatcher(rule.match);
   }
 
   return this;
