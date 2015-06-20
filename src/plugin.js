@@ -55,7 +55,7 @@ Plugin.prototype.addMatchingRules = function(matchName, matches) {
   var rules;
   if (matches && matches.length) {
     rules = this._matches[matchName] || (this._matches[matchName] = new Rule({name: matchName}));
-    rules.addMatch(matches);
+    rules.addMatcher(matches);
   }
 
   return this;

@@ -43,7 +43,7 @@
     "grunt-release": "~0.12.0",
     "jshint-stylish": "~1.0.2",
     "mocha": "~2.2.4",
-    "roolio": "~0.0.2",
+    "roolio": "~0.1.0",
     "sinon": "~1.14.1"
   },
   "dependencies": {
