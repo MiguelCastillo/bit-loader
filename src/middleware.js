@@ -1,6 +1,5 @@
 var Promise = require("./promise");
 var Utils   = require("./utils");
-var logger  = require("./logger").factory("Middleware");
 
 
 /**
@@ -232,21 +231,9 @@ Middleware.configureProvider = function(middleware, provider, options) {
   if (Utils.isFunction(options)) {
     provider.handler = options;
   }
-  else if (Utils.isString(options)) {
-    provider.name = options;
-
-    if (!Utils.isFunction(provider.handler)) {
-      provider.handler = Middleware.deferredHandler(middleware, provider);
-    }
-  }
   else if (Utils.isPlainObject(options)) {
     if (!Utils.isFunction(options.handler) && !Utils.isFunction(provider.handler)) {
-      if (Utils.isString(options.name)) {
-        options.handler = Middleware.deferredHandler(middleware, provider);
-      }
-      else {
-        throw new TypeError("Middleware provider must have a handler method or a name");
-      }
+      throw new TypeError("Middleware provider must have a handler method or a name");
     }
 
     Utils.extend(provider, options);
@@ -264,55 +251,11 @@ Middleware.configureProvider = function(middleware, provider, options) {
 Middleware.createProvider = function(middleware, options) {
   var provider;
 
-  if (Utils.isFunction(options) || Utils.isString(options) || Utils.isPlainObject(options)) {
+  if (Utils.isFunction(options) || Utils.isPlainObject(options)) {
     provider = Middleware.configureProvider(middleware, new Provider(), options);
   }
 
   return provider || options;
-};
-
-
-/**
- * @private
- *
- * Method that enables chaining in providers that have to be dynamically loaded.
- */
-Middleware.deferredHandler = function(middleware, provider) {
-  if (!middleware.settings.import) {
-    throw new TypeError("You must configure an import method in order to dynamically load middleware providers");
-  }
-
-  function importProvider() {
-    if (!provider.__deferred) {
-      logger.log("import [start]", provider);
-      provider.__deferred = middleware.settings
-        .import(provider.name)
-        .then(providerImported, Utils.reportError);
-    }
-    else {
-      logger.log("import [pending]", provider);
-    }
-
-    return provider.__deferred;
-  }
-
-  function providerImported(result) {
-    logger.log("import [end]", provider);
-    delete provider.__deferred;
-    Middleware.configureProvider(middleware, provider, result);
-  }
-
-
-  return function deferredHandlerDelegate() {
-    var data = arguments;
-
-    // Callback when provider is loaded
-    function providerReady() {
-      return provider.execute(data);
-    }
-
-    return importProvider().then(providerReady, Utils.reportError);
-  };
 };
 
 
