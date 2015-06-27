@@ -1,4 +1,5 @@
-function noop() {
+function noop(arg) {
+  return arg;
 }
 
 function isNil(item) {
@@ -10,7 +11,15 @@ function isNull(item) {
 }
 
 function isArray(item) {
-  return item instanceof Array;
+  return !isNil(item) && item.constructor === Array;
+}
+
+function isFunction(item) {
+  return !isNil(item) && item.constructor === Function;
+}
+
+function isDate(item) {
+  return !isNil(item) && item.constructor === Date;
 }
 
 function isString(item) {
@@ -24,14 +33,6 @@ function isObject(item) {
 var ObjectSignature = Object.prototype.toString();
 function isPlainObject(item) {
   return !!item && !isArray(item) && item.toString() === ObjectSignature;
-}
-
-function isFunction(item) {
-  return !isNil(item) && item.constructor === Function;
-}
-
-function isDate(item) {
-  return item instanceof Date;
 }
 
 function result(input, args, context) {

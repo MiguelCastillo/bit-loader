@@ -35,7 +35,7 @@ function Bitloader(options) {
     }
   };
 
-  this.pipelines = {
+  this.services = this.pipelines = {
     resolve    : new Middleware(this),
     fetch      : new Middleware(this),
     transform  : new Middleware(this),
@@ -200,7 +200,7 @@ Bitloader.prototype.setModule = function(mod) {
     throw new TypeError("Module `" + name + "` is not an instance of Module");
   }
 
-  if (!name || typeof(name) !== "string") {
+  if (!name || !Utils.isString(name)) {
     throw new TypeError("Module must have a name");
   }
 
@@ -292,7 +292,7 @@ Bitloader.prototype.ignore = function(rule) {
   var i, length, ruleNames;
 
   // Simplify the arguments that can be passed in to the ignore method
-  if (rule instanceof Array || typeof(rule) === "string") {
+  if (Utils.isArray(rule) || Utils.isString(rule)) {
     rule = {
       match: rule
     };
@@ -359,17 +359,18 @@ Bitloader.prototype.plugin = function(name, options) {
   }
 
   var handlers = [];
-  function handlerVisitor(handlerConfig) {
-    if (handlerConfig.deferred) {
-      handlers.push(handlerConfig.deferred);
+  var handlerVisitor = function handlerVisitor(handlerConfig) {
+    if (handlerConfig.deferredName) {
+      handlers.push(handlerConfig.deferredName);
     }
-  }
+  };
 
+  // Configure plugin
   plugin.configure(options, handlerVisitor);
 
   // Add plugin handlers to ignore list.
   if (handlers.length) {
-    this.ignore({match: handlers});
+    this.ignore(handlers);
   }
 
   return plugin;

@@ -4,7 +4,7 @@ define(["dist/bit-loader"], function(Bitloader) {
   describe("Plugin Test Suite", function() {
     var bitloader;
 
-    describe("When creating a puglin", function() {
+    describe("When creating an anonymous puglin", function() {
       var plugin;
       beforeEach(function() {
         plugin = new Bitloader.Plugin();
@@ -29,12 +29,55 @@ define(["dist/bit-loader"], function(Bitloader) {
     });
 
 
+    describe("When creating a plugin with name `testName`", function() {
+      var plugin, pluginName;
+      beforeEach(function() {
+        pluginName = "testName";
+        plugin = new Bitloader.Plugin(pluginName);
+      });
+
+      describe("and adding a service with `addService`", function() {
+        var services, transformHandlerStub, dependencyHandlerStub, transformStub, dependencyStub;
+
+        beforeEach(function() {
+          transformHandlerStub = sinon.stub();
+          dependencyHandlerStub = sinon.stub();
+          transformStub = sinon.stub();
+          dependencyStub = sinon.stub();
+
+          services = {
+            "transform": {
+              use: transformStub
+            },
+            "dependency": {
+              use: dependencyStub
+            }
+          };
+
+          plugin
+            .addService("transform", services.transform)
+            .addService("dependency", services.dependency)
+            .addHandlers("transform", transformHandlerStub)
+            .addHandlers("dependency", dependencyHandlerStub);
+        });
+
+        it("then plugin delegate handler is registered `transform` service", function() {
+          sinon.assert.calledWith(transformStub, sinon.match({name: pluginName}));
+        });
+
+        it("then plugin delegate handler is registered `dependency` service", function() {
+          sinon.assert.calledWith(dependencyStub, sinon.match({name: pluginName}));
+        });
+      });
+    });
+
+
     describe("When creating a plugin with services", function() {
       var plugin, pluginName, services, transformStub, dependencyStub;
       beforeEach(function() {
+        pluginName = "testName";
         transformStub = sinon.stub();
         dependencyStub = sinon.stub();
-        pluginName = "testName";
 
         services = {
           "transform": {
@@ -78,7 +121,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       });
 
 
-      describe("and adding function handlers calling `addHandlers'", function() {
+      describe("and adding 2 function handlers calling `addHandlers'", function() {
         var handlerStub1, handlerStub2;
         beforeEach(function() {
           handlerStub1 = sinon.stub();
@@ -99,16 +142,16 @@ define(["dist/bit-loader"], function(Bitloader) {
           expect(plugin._handlers.transform).to.be.an("array");
         });
 
-        it("then there is only one plugin handler", function() {
-          expect(plugin._handlers.transform.length).to.equal(1);
+        it("then there are two plugin handler", function() {
+          expect(plugin._handlers.transform.length).to.equal(2);
         });
 
-        it("then expect plugin handlers `array` to NOT contain the first handler registered", function() {
-          expect(plugin._handlers.transform[0].handler === handlerStub1).to.equal(false);
+        it("then plugin handlers `array` contain the first handler registered", function() {
+          expect(plugin._handlers.transform[0].handler === handlerStub1).to.equal(true);
         });
 
-        it("then expect plugin handlers `array` to contain the second handler regsitered", function() {
-          expect(plugin._handlers.transform[0].handler === handlerStub2).to.equal(true);
+        it("then plugin handlers `array` contain the second handler regsitered", function() {
+          expect(plugin._handlers.transform[1].handler === handlerStub2).to.equal(true);
         });
       });
 
@@ -729,7 +772,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       });
 
       it("then the plugins are added to the ignore list", function() {
-        expect(ignoreSpy.calledWith({match: transformHandlers})).to.equal(true);
+        expect(ignoreSpy.calledWith(transformHandlers)).to.equal(true);
       });
     });
 
@@ -756,15 +799,15 @@ define(["dist/bit-loader"], function(Bitloader) {
       });
 
       it("then visitor is called with handler configuration for `test1`", function() {
-        expect(visitorStub.calledWith(sinon.match({deferred: "test1"}))).to.equal(true);
+        expect(visitorStub.calledWith(sinon.match({deferredName: "test1"}))).to.equal(true);
       });
 
       it("then visitor is called with handler configuration for `test2`", function() {
-        expect(visitorStub.calledWith(sinon.match({deferred: "test2"}))).to.equal(true);
+        expect(visitorStub.calledWith(sinon.match({deferredName: "test2"}))).to.equal(true);
       });
 
       it("then visitor is NOT called with handler configuration for `test3`", function() {
-        expect(visitorStub.calledWith(sinon.match({deferred: "test3"}))).to.equal(false);
+        expect(visitorStub.calledWith(sinon.match({deferredName: "test3"}))).to.equal(false);
       });
     });
 
