@@ -9,11 +9,11 @@ var pluginId = 0;
 /**
  * Plugin
  */
-function Plugin(name, options) {
-  options = options || {};
+function Plugin(name, loader) {
+  loader = loader || {};
   this.name       = name || ("plugin-" + (pluginId++));
-  this.loader     = options;
-  this.services   = options.services || options.pipelines || {};
+  this.loader     = loader;
+  this.services   = loader.services || loader.pipelines || {};
   this._matches   = {};
   this._delegates = {};
   this._handlers  = {};
@@ -22,7 +22,10 @@ function Plugin(name, options) {
 
 
 /**
- * Configure plugin
+ * Configure plugin. This is a way to setup matching rules and handlers
+ * in a single convenient call.
+ *
+ * @returns {Plugin}
  */
 Plugin.prototype.configure = function(options) {
   options = options || {};
@@ -50,8 +53,10 @@ Plugin.prototype.configure = function(options) {
 
 
 /**
- * Method for adding matching rules used for determining if a
- * module meta should be processed by the plugin or not.
+ * Method for adding matching rules used for determining if data
+ * should be processed by the plugin or not.
+ *
+ * @returns {Plugin}
  */
 Plugin.prototype.addMatchingRules = function(matchName, matches) {
   if (matches && matches.length) {
@@ -67,7 +72,10 @@ Plugin.prototype.addMatchingRules = function(matchName, matches) {
 
 
 /**
- * Adds handlers for the particular service.
+ * Adds handlers for a service. This handler is the hook so that
+ * plugin methods can process data from the service.
+ *
+ * @returns {Plugin}
  */
 Plugin.prototype.addHandlers = function(serviceName, handlers) {
   if (!this.services.hasOwnProperty(serviceName)) {
@@ -93,6 +101,8 @@ Plugin.prototype.addHandlers = function(serviceName, handlers) {
  * Add service to register plugins with. A service must have a method `use`
  * that takes in a function that is called when the function needs to be
  * executed.
+ *
+ * @returns {Plugin}
  */
 Plugin.prototype.addService = function(serviceName, service) {
   if (this.services.hasOwnProperty(serviceName)) {
@@ -110,7 +120,7 @@ Plugin.prototype.addService = function(serviceName, service) {
  * @param {string} eventName - Name of the event to listen to.
  * @param {function} handler - Function that is called when the event is dispatched.
  *
- * @returns {Plugin} Returns itself
+ * @returns {Plugin}
  */
 Plugin.prototype.on = function(eventName, handler) {
   this._events.addListener(eventName, handler);
@@ -124,11 +134,42 @@ Plugin.prototype.on = function(eventName, handler) {
  * @param {string} eventName - Name of the event to unregister.
  * @param {function} handler - Function to unregister.
  *
- * @returns {Plugin} Returns itself
+ * @returns {Plugin}
  */
 Plugin.prototype.off = function(eventName, handler) {
   this._events.removeListener(eventName, handler);
   return this;
+};
+
+
+/**
+ * Method to load a plugin module. This starts loading the module as soon as
+ * possible and will hold any subsequent module imports until this module is
+ * fully loaded. This is primarily used during bits configuration.
+ *
+ * @returns {Promise} That when resolved, returns the plugin. Otherwise reports
+ *  the error.
+ */
+Plugin.prototype.import = function(pluginName) {
+  var plugin = this;
+  var loader = this.loader;
+
+  // Emit an added event for the plugin being imported.
+  this._events.emit("added", [{deferredName: pluginName}]);
+
+  function pluginImported(pluginFactory) {
+    var settings = pluginFactory(loader, plugin);
+
+    if (settings) {
+      plugin.configure(settings);
+    }
+
+    return plugin;
+  }
+
+  return loader
+    .important(pluginName)
+    .then(pluginImported, Utils.reportError);
 };
 
 
@@ -205,7 +246,9 @@ function configurePluginHandlers(plugin, handlers) {
           return handlerConfig.handler.apply(undefined, args);
         }
 
-        return plugin.loader.import(handlerConfig.deferredName).then(handlerReady, Utils.reportError);
+        return plugin.loader
+          .import(handlerConfig.deferredName)
+          .then(handlerReady, Utils.reportError);
       };
     }
 
@@ -215,7 +258,6 @@ function configurePluginHandlers(plugin, handlers) {
 
     return handlerConfig;
   }
-
 
   // Configure list of handlers.
   handlers = handlers.map(configure);

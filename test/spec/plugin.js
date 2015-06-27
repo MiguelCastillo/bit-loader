@@ -810,7 +810,87 @@ define(["dist/bit-loader"], function(Bitloader) {
       });
 
       it("then the event handler is called with handler settings for `test1` and `test2`", function() {
-        sinon.assert.calledWith(eventHandlerStub, sinon.match([sinon.match({deferredName: "test1"}), sinon.match({deferredName: "test2"})]));
+        sinon.assert.calledWith(eventHandlerStub, sinon.match([
+          sinon.match({deferredName: "test1"}),
+          sinon.match({deferredName: "test2"})
+        ]));
+      });
+    });
+
+
+    describe("When importing a plugin", function() {
+      var plugin, pluginFactoryStub, loaderStub, transformServiceStub, importStub, transformHandlerStub, addedEventHandlerStub;
+
+      beforeEach(function() {
+        transformServiceStub = sinon.stub();
+        transformHandlerStub = sinon.stub();
+        importStub = sinon.stub();
+        addedEventHandlerStub = sinon.stub();
+        pluginFactoryStub = sinon.stub();
+
+        pluginFactoryStub.returns({
+          "transform": [transformHandlerStub, "transformHandler2"]
+        });
+
+        // Setup return
+        importStub
+          .withArgs("test-plugin")
+          .returns(Promise.resolve(pluginFactoryStub));
+
+        loaderStub = {
+          important: importStub,
+          services: {
+            transform: {
+              use: transformServiceStub
+            }
+          }
+        };
+
+        plugin = new Bitloader.Plugin("js-plugin", loaderStub);
+
+        return new Promise(function(resolve) {
+          plugin
+            .on("added", resolve)
+            .on("added", addedEventHandlerStub)
+            .import("test-plugin");
+        });
+      });
+
+      it("then `important` method is called once", function() {
+        sinon.assert.calledOnce(importStub);
+      });
+
+      it("then `important` method is called with `test-plugin`", function() {
+        sinon.assert.calledWithExactly(importStub, "test-plugin");
+      });
+
+      it("then the `added` event handler is called twice", function() {
+        sinon.assert.calledTwice(addedEventHandlerStub);
+      });
+
+      it("then the `added` event handler is called with the plugin being loaded", function() {
+        sinon.assert.calledWith(addedEventHandlerStub, [
+          sinon.match({deferredName: "test-plugin"})
+        ]);
+      });
+
+      it("then the `added` event handler is called with the plugin handlers", function() {
+        sinon.assert.calledWith(addedEventHandlerStub, [
+          sinon.match({handler: sinon.match.func}),
+          sinon.match({deferredName: "transformHandler2"})
+        ]);
+      });
+
+      it("then the handler is registered with the `transform` service", function() {
+        sinon.assert.calledWith(transformServiceStub, sinon.match({name: "js-plugin", handler: sinon.match.func}));
+      });
+
+      it("then the `pluginFactory` is called once", function() {
+        sinon.assert.calledOnce(pluginFactoryStub);
+      });
+
+      it("then the `pluginFactory` is called with the corresponding plugin", function() {
+        sinon.assert.calledWithExactly(pluginFactoryStub, sinon.match.object, plugin);
       });
     });
 

@@ -18,6 +18,7 @@ function Import(manager) {
     throw new TypeError("Must provide a manager");
   }
 
+  this._important = [];
   this.manager = manager;
   this.context = Registry.getById(getRegistryId());
 }
@@ -31,6 +32,40 @@ function Import(manager) {
  * @returns {Promise}
  */
 Import.prototype.import = function(name, options) {
+  var importer = this;
+
+  if (this._important.length) {
+    var importantFinished = function importantFinished() {
+      // Clear the list of important requests.
+      importer._important = [];
+      return importer._import(name, options);
+    };
+
+    return Promise
+      .all(this._important)
+      .then(importantFinished, Utils.reportError);
+  }
+  else {
+    return importer._import(name, options);
+  }
+};
+
+
+/**
+ * Imports that must occur before any other imports. So every import
+ * will wait for all `important` imports to finish first.
+ */
+Import.prototype.important = function(name) {
+  var pending = this._import(name);
+  this._important.push(pending);
+  return pending;
+};
+
+
+/**
+ * Method that imports the module.
+ */
+Import.prototype._import = function(name, options) {
   var importer = this;
 
   if (typeof(name) === "string") {

@@ -59,9 +59,10 @@ function Bitloader(options) {
   this.compile  = options.compile || (new Bitloader.Compiler()).compile;
 
   // Internal helpers
-  this.load     = providers.loader.load.bind(providers.loader);
-  this.register = providers.loader.register.bind(providers.loader);
-  this.import   = providers.importer.import.bind(providers.importer);
+  this.load      = providers.loader.load.bind(providers.loader);
+  this.register  = providers.loader.register.bind(providers.loader);
+  this.import    = providers.importer.import.bind(providers.importer);
+  this.important = providers.importer.important.bind(providers.importer);
 
   // Register plugins
   for (var plugin in options.plugins) {
