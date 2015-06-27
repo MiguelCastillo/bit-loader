@@ -762,8 +762,13 @@ define(["dist/bit-loader"], function(Bitloader) {
         bitloader = new Bitloader();
         ignoreSpy = sinon.spy(bitloader, "ignore");
 
-        bitloader.plugin({
-          transform: transformHandlers
+        return new Promise(function(resolve) {
+          bitloader
+            .plugin()
+            .on("added", resolve)
+            .configure({
+              transform: transformHandlers
+            });
         });
       });
 
@@ -772,17 +777,17 @@ define(["dist/bit-loader"], function(Bitloader) {
       });
 
       it("then the plugins are added to the ignore list", function() {
-        expect(ignoreSpy.calledWith(transformHandlers)).to.equal(true);
+        sinon.assert.calledWith(ignoreSpy, transformHandlers);
       });
     });
 
 
-    describe("When registering dynamic plugins with `addHandlers` and a `visitor`", function() {
-      var transformHandlers, transformStub, visitorStub, plugin, services;
+    describe("When registering dynamic plugins with `addHandlers` and registering `added` events", function() {
+      var transformHandlers, transformStub, eventHandlerStub, plugin, services;
       beforeEach(function() {
         transformHandlers = ["test1", "test2"];
         transformStub = sinon.stub();
-        visitorStub = sinon.stub();
+        eventHandlerStub = sinon.stub();
 
         services = {
           "transform": {
@@ -791,23 +796,21 @@ define(["dist/bit-loader"], function(Bitloader) {
         };
 
         plugin = new Bitloader.Plugin("js", {services: services});
-        plugin.addHandlers("transform", transformHandlers, visitorStub);
+
+        return new Promise(function(resolve) {
+          plugin
+            .on("added", resolve)
+            .on("added", eventHandlerStub)
+            .addHandlers("transform", transformHandlers);
+        });
       });
 
-      it("then the `visitor` is called", function() {
-        expect(visitorStub.called).to.equal(true);
+      it("then the event handler is called once", function() {
+        sinon.assert.calledOnce(eventHandlerStub);
       });
 
-      it("then visitor is called with handler configuration for `test1`", function() {
-        expect(visitorStub.calledWith(sinon.match({deferredName: "test1"}))).to.equal(true);
-      });
-
-      it("then visitor is called with handler configuration for `test2`", function() {
-        expect(visitorStub.calledWith(sinon.match({deferredName: "test2"}))).to.equal(true);
-      });
-
-      it("then visitor is NOT called with handler configuration for `test3`", function() {
-        expect(visitorStub.calledWith(sinon.match({deferredName: "test3"}))).to.equal(false);
+      it("then the event handler is called with handler settings for `test1` and `test2`", function() {
+        sinon.assert.calledWith(eventHandlerStub, sinon.match([sinon.match({deferredName: "test1"}), sinon.match({deferredName: "test2"})]));
       });
     });
 

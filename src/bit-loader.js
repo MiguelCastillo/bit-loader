@@ -347,6 +347,7 @@ Bitloader.prototype.plugin = function(name, options) {
   }
 
   var plugin;
+  var loader = this;
 
   // If plugin exists, then we get it so that we can update it with the new settings.
   // Otherwise we create a new plugin and configure it with the incoming settings.
@@ -356,24 +357,22 @@ Bitloader.prototype.plugin = function(name, options) {
   else {
     plugin = new Plugin(name, this);
     this.plugins[plugin.name] = plugin;
-  }
 
-  var handlers = [];
-  var handlerVisitor = function handlerVisitor(handlerConfig) {
-    if (handlerConfig.deferredName) {
-      handlers.push(handlerConfig.deferredName);
-    }
-  };
+    plugin.on("added", function(handlers) {
+      handlers = handlers
+        .filter(function(handler) {
+          return handler.deferredName;
+        })
+        .map(function(handler) {
+          return handler.deferredName;
+        });
+
+      loader.ignore(handlers);
+    });
+  }
 
   // Configure plugin
-  plugin.configure(options, handlerVisitor);
-
-  // Add plugin handlers to ignore list.
-  if (handlers.length) {
-    this.ignore(handlers);
-  }
-
-  return plugin;
+  return plugin.configure(options);
 };
 
 

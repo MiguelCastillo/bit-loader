@@ -1,5 +1,6 @@
 var Promise = require("./promise");
 var Utils   = require("./utils");
+var Events  = require("./events");
 var Rule    = require("roolio");
 
 var pluginId = 0;
@@ -16,13 +17,14 @@ function Plugin(name, options) {
   this._matches   = {};
   this._delegates = {};
   this._handlers  = {};
+  this._events    = new Events();
 }
 
 
 /**
  * Configure plugin
  */
-Plugin.prototype.configure = function(options, handlerAdded) {
+Plugin.prototype.configure = function(options) {
   options = options || {};
 
   // Add matching rules
@@ -40,7 +42,7 @@ Plugin.prototype.configure = function(options, handlerAdded) {
       continue;
     }
 
-    this.addHandlers(serviceName, options[serviceName], handlerAdded);
+    this.addHandlers(serviceName, options[serviceName]);
   }
 
   return this;
@@ -52,10 +54,12 @@ Plugin.prototype.configure = function(options, handlerAdded) {
  * module meta should be processed by the plugin or not.
  */
 Plugin.prototype.addMatchingRules = function(matchName, matches) {
-  var rules;
   if (matches && matches.length) {
-    rules = this._matches[matchName] || (this._matches[matchName] = new Rule({name: matchName}));
-    rules.addMatcher(matches);
+    if (!this._matches[matchName]) {
+      this._matches[matchName] = new Rule({name: matchName});
+    }
+
+    this._matches[matchName].addMatcher(matches);
   }
 
   return this;
@@ -65,13 +69,13 @@ Plugin.prototype.addMatchingRules = function(matchName, matches) {
 /**
  * Adds handlers for the particular service.
  */
-Plugin.prototype.addHandlers = function(serviceName, handlers, handlerAdded) {
+Plugin.prototype.addHandlers = function(serviceName, handlers) {
   if (!this.services.hasOwnProperty(serviceName)) {
     throw new TypeError("Unable to register plugin for '" + serviceName + "'. '" + serviceName + "' is not found");
   }
 
   // Configure plugin handlers
-  this._handlers[serviceName] = (this._handlers[serviceName] || []).concat(configurePluginHandlers(this, handlers, handlerAdded));
+  this._handlers[serviceName] = (this._handlers[serviceName] || []).concat(configurePluginHandlers(this, handlers));
 
   // Register service delegate if one does not exist. Delegates are the callbacks
   // registered with the service that when called, the plugins executes all the
@@ -96,6 +100,34 @@ Plugin.prototype.addService = function(serviceName, service) {
   }
 
   this.services[serviceName] = service;
+  return this;
+};
+
+
+/**
+ * Register listeners for events that a plugin dispatcher
+ *
+ * @param {string} eventName - Name of the event to listen to.
+ * @param {function} handler - Function that is called when the event is dispatched.
+ *
+ * @returns {Plugin} Returns itself
+ */
+Plugin.prototype.on = function(eventName, handler) {
+  this._events.addListener(eventName, handler);
+  return this;
+};
+
+
+/**
+ * Unregisters an event listener previously registered.
+ *
+ * @param {string} eventName - Name of the event to unregister.
+ * @param {function} handler - Function to unregister.
+ *
+ * @returns {Plugin} Returns itself
+ */
+Plugin.prototype.off = function(eventName, handler) {
+  this._events.removeListener(eventName, handler);
   return this;
 };
 
@@ -139,7 +171,7 @@ function createServiceHandler(plugin, serviceName) {
  * where handle things like if a handler is a string, then we assume it is the
  * name of a module that we need to load...
  */
-function configurePluginHandlers(plugin, handlers, handlerAdded) {
+function configurePluginHandlers(plugin, handlers) {
   if (!handlers) {
     throw new TypeError("Plugin must have 'handlers' defined");
   }
@@ -148,7 +180,7 @@ function configurePluginHandlers(plugin, handlers, handlerAdded) {
     handlers = [handlers];
   }
 
-  return handlers.map(function handlerIterator(handlerConfig) {
+  function configure(handlerConfig) {
     if (!handlerConfig) {
       throw new TypeError("Plugin handler must be a string, a function, or an object with a handler that is a string or a function");
     }
@@ -181,13 +213,16 @@ function configurePluginHandlers(plugin, handlers, handlerAdded) {
       throw new TypeError("Plugin handler must be a function or a string");
     }
 
-    // Once the plugin handler is configured, call the handlerAdded callback if one is provided.
-    if (handlerAdded) {
-      handlerAdded(handlerConfig);
-    }
-
     return handlerConfig;
-  });
+  }
+
+
+  // Configure list of handlers.
+  handlers = handlers.map(configure);
+
+  // Dispatch message that a new plugin was configured
+  plugin._events.emit("added", handlers);
+  return handlers;
 }
 
 
