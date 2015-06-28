@@ -35,7 +35,7 @@ function Bitloader(options) {
     }
   };
 
-  this.pipelines = {
+  this.services = this.pipelines = {
     resolve    : new Middleware(this),
     fetch      : new Middleware(this),
     transform  : new Middleware(this),
@@ -59,9 +59,10 @@ function Bitloader(options) {
   this.compile  = options.compile || (new Bitloader.Compiler()).compile;
 
   // Internal helpers
-  this.load     = providers.loader.load.bind(providers.loader);
-  this.register = providers.loader.register.bind(providers.loader);
-  this.import   = providers.importer.import.bind(providers.importer);
+  this.load      = providers.loader.load.bind(providers.loader);
+  this.register  = providers.loader.register.bind(providers.loader);
+  this.import    = providers.importer.import.bind(providers.importer);
+  this.important = providers.importer.important.bind(providers.importer);
 
   // Register plugins
   for (var plugin in options.plugins) {
@@ -200,7 +201,7 @@ Bitloader.prototype.setModule = function(mod) {
     throw new TypeError("Module `" + name + "` is not an instance of Module");
   }
 
-  if (!name || typeof(name) !== "string") {
+  if (!name || !Utils.isString(name)) {
     throw new TypeError("Module must have a name");
   }
 
@@ -292,7 +293,7 @@ Bitloader.prototype.ignore = function(rule) {
   var i, length, ruleNames;
 
   // Simplify the arguments that can be passed in to the ignore method
-  if (rule instanceof Array || typeof(rule) === "string") {
+  if (Utils.isArray(rule) || Utils.isString(rule)) {
     rule = {
       match: rule
     };
@@ -347,6 +348,7 @@ Bitloader.prototype.plugin = function(name, options) {
   }
 
   var plugin;
+  var loader = this;
 
   // If plugin exists, then we get it so that we can update it with the new settings.
   // Otherwise we create a new plugin and configure it with the incoming settings.
@@ -356,23 +358,22 @@ Bitloader.prototype.plugin = function(name, options) {
   else {
     plugin = new Plugin(name, this);
     this.plugins[plugin.name] = plugin;
+
+    plugin.on("added", function(handlers) {
+      handlers = handlers
+        .filter(function(handler) {
+          return handler.deferredName;
+        })
+        .map(function(handler) {
+          return handler.deferredName;
+        });
+
+      loader.ignore(handlers);
+    });
   }
 
-  var handlers = [];
-  function handlerVisitor(handlerConfig) {
-    if (handlerConfig.deferred) {
-      handlers.push(handlerConfig.deferred);
-    }
-  }
-
-  plugin.configure(options, handlerVisitor);
-
-  // Add plugin handlers to ignore list.
-  if (handlers.length) {
-    this.ignore({match: handlers});
-  }
-
-  return plugin;
+  // Configure plugin
+  return plugin.configure(options);
 };
 
 

@@ -63,7 +63,7 @@ module.exports = function(grunt) {
         src: ["src/<%= pkg.name %>.js"],
         dest: "dist/<%= pkg.name %>.js",
         options: {
-          banner: "/*! <%= pkg.name %> v<%= pkg.version %> - <%= grunt.template.today('yyyy-mm-dd') %>. (c) <%= grunt.template.today('yyyy') %> Miguel Castillo. Licensed under MIT */",
+          banner: "/*! <%= pkg.name %> v<%= pkg.version %> - <%= grunt.template.today() %>. (c) <%= grunt.template.today('yyyy') %> Miguel Castillo. Licensed under MIT */",
           browserifyOptions: {
             "detectGlobals": false,
             "standalone": "bitloader"
