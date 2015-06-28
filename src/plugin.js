@@ -191,20 +191,50 @@ function registerServiceHandler(plugin, service, handler) {
 function createServiceHandler(plugin, serviceName) {
   // The service handler iterates through all the plugin handlers
   // passing in the correspoding module meta to be processed.
-  return function handlerDelegate(moduleMeta) {
-    // This is a nasty little sucker with nested layers of promises...
-    // Handlers themselves can return promises and get injected into
-    // the promise sequence.
-    function handlerIterator(prev, handlerConfig) {
-      function pluginHandler() {
-        return handlerConfig.handler(moduleMeta, handlerConfig.options);
-      }
-      return prev.then(pluginHandler, Utils.reportError);
-    }
-
-    return plugin._handlers[serviceName].reduce(handlerIterator, Promise.resolve());
+  return function serviceHandlerDelegate(moduleMeta) {
+    return plugin
+      ._handlers[serviceName]
+      .reduce(pluginHandler.iterator, Promise.resolve(moduleMeta));
   };
 }
+
+
+/**
+ * Executes plugin handler passing in the module meta object. Objects
+ * resolved from the handler promise will be merged into the module
+ * meta object.
+ *
+ * @returns {function} Delegate function that executes the plugin handler.
+ */
+function pluginHandler(handler, options) {
+  return function pluginHandlerDelegate(moduleMeta) {
+    return Promise
+      .resolve(handler(moduleMeta, options))
+      .then(function(result) {
+        // If a plain object is returned, then we merge it in.
+        if (Utils.isPlainObject(result)) {
+          moduleMeta.configure(result);
+        }
+
+        return moduleMeta;
+      }, Utils.reportError);
+  };
+}
+
+
+/**
+ * Iterator for plugin handlers. This is for executing a sequence of handlers.
+ *
+ * @param {Promise} deferred - Current deferred promise handler being executed.
+ *  When this deferred is finished, the next handler willbe executed.
+ * @param {object} handlerConfig - Handler object that contains the handler
+ *  callback and the options for it.
+ *
+ * @returns {Promise}
+ */
+pluginHandler.iterator = function(deferred, handlerConfig) {
+  return deferred.then(pluginHandler(handlerConfig.handler, handlerConfig.options), Utils.reportError);
+};
 
 
 /**
@@ -221,7 +251,7 @@ function configurePluginHandlers(plugin, handlers) {
     handlers = [handlers];
   }
 
-  function configure(handlerConfig) {
+  function configureHandler(handlerConfig) {
     if (!handlerConfig) {
       throw new TypeError("Plugin handler must be a string, a function, or an object with a handler that is a string or a function");
     }
@@ -241,14 +271,14 @@ function configurePluginHandlers(plugin, handlers) {
       handlerConfig.handler = function deferredHandler() {
         var args = arguments;
 
-        function handlerReady(newhandler) {
-          handlerConfig.handler = newhandler;
-          return handlerConfig.handler.apply(undefined, args);
+        function pluginHandler(handler) {
+          handlerConfig.handler = handler;
+          return handler.apply(undefined, args);
         }
 
         return plugin.loader
           .import(handlerConfig.deferredName)
-          .then(handlerReady, Utils.reportError);
+          .then(pluginHandler, Utils.reportError);
       };
     }
 
@@ -260,7 +290,7 @@ function configurePluginHandlers(plugin, handlers) {
   }
 
   // Configure list of handlers.
-  handlers = handlers.map(configure);
+  handlers = handlers.map(configureHandler);
 
   // Dispatch message that a new plugin was configured
   plugin._events.emit("added", handlers);
