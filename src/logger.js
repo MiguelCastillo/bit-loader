@@ -27,18 +27,39 @@ Logger.prototype.factory = function(name, options) {
 
 
 /**
+ * Method that returns the correct stream to log to.
+ *
+ * @returns {Stream}
+ */
+Logger.prototype.stream = function() {
+  return Logger.stream || this._stream;
+};
+
+
+/**
+ * Method that returns the correct serializer for transforming
+ * before it is logged.
+ *
+ * @returns {function} Serializer function to process log data
+ */
+Logger.prototype.serialize = function(data) {
+ return (Logger.serialize || this._serialize)(data);
+};
+
+
+/**
  * Method to log a message.
  *
  * Verifies that logger is enabled. If it is enabled, then the message(s) are
  * logged. Otherwise ignored.
  */
 Logger.prototype.log = function() {
-  if (!this.isEnabled()) {
-    return;
+  if (this.isEnabled()) {
+    var data = logPayload(this.name, "log", arguments);
+    this.stream().write(this.serialize(data));
   }
 
-  var data = {date: getDate(), type: "log", name: this.name, data: arguments};
-  (Logger.stream || this.stream).write((Logger.serialize || this.serialize)(data));
+  return this;
 };
 
 
@@ -49,12 +70,12 @@ Logger.prototype.log = function() {
  * are logged.  Otherwise ignored.
  */
 Logger.prototype.error = function() {
-  if (!this.isEnabled()) {
-    return;
+  if (this.isEnabled()) {
+    var data = logPayload(this.name, "error", arguments);
+    this.stream().write(this.serialize(data));
   }
 
-  var data = {date: getDate(), type: "error", name: this.name, data: arguments};
-  (Logger.stream || this.stream).write((Logger.serialize || this.serialize)(data));
+  return this;
 };
 
 
@@ -65,12 +86,12 @@ Logger.prototype.error = function() {
  * are logged.  Otherwise ignored.
  */
 Logger.prototype.warn = function() {
-  if (!this.isEnabled()) {
-    return;
+  if (this.isEnabled()) {
+    var data = logPayload(this.name, "warn", arguments);
+    this.stream().write(this.serialize(data));
   }
 
-  var data = {date: getDate(), type: "warn", name: this.name, data: arguments};
-  (Logger.stream || this.stream).write((Logger.serialize || this.serialize)(data));
+  return this;
 };
 
 
@@ -81,20 +102,12 @@ Logger.prototype.warn = function() {
  * are logged.  Otherwise ignored.
  */
 Logger.prototype.info = function() {
-  if (!this.isEnabled()) {
-    return;
+  if (this.isEnabled()) {
+    var data = logPayload(this.name, "info", arguments);
+    this.stream().write(this.serialize(data));
   }
 
-  var data = {date: getDate(), type: "info", name: this.name, data: arguments};
-  (Logger.stream || this.stream).write((Logger.serialize || this.serialize)(data));
-};
-
-
-/**
- * Method to be overiden to give custom behavior.
- */
-Logger.prototype.serialize = function(data) {
-  return data;
+  return this;
 };
 
 
@@ -211,6 +224,26 @@ Logger.all = function() {
 
 
 /**
+ * Function that create a JSON structure to be logged
+ *
+ * @param {string} name - Name of the logger
+ * @param {string} type - Type of logger. E.g. log, warn, error
+ * @param {object} data - application data to be logged
+ *
+ * @returns {{date: Date, type: string, name: string, data: object}}
+ *  Meta data to be logged
+ */
+function logPayload(name, type, data) {
+  return {
+    date: getDate(),
+    type: type,
+    name: name,
+    data: data
+  };
+}
+
+
+/**
  * Returns a valid console interface with three methods:
  *
  * @returns {{write: function}}
@@ -247,11 +280,19 @@ function getProcessStream() {
 
 
 /**
+ * Noop function
+ */
+function noop(data) {
+  return data;
+}
+
+
+/**
  * Get a noop stream
  */
 function getNoopStream() {
   return {
-    write: function() {}
+    write: noop
   };
 }
 
@@ -261,7 +302,7 @@ function getNoopStream() {
  * we are writing to.
  */
 function configureStream(logger, options) {
-  logger.stream = options.stream || getConsoleStream() || getProcessStream() || getNoopStream();
+  logger._stream = options.stream || getConsoleStream() || getProcessStream() || getNoopStream();
 }
 
 
@@ -270,15 +311,18 @@ function configureStream(logger, options) {
  */
 function configureSerializer(logger, options) {
   if (options.serialize) {
-    logger.serialize = options.serialize;
+    logger._serialize = options.serialize;
   }
   else if (typeof(process) !== "undefined" && process.stdout) {
-    logger.serialize = function(data) {
+    logger._serialize = function(data) {
       if (typeof(data) !== "string") {
         data = JSON.stringify(data);
       }
       return data;
     };
+  }
+  else {
+    logger._serialize = noop;
   }
 }
 
