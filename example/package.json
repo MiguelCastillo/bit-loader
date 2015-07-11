@@ -12,7 +12,8 @@
     "browser-pack": "^5.0.1",
     "browser-resolve": "^1.9.0",
     "deps-bits": "0.0.3",
-    "react": "^0.13.3"
+    "react": "^0.13.3",
+    "stream-joint": "^1.0.0"
   },
   "browser": {
     "react": "./node_modules/react/dist/react.min.js"

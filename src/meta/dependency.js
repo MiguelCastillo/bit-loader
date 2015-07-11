@@ -2,7 +2,7 @@ var runPipeline = require("./runPipeline");
 var Promise     = require("../promise");
 var Module      = require("../module");
 var Utils       = require("../utils");
-var logger      = require("../logger").factory("Meta/Dependency");
+var logger      = require("../logger").create("Meta/Dependency");
 
 
 function MetaDependency() {

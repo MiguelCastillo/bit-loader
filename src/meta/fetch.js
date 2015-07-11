@@ -1,7 +1,7 @@
 var runPipeline = require("./runPipeline");
 var Promise     = require("../promise");
 var Utils       = require("../utils");
-var logger      = require("../logger").factory("Meta/Fetch");
+var logger      = require("../logger").create("Meta/Fetch");
 
 
 function MetaFetch() {
