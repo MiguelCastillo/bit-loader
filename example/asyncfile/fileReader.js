@@ -1,7 +1,6 @@
 var fs        = require("fs");
 var Bitloader = require("bit-loader");
 var Utils     = Bitloader.Utils;
-var Promise   = Bitloader.Promise;
 
 
 /**
