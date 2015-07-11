@@ -1,8 +1,16 @@
+var fs          = require("fs");
+var joint       = require("stream-joint");
+var Bitloader   = require("bit-loader");
 var fileReader  = require("./fileReader");
 var compiler    = require("./compiler");
 var resolvePath = require("./resolvePath");
-var Bitloader   = require("bit-loader");
 var Utils       = Bitloader.Utils;
+
+
+Bitloader.Logger
+  .enable()
+  .pipe(joint(process.stdout))
+  .pipe(joint(fs.createWriteStream('./temp.log')));
 
 
 var loader = new Bitloader({

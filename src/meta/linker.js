@@ -1,5 +1,5 @@
 var Module = require("../module");
-var logger = require("../logger").factory("Module/Linker");
+var logger = require("../logger").create("Module/Linker");
 
 
 /**

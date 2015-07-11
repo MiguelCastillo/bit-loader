@@ -2,7 +2,7 @@ var runPipeline = require("./runPipeline");
 var Promise     = require("../promise");
 var Module      = require("../module");
 var Utils       = require("../utils");
-var logger      = require("../logger").factory("Meta/Compiler");
+var logger      = require("../logger").create("Meta/Compiler");
 
 
 function MetaCompile() {

@@ -1,5 +1,5 @@
-var _enabled = false;
-var _only    = false;
+var _only;
+var _loggers = {};
 
 
 /**
@@ -10,29 +10,74 @@ var _only    = false;
  */
 function Logger(name, options) {
   options = options || {};
-  this._enabled  = true;
+  this._enabled  = false;
   this.name      = name;
 
-  configureStream(this, options);
-  configureSerializer(this, options);
+  this._stream = configureStream(options);
+  this._serializer = configureSerializer(options);
+
+  // Cache it so that we can find it.
+  _loggers[name] = this;
 }
 
 
 /**
  * Helper factory method to create named loggers
+ *
+ * @returns {Logger} New logger instance
  */
-Logger.prototype.factory = function(name, options) {
+Logger.prototype.create = function(name, options) {
+  if (_loggers[name]) {
+    return _loggers[name];
+  }
+
   return new Logger(name, options);
+};
+
+
+/**
+ * Method to find a logger instance by name.
+ *
+ * @param {string} name - Name of the logger to find
+ *
+ * @returns {Logger}
+ */
+Logger.prototype.find = function(name) {
+  return _loggers[name];
+};
+
+
+/**
+ * Method to replace the current stream with a new one.
+ *
+ * @param {Stream} stream - Stream to write data to
+ *
+ * @returns {Stream} stream passed in
+ */
+Logger.prototype.pipe = function(stream) {
+  if (stream !== this._stream) {
+    this._stream = stream;
+  }
+
+  return stream;
 };
 
 
 /**
  * Method that returns the correct stream to log to.
  *
+ * @param {Stream} stream - If provider, then stream is set as the stream
+ *  for the logger instance. Otherwise, the current stream is returned.
+ *
  * @returns {Stream}
  */
-Logger.prototype.stream = function() {
-  return Logger.stream || this._stream;
+Logger.prototype.stream = function(stream) {
+  if (arguments.length === 1) {
+    this._stream = stream;
+    return stream;
+  }
+
+  return this._stream || _global._stream;
 };
 
 
@@ -43,7 +88,7 @@ Logger.prototype.stream = function() {
  * @returns {function} Serializer function to process log data
  */
 Logger.prototype.serialize = function(data) {
- return (Logger.serialize || this._serialize)(data);
+ return (this._serializer || _global.serializer)(data);
 };
 
 
@@ -117,7 +162,7 @@ Logger.prototype.info = function() {
  * @returns {boolean}
  */
 Logger.prototype.isEnabled = function() {
-  return this._enabled && _enabled && (!_only || _only === this.name);
+  return (_global._enabled || this._enabled) && (!_only || _only === this.name);
 };
 
 
@@ -128,6 +173,7 @@ Logger.prototype.isEnabled = function() {
  */
 Logger.prototype.enable = function() {
   this._enabled = true;
+  return this;
 };
 
 
@@ -138,6 +184,7 @@ Logger.prototype.enable = function() {
  */
 Logger.prototype.disable = function() {
   this._enabled = false;
+  return this;
 };
 
 
@@ -146,9 +193,10 @@ Logger.prototype.disable = function() {
  * set to only, then the request is silently ignored.
  */
 Logger.prototype.only = function() {
-  if (!Logger._only) {
-    Logger._only = this.name;
+  if (!_only) {
+    _only = this.name;
   }
+  return this;
 };
 
 
@@ -157,7 +205,8 @@ Logger.prototype.only = function() {
  * set themselves as only.
  */
 Logger.prototype.all = function() {
-  Logger._only = null;
+  _only = null;
+  return this;
 };
 
 
@@ -165,7 +214,8 @@ Logger.prototype.all = function() {
  * Disables loggers globally.
  */
 Logger.prototype.disableAll = function() {
-  Logger.disable();
+  _global._enabled = false;
+  return this;
 };
 
 
@@ -173,53 +223,8 @@ Logger.prototype.disableAll = function() {
  * Enables loggers globally.
  */
 Logger.prototype.enableAll = function() {
-  Logger.enable();
-};
-
-
-// Expose the constructor to be able to create new instances from an
-// existing instance.
-Logger.prototype.default = Logger;
-
-
-/**
- * Underlying method to enable all logger instances
- *
- * @private
- */
-Logger.enable  = function() {
-  _enabled = true;
-};
-
-
-/**
- * Underlying method to disable all logger instances
- *
- * @private
- */
-Logger.disable = function() {
-  _enabled = false;
-};
-
-
-/**
- * Underlying method to set the `only` logger instance that can log message
- *
- * @private
- */
-Logger.only = function(name) {
-  _only = name;
-};
-
-
-/**
- * Underlying method to remove the `only` logger instance that can log
- * message
- *
- * @private
- */
-Logger.all = function() {
-  _only = null;
+  _global._enabled = true;
+  return this;
 };
 
 
@@ -244,6 +249,14 @@ function logPayload(name, type, data) {
 
 
 /**
+ * Noop function
+ */
+function noop(data) {
+  return data;
+}
+
+
+/**
  * Returns a valid console interface with three methods:
  *
  * @returns {{write: function}}
@@ -257,6 +270,9 @@ function getConsoleStream() {
   return result && {
     write: function(data) {
       result.log(data);
+    },
+    pipe: function(stream) {
+      return stream;
     }
   };
 }
@@ -271,19 +287,7 @@ function getProcessStream() {
     result = process.stdout;
   }
 
-  return result && {
-    write: function(data) {
-      result.write(data);
-    }
-  };
-}
-
-
-/**
- * Noop function
- */
-function noop(data) {
-  return data;
+  return result;
 }
 
 
@@ -301,28 +305,28 @@ function getNoopStream() {
  * Method that fills in the target object to make sure we have a valid target
  * we are writing to.
  */
-function configureStream(logger, options) {
-  logger._stream = options.stream || getConsoleStream() || getProcessStream() || getNoopStream();
+function configureStream(options) {
+  return options && options.stream;
 }
 
 
 /**
  * Handler custom serializers
  */
-function configureSerializer(logger, options) {
-  if (options.serialize) {
-    logger._serialize = options.serialize;
+function configureSerializer(options) {
+  if (options && options.serialize) {
+    return options.serialize;
   }
   else if (typeof(process) !== "undefined" && process.stdout) {
-    logger._serialize = function(data) {
+    return function(data) {
       if (typeof(data) !== "string") {
         data = JSON.stringify(data);
       }
-      return data;
+      return data + "\n";
     };
   }
   else {
-    logger._serialize = noop;
+    return noop;
   }
 }
 
@@ -340,4 +344,10 @@ function getDate() {
 /**
  * Default logger instance available
  */
-module.exports = new Logger();
+var _global = new Logger("global", {
+  stream: getProcessStream() || getConsoleStream() || getNoopStream(),
+  serializer: configureSerializer()
+});
+
+
+module.exports = Logger.prototype.default = _global;

@@ -37,11 +37,8 @@ function readFile(filePath) {
       .setEncoding("utf8");
 
     stream
-      .on("readable", function() {
-        var chunk = stream.read();
-        if (chunk !== null) {
-          filecontent += chunk;
-        }
+      .on("data", function(chunk) {
+        filecontent += chunk;
       })
       .on("end", function() {
         resolve(filecontent);

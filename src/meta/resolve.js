@@ -1,7 +1,7 @@
 var runPipeline = require("./runPipeline");
 var Promise     = require("../promise");
 var Utils       = require("../utils");
-var logger      = require("../logger").factory("Meta/Resolve");
+var logger      = require("../logger").create("Meta/Resolve");
 
 
 function MetaResolve() {
