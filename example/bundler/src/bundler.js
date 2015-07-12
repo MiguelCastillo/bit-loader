@@ -1,5 +1,5 @@
 var browserPack = require("browser-pack");
-var pstream     = require("./pstream");
+var pstream     = require("p-stream");
 
 
 /**
@@ -54,8 +54,9 @@ function bundler(loader, options, modules) {
     processModule(stack.pop());
   }
 
-  var stream  = browserPack(options);
+  var stream = browserPack(options).setEncoding("utf8");
   var promise = pstream(stream);
+
   stream.end(JSON.stringify(mods));
   return promise;
 }

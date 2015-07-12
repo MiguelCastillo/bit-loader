@@ -1,5 +1,5 @@
 var fs        = require("fs");
-var pstream   = require("./pstream");
+var pstream   = require("p-stream");
 var Bitloader = require("bit-loader");
 var Utils     = Bitloader.Utils;
 
@@ -10,19 +10,18 @@ var Utils     = Bitloader.Utils;
  * @param {object} moduleMeta - Module meta with information about the module being loaded
  */
 function fileReader(moduleMeta) {
-  function fileRead(text) {
-    moduleMeta.configure({
-      source: text
-    });
-  }
-
   // Read file from disk and return a module meta
-  return readFile(moduleMeta.path).then(fileRead, Utils.reportError);
+  return pstream(readFile(moduleMeta.path))
+    .then(function(text) {
+      return {
+        source: text
+      };
+    }, Utils.reportError);
 }
 
 
 /**
- * Read file from storage.  You can very easily replace this with a routine
+ * Read file from storage. You can very easily replace this with a routine
  * that loads data using XHR.
  *
  * @private
@@ -32,11 +31,9 @@ function fileReader(moduleMeta) {
  * @returns {Promise}
  */
 function readFile(filePath) {
-  var stream = fs
+  return fs
     .createReadStream(filePath)
     .setEncoding("utf8");
-
-  return pstream(stream);
 }
 
 
