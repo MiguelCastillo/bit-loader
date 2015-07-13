@@ -21,7 +21,7 @@ function jsPipeline() {
  */
 function coffeePipeline() {
   this
-    .load("./src//taskrunner.js")
+    .load("./src/taskrunner.js")
     .then(function(moduleMeta) {
       console.log(moduleMeta);
     });

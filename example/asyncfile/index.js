@@ -14,7 +14,7 @@ Bitloader.Logger
 
 
 var loader = new Bitloader({
-  resolve: resolvePath,
+  resolve: resolvePath.configure({baseUrl: __filename}),
   fetch: fileReader,
   compile: compiler
 });
