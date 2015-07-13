@@ -14,7 +14,7 @@ Bitloader.Logger
 
 
 var loader = new Bitloader({
-  resolve: resolvePath,
+  resolve: resolvePath.configure({baseUrl: __filename}),
   fetch: fileReader,
   compile: compiler
 });
@@ -22,7 +22,7 @@ var loader = new Bitloader({
 
 // Load two modules
 loader
-  .import(["./js/sample1.js", "./js/sample2.js"])
+  .import(["js/sample1.js", "js/sample2.js"])
   .then(function(result) {
     console.log(result[0], result[1]);
   }, Utils.reportError);

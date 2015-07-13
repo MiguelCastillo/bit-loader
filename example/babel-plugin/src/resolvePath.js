@@ -1,3 +1,5 @@
+var path           = require("path");
+var fs             = require("fs");
 var browserResolve = require("browser-resolve");
 var Bitloader      = require("bit-loader");
 var Utils          = Bitloader.Utils;
@@ -19,7 +21,7 @@ function resolver(moduleMeta) {
 resolver.configure = function(options) {
   options = options || {};
 
-  if (!options.baseUrl) {
+  if (!options.hasOwnProperty("baseUrl")) {
     options.baseUrl = process.cwd();
   }
 
@@ -34,9 +36,9 @@ resolver.configure = function(options) {
  */
 function resolve(moduleMeta, options) {
   function setPath(path) {
-    moduleMeta.configure({
+    return {
       path: path
-    });
+    };
   }
 
   return resolvePath(moduleMeta, options).then(setPath, Utils.reportError);
@@ -51,6 +53,11 @@ function resolve(moduleMeta, options) {
  */
 function resolvePath(moduleMeta, options) {
   var parentPath = getParentPath(moduleMeta, options);
+
+  var filePath = path.resolve(path.dirname(options.baseUrl), moduleMeta.name);
+  if (fs.existsSync(filePath)) {
+    return Promise.resolve(filePath);
+  }
 
   return new Promise(function(resolve, reject) {
     browserResolve(moduleMeta.name, {filename: parentPath}, function(err, path) {
@@ -70,8 +77,8 @@ function resolvePath(moduleMeta, options) {
  * happens when a dependency is loaded.
  */
 function getParentPath(moduleMeta, options) {
-  var parent = moduleMeta.parent;
-  return (parent && moduleMeta !== parent) ? parent.path : options.baseUrl;
+  var referer = moduleMeta.referer;
+  return (referer && moduleMeta !== referer) ? referer.path : options.baseUrl;
 }
 
 
