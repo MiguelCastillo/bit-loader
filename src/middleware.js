@@ -1,5 +1,6 @@
 var Promise = require("./promise");
-var Utils   = require("./utils");
+var utils   = require("./utils");
+var types   = require("./types");
 
 
 /**
@@ -16,7 +17,7 @@ function Provider() {
  * @returns {Promise} Promise returned from the call to the handler.
  */
 Provider.prototype.execute = function(data) {
-  if (Utils.isFunction(this.handler)) {
+  if (types.isFunction(this.handler)) {
     return this.handler.apply(this, data);
   }
 };
@@ -80,7 +81,7 @@ function Middleware(options) {
  * @returns {Middleware} Returns instance of Middleware
  */
 Middleware.prototype.use = function(providers) {
-  if (!Utils.isArray(providers)) {
+  if (!types.isArray(providers)) {
     providers = [providers];
   }
 
@@ -99,7 +100,7 @@ Middleware.prototype.use = function(providers) {
       provider = Middleware.createProvider(this, options);
       this.providers.push(provider);
 
-      if (Utils.isString(provider.name)) {
+      if (types.isString(provider.name)) {
         this.named[provider.name] = provider;
       }
     }
@@ -145,11 +146,11 @@ Middleware.prototype.hasProvider = function(name) {
  * @returns {Array.<Provider>} Array of providers.
  */
 Middleware.prototype.filterProviders = function(names) {
-  if (Utils.isString(names)) {
+  if (types.isString(names)) {
     names = [names];
   }
 
-  if (!Utils.isArray(names)) {
+  if (!types.isArray(names)) {
     throw new TypeError("List of handlers must be a string or an array of names");
   }
 
@@ -177,7 +178,7 @@ Middleware.prototype.filterProviders = function(names) {
  * @returns {Promise}
  */
 Middleware.prototype.run = function(names, data, canExecuteProvider) {
-  if (data && !Utils.isArray(data)) {
+  if (data && !types.isArray(data)) {
     data = [data];
   }
 
@@ -195,7 +196,7 @@ Middleware.prototype.run = function(names, data, canExecuteProvider) {
  * @returns {Promise}
  */
 Middleware.prototype.runFirst = function(names, data, canExecuteProvider) {
-  if (data && !Utils.isArray(data)) {
+  if (data && !types.isArray(data)) {
     data = [data];
   }
 
@@ -211,7 +212,7 @@ Middleware.prototype.runFirst = function(names, data, canExecuteProvider) {
  * @returns {Promise}
  */
 Middleware.prototype.runAll = function(data, canExecuteProvider) {
-  if (data && !Utils.isArray(data)) {
+  if (data && !types.isArray(data)) {
     data = [data];
   }
 
@@ -225,18 +226,18 @@ Middleware.prototype.runAll = function(data, canExecuteProvider) {
  * Method to configure providers.
  */
 Middleware.configureProvider = function(middleware, provider, options) {
-  if (Utils.isFunction(provider.configure)) {
+  if (types.isFunction(provider.configure)) {
     provider.configure(options);
   }
-  if (Utils.isFunction(options)) {
+  if (types.isFunction(options)) {
     provider.handler = options;
   }
-  else if (Utils.isPlainObject(options)) {
-    if (!Utils.isFunction(options.handler) && !Utils.isFunction(provider.handler)) {
+  else if (types.isPlainObject(options)) {
+    if (!types.isFunction(options.handler) && !types.isFunction(provider.handler)) {
       throw new TypeError("Middleware provider must have a handler method or a name");
     }
 
-    Utils.extend(provider, options);
+    utils.extend(provider, options);
   }
 
   return provider;
@@ -251,7 +252,7 @@ Middleware.configureProvider = function(middleware, provider, options) {
 Middleware.createProvider = function(middleware, options) {
   var provider;
 
-  if (Utils.isFunction(options) || Utils.isPlainObject(options)) {
+  if (types.isFunction(options) || types.isPlainObject(options)) {
     provider = Middleware.configureProvider(middleware, new Provider(), options);
   }
 
@@ -289,7 +290,7 @@ function _runProviders(providers, data, canExecuteProvider) {
 
     function providerSequenceError(err) {
       cancelled = true;
-      return Utils.reportError(err);
+      return utils.reportError(err);
     }
 
     return result.then(providerSequenceRun, providerSequenceError);

@@ -1,5 +1,6 @@
 var Promise = require("./promise");
-var Utils   = require("./utils");
+var utils   = require("./utils");
+var types   = require("./types");
 var Events  = require("./events");
 var Rule    = require("roolio");
 
@@ -169,7 +170,7 @@ Plugin.prototype.import = function(pluginName) {
 
   return loader
     .important(pluginName)
-    .then(pluginImported, Utils.reportError);
+    .then(pluginImported, utils.reportError);
 };
 
 
@@ -212,12 +213,12 @@ function pluginHandler(handler, options) {
       .resolve(handler(moduleMeta, options))
       .then(function(result) {
         // If a plain object is returned, then we merge it in.
-        if (Utils.isPlainObject(result)) {
+        if (types.isPlainObject(result)) {
           moduleMeta.configure(result);
         }
 
         return moduleMeta;
-      }, Utils.reportError);
+      }, utils.reportError);
   };
 }
 
@@ -233,7 +234,7 @@ function pluginHandler(handler, options) {
  * @returns {Promise}
  */
 pluginHandler.iterator = function(deferred, handlerConfig) {
-  return deferred.then(pluginHandler(handlerConfig.handler, handlerConfig.options), Utils.reportError);
+  return deferred.then(pluginHandler(handlerConfig.handler, handlerConfig.options), utils.reportError);
 };
 
 
@@ -247,7 +248,7 @@ function configurePluginHandlers(plugin, handlers) {
     throw new TypeError("Plugin must have 'handlers' defined");
   }
 
-  if (!Utils.isArray(handlers)) {
+  if (!types.isArray(handlers)) {
     handlers = [handlers];
   }
 
@@ -256,14 +257,14 @@ function configurePluginHandlers(plugin, handlers) {
       throw new TypeError("Plugin handler must be a string, a function, or an object with a handler that is a string or a function");
     }
 
-    if (Utils.isFunction(handlerConfig) || Utils.isString(handlerConfig)) {
+    if (types.isFunction(handlerConfig) || types.isString(handlerConfig)) {
       handlerConfig = {
         handler: handlerConfig
       };
     }
 
     // Handle dynamic handler loading
-    if (Utils.isString(handlerConfig.handler)) {
+    if (types.isString(handlerConfig.handler)) {
       // Store name for later access
       handlerConfig.deferredName = handlerConfig.handler;
 
@@ -278,11 +279,11 @@ function configurePluginHandlers(plugin, handlers) {
 
         return plugin.loader
           .import(handlerConfig.deferredName)
-          .then(pluginHandler, Utils.reportError);
+          .then(pluginHandler, utils.reportError);
       };
     }
 
-    if (!Utils.isFunction(handlerConfig.handler)) {
+    if (!types.isFunction(handlerConfig.handler)) {
       throw new TypeError("Plugin handler must be a function or a string");
     }
 

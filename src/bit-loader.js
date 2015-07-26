@@ -1,6 +1,7 @@
+var types      = require("./types");
 var Rule       = require("roolio");
 var Logger     = require("./logger");
-var Utils      = require("./utils");
+var utils      = require("./utils");
 var Fetcher    = require("./interfaces/fetcher");
 var Compiler   = require("./interfaces/compiler");
 var Resolver   = require("./interfaces/resolver");
@@ -201,7 +202,7 @@ Bitloader.prototype.setModule = function(mod) {
     throw new TypeError("Module `" + name + "` is not an instance of Module");
   }
 
-  if (!name || !Utils.isString(name)) {
+  if (!name || !types.isString(name)) {
     throw new TypeError("Module must have a name");
   }
 
@@ -293,7 +294,7 @@ Bitloader.prototype.ignore = function(rule) {
   var i, length, ruleNames;
 
   // Simplify the arguments that can be passed in to the ignore method
-  if (Utils.isArray(rule) || Utils.isString(rule)) {
+  if (types.isArray(rule) || types.isString(rule)) {
     rule = {
       match: rule
     };
@@ -307,7 +308,7 @@ Bitloader.prototype.ignore = function(rule) {
       ruleNames = Object.keys(this.rules.ignore);
     }
     else {
-      ruleNames = Utils.isArray(rule.name) ? rule.name : [rule.name];
+      ruleNames = types.isArray(rule.name) ? rule.name : [rule.name];
     }
   }
 
@@ -342,7 +343,7 @@ Bitloader.prototype.ignore = function(rule) {
  *  ```
  */
 Bitloader.prototype.plugin = function(name, options) {
-  if (Utils.isPlainObject(name)) {
+  if (types.isPlainObject(name)) {
     options = name;
     name = null;
   }
@@ -398,7 +399,8 @@ Bitloader.prototype.getPlugin = function(name) {
 
 
 // Expose constructors and utilities
-Bitloader.Utils      = Utils;
+Bitloader.types      = types;
+Bitloader.utils      = utils;
 Bitloader.Registry   = Registry;
 Bitloader.Loader     = Loader;
 Bitloader.Import     = Import;

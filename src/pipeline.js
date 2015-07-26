@@ -1,5 +1,5 @@
 var Promise = require("./promise");
-var Utils   = require("./utils");
+var utils   = require("./utils");
 
 function Pipeline(assets) {
   this.assets = assets;
@@ -14,7 +14,7 @@ Pipeline.prototype.run = function() {
   }
 
   return this.assets.reduce(function(prev, curr) {
-    return prev.then(cb(curr), Utils.reportError);
+    return prev.then(cb(curr), utils.reportError);
   }, Promise.resolve());
 };
 

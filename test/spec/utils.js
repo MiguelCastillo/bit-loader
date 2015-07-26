@@ -1,12 +1,12 @@
 define(["dist/bit-loader"], function(Bitloader) {
-  var Utils = Bitloader.Utils;
+  var utils = Bitloader.utils;
 
-  describe("Utils Suite", function() {
+  describe("utils Suite", function() {
     describe("when extend into an empty target object", function() {
       describe("no object", function() {
         var result;
         beforeEach(function() {
-          result = Utils.extend();
+          result = utils.extend();
         });
 
         it("then result is an object", function() {
@@ -22,7 +22,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         var result, target;
         beforeEach(function() {
           target = {};
-          result = Utils.extend(target);
+          result = utils.extend(target);
         });
 
         it("then result and target are the same object", function() {
@@ -43,7 +43,7 @@ define(["dist/bit-loader"], function(Bitloader) {
           var result, target;
           beforeEach(function() {
             target = {};
-            result = Utils.extend(target, {"one": "dont"}, {"two": "twotest", "one": "onetest"}, {"two": "twotest", "one": "twotest"});
+            result = utils.extend(target, {"one": "dont"}, {"two": "twotest", "one": "onetest"}, {"two": "twotest", "one": "twotest"});
           });
 
           it("then result and target are the same object", function() {
@@ -70,7 +70,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       describe("an empty object", function() {
         var result;
         beforeEach(function() {
-          result = Utils.extend({"one": "dont"}, {"one": "do", "two": "it"});
+          result = utils.extend({"one": "dont"}, {"one": "do", "two": "it"});
         });
 
         it("then result is an object", function() {
@@ -85,7 +85,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       describe("two different objects with property 'one' in all of them", function() {
         var result;
         beforeEach(function() {
-          result = Utils.extend({"one": "dont"}, {"two": "twotest", "one": "onetest"}, {"two": "twotest", "one": "twotest"});
+          result = utils.extend({"one": "dont"}, {"two": "twotest", "one": "onetest"}, {"two": "twotest", "one": "twotest"});
         });
 
         it("result is an object", function() {
@@ -111,7 +111,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       describe("no object", function() {
         var result;
         beforeEach(function() {
-          result = Utils.merge();
+          result = utils.merge();
         });
 
         it("then result is an object", function() {
@@ -127,7 +127,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         var result, target;
         beforeEach(function() {
           target = {};
-          result = Utils.merge(target);
+          result = utils.merge(target);
         });
 
         it("then result is target", function() {
@@ -147,7 +147,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         var result, target;
         beforeEach(function() {
           target = {};
-          result = Utils.merge(target, {"one": "dont"}, {"two": "twotest", "one": "onetest"});
+          result = utils.merge(target, {"one": "dont"}, {"two": "twotest", "one": "onetest"});
         });
 
         it("then result is target", function() {
@@ -167,7 +167,6 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
       });
 
-
       describe("two objects with the same property of type `Array` using a defaults object", function() {
         var result, target, defaults, package;
         beforeEach(function() {
@@ -186,8 +185,8 @@ define(["dist/bit-loader"], function(Bitloader) {
             date: (new Date())
           };
 
-          target = Utils.merge({}, defaults, source1);
-          result = Utils.merge(target, {"one": ["onetest"]});
+          target = utils.merge({}, defaults, source1);
+          result = utils.merge(target, {"one": ["onetest"]});
         });
 
         it("then result is target", function() {
@@ -223,12 +222,11 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
       });
 
-
       describe("two objects with one nested objects", function() {
         var result, target;
         beforeEach(function() {
           target = {};
-          result = Utils.merge(target, {"one": "dont"}, {"two": "twotest", "one": "onetest", "with": {"object": "two deep"}});
+          result = utils.merge(target, {"one": "dont"}, {"two": "twotest", "one": "onetest", "with": {"object": "two deep"}});
         });
 
         it("then result is target", function() {
@@ -276,7 +274,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         var result, target;
         beforeEach(function() {
           target = {};
-          result = Utils.merge(target, {"one": "dont"}, {"two": "twotest", "one": "onetest", "with": {"object": "two deep", "noway": {"yes":"way"}}});
+          result = utils.merge(target, {"one": "dont"}, {"two": "twotest", "one": "onetest", "with": {"object": "two deep", "noway": {"yes":"way"}}});
         });
 
         it("then result is an object", function() {
@@ -328,7 +326,6 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
       });
 
-
       describe("two objects with three deep nested objects", function() {
         var date, obj1, obj2, obj3, obj4, obj5, obj6, obj7, target;
         beforeEach(function() {
@@ -340,7 +337,7 @@ define(["dist/bit-loader"], function(Bitloader) {
           obj5 = {"modules": {"no": {"item": "overriden3"}}};
           obj6 = {"modules": {"no": {"item": "overriden4"}}};
           obj7 = {"modules": {"no": {"item": "overriden5"}}};
-          target = Utils.merge({}, obj1, obj2, obj3, obj4, obj5, obj6, obj7);
+          target = utils.merge({}, obj1, obj2, obj3, obj4, obj5, obj6, obj7);
         });
 
         it("then original obj1.no is an object", function() {
@@ -461,105 +458,6 @@ define(["dist/bit-loader"], function(Bitloader) {
 
         it("then result module.yes.item is", function() {
           expect(target.modules.yes.item).to.equal(date);
-        });
-      });
-    });
-
-
-    describe("when isRealObject", function() {
-      describe("empty object", function() {
-        it("is true", function() {
-          expect(Utils.isPlainObject({})).to.equal(true);
-        });
-      });
-
-      describe("null", function() {
-        it("is false", function() {
-          expect(Utils.isPlainObject(null)).to.equal(false);
-        });
-      });
-
-      describe("new Date", function() {
-        it("is false", function() {
-          expect(Utils.isPlainObject(new Date())).to.equal(false);
-        });
-      });
-
-      describe("undefined", function() {
-        it("is false", function() {
-          expect(Utils.isPlainObject(undefined)).to.equal(false);
-        });
-      });
-
-      describe("anonymous function", function() {
-        it("is false", function() {
-          expect(Utils.isPlainObject(function(){})).to.equal(false);
-        });
-      });
-    });
-
-
-    describe("when isObject", function() {
-      describe("empty object", function() {
-        it("is true", function() {
-          expect(Utils.isObject({})).to.equal(true);
-        });
-      });
-
-      describe("null", function() {
-        it("is true", function() {
-          expect(Utils.isObject(null)).to.equal(true);
-        });
-      });
-
-      describe("new Date", function() {
-        it("is true", function() {
-          expect(Utils.isObject(new Date())).to.equal(true);
-        });
-      });
-
-      describe("undefined", function() {
-        it("is false", function() {
-          expect(Utils.isObject(undefined)).to.equal(false);
-        });
-      });
-
-      describe("anonymous function", function() {
-        it("is false", function() {
-          expect(Utils.isObject(function(){})).to.equal(false);
-        });
-      });
-    });
-
-
-    describe("when isFunction", function() {
-      describe("empty object", function() {
-        it("is false", function() {
-          expect(Utils.isFunction({})).to.equal(false);
-        });
-      });
-
-      describe("null", function() {
-        it("is false", function() {
-          expect(Utils.isFunction(null)).to.equal(false);
-        });
-      });
-
-      describe("new Date", function() {
-        it("is false", function() {
-          expect(Utils.isFunction(new Date())).to.equal(false);
-        });
-      });
-
-      describe("undefined", function() {
-        it("is false", function() {
-          expect(Utils.isFunction(undefined)).to.equal(false);
-        });
-      });
-
-      describe("anonymous function", function() {
-        it("is true", function() {
-          expect(Utils.isFunction(function(){})).to.equal(true);
         });
       });
     });

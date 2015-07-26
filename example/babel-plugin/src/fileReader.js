@@ -1,7 +1,7 @@
 var fs        = require("fs");
 var pstream   = require("p-stream");
 var Bitloader = require("bit-loader");
-var Utils     = Bitloader.Utils;
+var utils     = Bitloader.utils;
 
 
 /**
@@ -16,7 +16,7 @@ function fileReader(moduleMeta) {
       return {
         source: text
       };
-    }, Utils.reportError);
+    }, utils.reportError);
 }
 
 

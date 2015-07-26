@@ -1,6 +1,7 @@
 var Promise        = require("./promise");
 var Module         = require("./module");
-var Utils          = require("./utils");
+var utils          = require("./utils");
+var types          = require("./types");
 var Pipeline       = require("./pipeline");
 var Registry       = require("./registry");
 var metaLinker     = require("./meta/linker");
@@ -59,7 +60,7 @@ function Loader(manager) {
 Loader.prototype.load = function(names, referer) {
   var loader = this;
 
-  if (Utils.isString(names)) {
+  if (types.isString(names)) {
     return loader._load(names, referer);
   }
 
@@ -113,7 +114,7 @@ Loader.prototype.fetch = function(name, referer) {
 
   var loading = loader
     ._pipelineModuleMeta(moduleMeta)
-    .then(moduleMetaFinished, Utils.reportError);
+    .then(moduleMetaFinished, utils.reportError);
 
   return loader.setLoading(name, loading);
 };
@@ -168,7 +169,7 @@ Loader.prototype.asyncBuild = function(name) {
   if (this.isLoaded(name)) {
     return Promise.resolve().then(function() {
       return loader._linkModuleMeta(name);
-    }, Utils.reportError);
+    }, utils.reportError);
   }
   else if (!this.isPending(name)) {
     throw new TypeError("Unable to build '" + name + "'.");
@@ -187,7 +188,7 @@ Loader.prototype.asyncBuild = function(name) {
     return Promise.all(pending)
       .then(function dependenciesBuilt() {
         return moduleMeta;
-      }, Utils.reportError);
+      }, utils.reportError);
   };
 
   var linkModuleMeta = function() {
@@ -198,8 +199,8 @@ Loader.prototype.asyncBuild = function(name) {
   // Right here is where we handle dynamic registration of modules while are being loaded.
   // E.g. System.register to register a module that's being loaded
   return metaDependency.pipeline(loader.manager, loader.getModule(name))
-    .then(buildDependencies, Utils.reportError)
-    .then(linkModuleMeta, Utils.reportError);
+    .then(buildDependencies, utils.reportError)
+    .then(linkModuleMeta, utils.reportError);
 };
 
 
@@ -236,7 +237,7 @@ Loader.prototype.transform = function(moduleMeta) {
     return Promise.reject(new TypeError("Must provide a module meta object"));
   }
 
-  if (!Utils.isString(moduleMeta.source)) {
+  if (!types.isString(moduleMeta.source)) {
     throw Promise.reject(new TypeError("Must provide a source string property with the content to transform"));
   }
 
@@ -256,7 +257,7 @@ Loader.prototype.transform = function(moduleMeta) {
 Loader.prototype.runPipeline = function(moduleMeta) {
   return this.pipeline
     .run(this.manager, moduleMeta)
-    .then(pipelineFinished, Utils.reportError);
+    .then(pipelineFinished, utils.reportError);
 
   function pipelineFinished() {
     return moduleMeta;
@@ -314,7 +315,7 @@ Loader.prototype._load = function(name, referer) {
 
   return loader
     .fetch(name, referer)
-    .then(build, Utils.reportError);
+    .then(build, utils.reportError);
 };
 
 

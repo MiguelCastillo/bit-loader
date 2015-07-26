@@ -1,7 +1,7 @@
 var runPipeline = require("./runPipeline");
 var Promise     = require("../promise");
 var Module      = require("../module");
-var Utils       = require("../utils");
+var utils       = require("../utils");
 var logger      = require("../logger").create("Meta/Dependency");
 
 
@@ -32,7 +32,7 @@ MetaDependency.pipeline = function(manager, moduleMeta) {
   }
 
   return runPipeline(manager.pipelines.dependency, moduleMeta)
-    .then(dependenciesFinished, Utils.reportError);
+    .then(dependenciesFinished, utils.reportError);
 };
 
 
@@ -47,7 +47,7 @@ function loadDependencies(manager, moduleMeta) {
     return moduleMeta;
   }
 
-  return Promise.all(loading).then(dependenciesFetched, Utils.reportError);
+  return Promise.all(loading).then(dependenciesFetched, utils.reportError);
 }
 
 

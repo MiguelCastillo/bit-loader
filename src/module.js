@@ -1,4 +1,5 @@
-var Utils = require("./utils");
+var utils = require("./utils");
+var types = require("./types");
 
 var Type = {
   "UNKNOWN" : "UNKNOWN",
@@ -52,7 +53,7 @@ function Module(options) {
 function Meta(options) {
   options = options || {};
 
-  if (Utils.isString(options)) {
+  if (types.isString(options)) {
     options = {
       name: options
     };
@@ -61,11 +62,11 @@ function Meta(options) {
   // Make sure we have a an ID for the module meta
   options.id = options.id || options.name;
 
-  if (!Utils.isString(options.name)) {
+  if (!types.isString(options.name)) {
     throw new TypeError("Must provide a name, which is used by the resolver to create a location for the resource");
   }
 
-  if (!Utils.isArray(options.deps)) {
+  if (!types.isArray(options.deps)) {
     delete options.deps;
     this.deps = [];
   }
@@ -75,7 +76,7 @@ function Meta(options) {
 
 
 Meta.prototype.configure = function(options) {
-  return Utils.extend(this, options);
+  return utils.extend(this, options);
 };
 
 
@@ -113,7 +114,7 @@ Meta.hasDependencies = function(moduleMeta) {
  * @returns {boolean}
  */
 Meta.isCompiled = function(moduleMeta) {
-  return moduleMeta.hasOwnProperty("code") || Utils.isFunction(moduleMeta.factory);
+  return moduleMeta.hasOwnProperty("code") || types.isFunction(moduleMeta.factory);
 };
 
 
@@ -124,7 +125,7 @@ Meta.isCompiled = function(moduleMeta) {
  * @returns {boolean}
  */
 Meta.canCompile = function(moduleMeta) {
-  return !Meta.isCompiled(moduleMeta) && Utils.isString(moduleMeta.source);
+  return !Meta.isCompiled(moduleMeta) && types.isString(moduleMeta.source);
 };
 
 

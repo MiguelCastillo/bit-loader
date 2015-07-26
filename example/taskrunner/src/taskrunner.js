@@ -2,7 +2,7 @@ var fileReader  = require("./fileReader");
 var resolvePath = require("./resolvePath");
 var Task        = require("./task");
 var Bitloader   = require("bit-loader");
-var Utils     = Bitloader.Utils;
+var utils     = Bitloader.utils;
 
 
 /**
@@ -32,11 +32,11 @@ TaskRunner.prototype.configure = function(options) {
  * @returns {TaskRunner} Task runner instance
  */
 TaskRunner.prototype.register = function(name, deps, cb) {
-  if (!Utils.isString(name)) {
+  if (!utils.isString(name)) {
     throw new TypeError("Must provide a name for the task");
   }
 
-  if (Utils.isFunction(deps)) {
+  if (utils.isFunction(deps)) {
     cb = deps;
     deps = [];
   }
