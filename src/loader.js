@@ -47,56 +47,25 @@ function Loader(manager) {
 
 
 /**
- * Handles the process of returning the instance of the Module if one exists, otherwise
- * the workflow for creating the instance is kicked off, which will eventually lead to
- * the creation of a Module instance
+ * Load up modules and get module instances back.
  *
- * The workflow is to take in a module name that needs to be loaded.  If a module with
- * the given name isn't loaded, then we fetch it.  The fetch call returns a promise, which
- * when resolved returns a moduleMeta. The moduleMeta is an intermediate object that contains
- * the module source from fetch and a compile method used for converting the source to an
- * instance of Module. The purporse for moduleMeta is to allow a tranformation pipeline to
- * process the raw source before building the final product - a Module instance. The
- * transformation pipeline allows us to do things like convert coffeescript to javascript.
+ * @param {string | string[]} names - Name or names of modules to be loaded.
+ * @param {{path: string, name: string}} referer - Object with information
+ *  about the module calling load.
  *
- * Primary workflow:
- * fetch     -> module name {string}
- * transform -> module meta {compile:fn, source:string}
- * load deps -> module meta {compile:fn, source:string}
- * compile module meta
- * link module
- *
- * @param {string} name - The name of the module to load.
- * @param {{path: string, name: string}} referer - Object with the
- *  location and name of the requesting module.
- *
- * @returns {Promise} - Promise that will resolve to a Module instance
+ * @returns {Promise} Promise that when resolved, returns all the loaded
+ *  module instances.
  */
-Loader.prototype.load = function(name, referer) {
-  var loader  = this;
-  var manager = this.manager;
+Loader.prototype.load = function(names, referer) {
+  var loader = this;
 
-  if (!name) {
-    return Promise.reject(new TypeError("Must provide the name of the module to load"));
+  if (Utils.isString(names)) {
+    return loader._load(names, referer);
   }
 
-  // Take a look if the module is already loaded
-  if (manager.hasModule(name)) {
-    return Promise.resolve(manager.getModule(name));
-  }
-
-  // Check if the module is fetched or registered
-  if (loader.isLoaded(name) || loader.isPending(name)) {
-    return Promise.resolve(build());
-  }
-
-  function build() {
-    return loader.asyncBuild(name);
-  }
-
-  return loader
-    .fetch(name, referer)
-    .then(build, Utils.reportError);
+  return Promise.all(names.map(function(name) {
+    return loader._load(name, referer);
+  }));
 };
 
 
@@ -134,14 +103,6 @@ Loader.prototype.fetch = function(name, referer) {
 
   function moduleMetaFinished(moduleMeta) {
     return loader.setLoaded(moduleMeta.name, moduleMeta);
-  }
-
-  // Make sure we have the props we need.
-  if (referer) {
-    referer = {
-      name: referer.name,
-      path: referer.path
-    };
   }
 
   // Create module meta, set the referer, and start processing it.
@@ -300,6 +261,60 @@ Loader.prototype.runPipeline = function(moduleMeta) {
   function pipelineFinished() {
     return moduleMeta;
   }
+};
+
+
+/**
+ * Handles the process of returning the instance of the Module if one exists, otherwise
+ * the workflow for creating the instance is kicked off, which will eventually lead to
+ * the creation of a Module instance
+ *
+ * The workflow is to take in a module name that needs to be loaded.  If a module with
+ * the given name isn't loaded, then we fetch it.  The fetch call returns a promise, which
+ * when resolved returns a moduleMeta. The moduleMeta is an intermediate object that contains
+ * the module source from fetch and a compile method used for converting the source to an
+ * instance of Module. The purporse for moduleMeta is to allow a tranformation pipeline to
+ * process the raw source before building the final product - a Module instance. The
+ * transformation pipeline allows us to do things like convert coffeescript to javascript.
+ *
+ * Primary workflow:
+ * fetch     -> module name {string}
+ * transform -> module meta {compile:fn, source:string}
+ * load deps -> module meta {compile:fn, source:string}
+ * compile module meta
+ * link module
+ *
+ * @param {string} name - The name of the module to load.
+ * @param {{path: string, name: string}} referer - Object with the
+ *  location and name of the requesting module.
+ *
+ * @returns {Promise} - Promise that will resolve to a Module instance
+ */
+Loader.prototype._load = function(name, referer) {
+  var loader  = this;
+  var manager = this.manager;
+
+  if (!name) {
+    return Promise.reject(new TypeError("Must provide the name of the module to load"));
+  }
+
+  // Take a look if the module is already loaded
+  if (manager.hasModule(name)) {
+    return Promise.resolve(manager.getModule(name));
+  }
+
+  // Check if the module is fetched or registered
+  if (loader.isLoaded(name) || loader.isPending(name)) {
+    return Promise.resolve(build());
+  }
+
+  function build() {
+    return loader.asyncBuild(name);
+  }
+
+  return loader
+    .fetch(name, referer)
+    .then(build, Utils.reportError);
 };
 
 
