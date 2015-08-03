@@ -2,7 +2,7 @@ var path           = require("path");
 var fs             = require("fs");
 var browserResolve = require("browser-resolve");
 var Bitloader      = require("bit-loader");
-var Utils          = Bitloader.Utils;
+var utils          = Bitloader.utils;
 
 
 /**
@@ -41,7 +41,7 @@ function resolve(moduleMeta, options) {
     };
   }
 
-  return resolvePath(moduleMeta, options).then(setPath, Utils.reportError);
+  return resolvePath(moduleMeta, options).then(setPath, utils.reportError);
 }
 
 

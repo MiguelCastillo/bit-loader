@@ -4,7 +4,7 @@ var Bitloader   = require("bit-loader");
 var fileReader  = require("./fileReader");
 var compiler    = require("./compiler");
 var resolvePath = require("./resolvePath");
-var Utils       = Bitloader.Utils;
+var utils       = Bitloader.utils;
 
 
 Bitloader.Logger
@@ -25,7 +25,7 @@ loader
   .import(["js/sample1.js", "js/sample2.js"])
   .then(function(result) {
     console.log(result[0], result[1]);
-  }, Utils.reportError);
+  }, utils.reportError);
 
 
 module.exports = loader;

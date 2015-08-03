@@ -1,6 +1,7 @@
 var runPipeline = require("./runPipeline");
 var Promise     = require("../promise");
-var Utils       = require("../utils");
+var utils       = require("../utils");
+var types       = require("../types");
 var logger      = require("../logger").create("Meta/Transform");
 
 
@@ -25,12 +26,12 @@ MetaTransform.pipeline = function(manager, moduleMeta) {
   }
 
   return runPipeline(manager.pipelines.transform, moduleMeta)
-    .then(transformationFinished, Utils.reportError);
+    .then(transformationFinished, utils.reportError);
 };
 
 
 function canProcess(manager, moduleMeta) {
-  return Utils.isString(moduleMeta.source) && !manager.rules.ignore.transform.match(moduleMeta.name);
+  return types.isString(moduleMeta.source) && !manager.rules.ignore.transform.match(moduleMeta.name);
 }
 
 

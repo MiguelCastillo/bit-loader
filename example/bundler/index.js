@@ -4,7 +4,7 @@ var resolvePath = require("./src/resolvePath");
 var Bitloader   = require("bit-loader");
 var babel       = require("babel-bits");
 var umd_deps    = require("deps-bits");
-var Utils       = Bitloader.Utils;
+var utils       = Bitloader.utils;
 
 
 /**
@@ -39,8 +39,8 @@ bitloader.plugin("js", {
  * Import two modules. One with just ES2015 and the other with React JSX and ES2015
  */
 bitloader.load(["./js/Name.js"])
-  .then(bundler(bitloader), Utils.reportError)
-  .then(toConsole, Utils.reportError);
+  .then(bundler(bitloader), utils.reportError)
+  .then(toConsole, utils.reportError);
 
 
 function toConsole(buffer) {

@@ -1,6 +1,7 @@
 var runPipeline = require("./runPipeline");
 var Promise     = require("../promise");
-var Utils       = require("../utils");
+var utils       = require("../utils");
+var types       = require("../types");
 var logger      = require("../logger").create("Meta/Fetch");
 
 
@@ -22,7 +23,7 @@ MetaFetch.pipeline = function(manager, moduleMeta) {
     // If a pipeline item has added source to the module meta, then we
     // are done with this stage.  Otherwise, we will run the default
     // fetch provider
-    if (Utils.isString(moduleMeta.source)) {
+    if (types.isString(moduleMeta.source)) {
       return moduleMeta;
     }
 
@@ -30,7 +31,7 @@ MetaFetch.pipeline = function(manager, moduleMeta) {
   }
 
   return runPipeline(manager.pipelines.fetch, moduleMeta)
-    .then(fetchFinished, Utils.reportError);
+    .then(fetchFinished, utils.reportError);
 };
 
 
@@ -47,12 +48,12 @@ MetaFetch.fetch = function(manager, moduleMeta) {
   return Promise.resolve(manager.fetch(moduleMeta))
     .then(function(meta) {
       return moduleMeta.configure(meta);
-    }, Utils.reportError);
+    }, utils.reportError);
 };
 
 
 function canProcess(manager, moduleMeta) {
-  return !Utils.isString(moduleMeta.source) && !manager.rules.ignore.fetch.match(moduleMeta.name);
+  return !types.isString(moduleMeta.source) && !manager.rules.ignore.fetch.match(moduleMeta.name);
 }
 
 

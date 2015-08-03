@@ -1,5 +1,5 @@
 var Bitloader  = require("bit-loader");
-var Utils      = Bitloader.Utils;
+var utils      = Bitloader.utils;
 
 
 /**
@@ -36,14 +36,14 @@ function Task(taskrunner, options) {
   function run() {
     if (deps.length) {
       var sequence = deps.reduce(function(runner, name) {
-          return runner.then(runDeferred(name), Utils.reportError);
+          return runner.then(runDeferred(name), utils.reportError);
         }, Promise.resolve());
 
       return sequence.then(function() {
           if (src.length) {
             return loader.import(src);
           }
-        }, Utils.reportError);
+        }, utils.reportError);
     }
     else if (src.length) {
       return loader.import(src);

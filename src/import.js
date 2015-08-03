@@ -1,5 +1,5 @@
 var Promise  = require("./promise");
-var Utils    = require("./utils");
+var utils    = require("./utils");
 var Registry = require("./registry");
 
 var getRegistryId = Registry.idGenerator("import");
@@ -43,7 +43,7 @@ Import.prototype.import = function(name, options) {
 
     return Promise
       .all(this._important)
-      .then(importantFinished, Utils.reportError);
+      .then(importantFinished, utils.reportError);
   }
   else {
     return importer._import(name, options);
@@ -104,7 +104,7 @@ Import.prototype._getModule = function(name, options) {
   // https://github.com/MiguelCastillo/spromise/issues/35
   return new Promise(function deferredModuleResolver(resolve, reject) {
     function moduleError(error) {
-      reject(Utils.reportError(error));
+      reject(utils.reportError(error));
     }
 
     function moduleLoaded(mod) {
