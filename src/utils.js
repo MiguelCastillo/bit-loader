@@ -76,7 +76,7 @@ function extend(target) {
 }
 
 /**
- * Deep copy of all properties into target object.
+ * Deep copy all properties into target object.
  *
  * @param {object} target - Object to copy properties to
  * @param {...*} rest - The rest of the arguements are deeply merged into target
