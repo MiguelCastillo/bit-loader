@@ -49,7 +49,7 @@
     "spromise": "~0.9.3"
   },
   "browser": {
-    "promise": "spromise",
-    "logger": "./src/logger.js"
+    "logger": "./src/logger.js",
+    "types": "dis-isa"
   }
 }

@@ -1,5 +1,5 @@
 var utils = require("./utils");
-var types = require("./types");
+var types = require("types");
 
 var Type = {
   "UNKNOWN" : "UNKNOWN",

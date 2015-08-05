@@ -1,7 +1,6 @@
+var types       = require("types");
 var runPipeline = require("./runPipeline");
-var Promise     = require("../promise");
 var utils       = require("../utils");
-var types       = require("../types");
 var logger      = require("../logger").create("Meta/Transform");
 
 

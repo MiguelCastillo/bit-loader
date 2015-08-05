@@ -1,5 +1,4 @@
-var Promise = require("./promise");
-var utils   = require("./utils");
+var utils = require("./utils");
 
 function Pipeline(assets) {
   this.assets = assets;
