@@ -1,4 +1,3 @@
-var Promise  = require("./promise");
 var utils    = require("./utils");
 var Registry = require("./registry");
 

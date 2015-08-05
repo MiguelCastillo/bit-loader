@@ -1,6 +1,5 @@
-var Promise = require("./promise");
-var utils   = require("./utils");
-var types   = require("./types");
+var types = require("types");
+var utils = require("./utils");
 
 
 /**

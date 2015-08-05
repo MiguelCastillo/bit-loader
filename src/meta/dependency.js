@@ -1,5 +1,4 @@
 var runPipeline = require("./runPipeline");
-var Promise     = require("../promise");
 var Module      = require("../module");
 var utils       = require("../utils");
 var logger      = require("../logger").create("Meta/Dependency");

@@ -1,4 +1,4 @@
-var types      = require("./types");
+var types      = require("types");
 var Rule       = require("roolio");
 var Logger     = require("./logger");
 var utils      = require("./utils");

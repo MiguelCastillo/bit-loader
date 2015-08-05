@@ -1,4 +1,4 @@
-var types = require("./types");
+var types = require("types");
 
 /**
  * Noop method. You can pass in an argument and it will be returned as is.

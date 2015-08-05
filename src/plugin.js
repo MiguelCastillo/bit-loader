@@ -1,8 +1,7 @@
-var Promise = require("./promise");
-var utils   = require("./utils");
-var types   = require("./types");
-var Events  = require("./events");
-var Rule    = require("roolio");
+var types  = require("types");
+var Rule   = require("roolio");
+var utils  = require("./utils");
+var Events = require("./events");
 
 var pluginId = 0;
 
