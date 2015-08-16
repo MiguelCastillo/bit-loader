@@ -1,6 +1,6 @@
+var log2console = require("log2console");
 var runPipeline = require("./runPipeline");
 var Module      = require("../module");
-var utils       = require("../utils");
 var logger      = require("../logger").create("Meta/Dependency");
 
 
@@ -31,7 +31,7 @@ MetaDependency.pipeline = function(manager, moduleMeta) {
   }
 
   return runPipeline(manager.pipelines.dependency, moduleMeta)
-    .then(dependenciesFinished, utils.reportError);
+    .then(dependenciesFinished, log2console);
 };
 
 
@@ -46,7 +46,7 @@ function loadDependencies(manager, moduleMeta) {
     return moduleMeta;
   }
 
-  return Promise.all(loading).then(dependenciesFetched, utils.reportError);
+  return Promise.all(loading).then(dependenciesFetched, log2console);
 }
 
 

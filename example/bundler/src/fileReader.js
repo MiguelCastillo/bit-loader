@@ -1,7 +1,6 @@
-var fs        = require("fs");
-var pstream   = require("p-stream");
-var Bitloader = require("bit-loader");
-var utils     = Bitloader.utils;
+var fs          = require("fs");
+var pstream     = require("p-stream");
+var log2console = require("log2console");
 
 
 /**
@@ -16,7 +15,7 @@ function fileReader(moduleMeta) {
       return {
         source: text
       };
-    }, utils.reportError);
+    }, log2console);
 }
 
 

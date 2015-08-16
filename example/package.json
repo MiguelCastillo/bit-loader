@@ -3,7 +3,10 @@
   "version": "0.0.1",
   "description": "bit loader examples",
   "dependencies": {
-    "bit-loader": ""
+    "belty": "^0.1.2",
+    "bit-loader": "",
+    "dis-isa": "^1.2.2",
+    "log2console": "^1.0.3"
   },
   "devDependencies": {
     "babel-bits": "0.3.0",

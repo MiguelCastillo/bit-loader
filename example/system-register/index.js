@@ -1,5 +1,7 @@
-var Bitloader = require("bit-loader");
-var utils = Bitloader.utils;
+var utils       = require("belty");
+var log2console = require("log2console");
+var Bitloader   = require("bit-loader");
+
 var loader = new Bitloader();
 
 // Register instance we are going to be requesting
@@ -8,6 +10,4 @@ loader.register("like2", [], utils.noop);
 
 loader
   .import(["like1", "like2"])
-  .then(function(result) {
-    console.log(result);
-  });
+  .then(log2console, log2console);

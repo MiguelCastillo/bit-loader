@@ -1,5 +1,6 @@
-var types = require("types");
-var utils = require("./utils");
+var log2console = require("log2console");
+var types       = require("dis-isa");
+var utils       = require("belty");
 
 
 /**
@@ -289,7 +290,7 @@ function _runProviders(providers, data, canExecuteProvider) {
 
     function providerSequenceError(err) {
       cancelled = true;
-      return utils.reportError(err);
+      return log2console(err);
     }
 
     return result.then(providerSequenceRun, providerSequenceError);

@@ -1,5 +1,5 @@
-var utils = require("./utils");
-var types = require("types");
+var utils = require("belty");
+var types = require("dis-isa");
 
 var Type = {
   "UNKNOWN" : "UNKNOWN",

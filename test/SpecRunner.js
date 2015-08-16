@@ -7,7 +7,6 @@ mocha.setup("bdd");
 
 require([
   "test/spec/fetch",
-  "test/spec/utils",
   "test/spec/import",
   "test/spec/loader",
   "test/spec/registry",

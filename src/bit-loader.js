@@ -1,7 +1,6 @@
-var types      = require("types");
+var types      = require("dis-isa");
 var Rule       = require("roolio");
 var Logger     = require("./logger");
-var utils      = require("./utils");
 var Fetcher    = require("./interfaces/fetcher");
 var Compiler   = require("./interfaces/compiler");
 var Resolver   = require("./interfaces/resolver");
@@ -399,8 +398,6 @@ Bitloader.prototype.getPlugin = function(name) {
 
 
 // Expose constructors and utilities
-Bitloader.types      = types;
-Bitloader.utils      = utils;
 Bitloader.Registry   = Registry;
 Bitloader.Loader     = Loader;
 Bitloader.Import     = Import;

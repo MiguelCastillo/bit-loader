@@ -1,4 +1,4 @@
-var utils = require("./utils");
+var log2console = require("log2console");
 
 function Pipeline(assets) {
   this.assets = assets;
@@ -13,7 +13,7 @@ Pipeline.prototype.run = function() {
   }
 
   return this.assets.reduce(function(prev, curr) {
-    return prev.then(cb(curr), utils.reportError);
+    return prev.then(cb(curr), log2console);
   }, Promise.resolve());
 };
 
