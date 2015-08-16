@@ -1,16 +1,16 @@
 var fs          = require("fs");
 var joint       = require("stream-joint");
+var log2console = require("log2console");
 var Bitloader   = require("bit-loader");
 var fileReader  = require("./fileReader");
 var compiler    = require("./compiler");
 var resolvePath = require("./resolvePath");
-var utils       = Bitloader.utils;
 
 
 Bitloader.Logger
   .enable()
   .pipe(joint(process.stdout))
-  .pipe(joint(fs.createWriteStream('./temp.log')));
+  .pipe(joint(fs.createWriteStream("./temp.log")));
 
 
 var loader = new Bitloader({
@@ -24,8 +24,9 @@ var loader = new Bitloader({
 loader
   .import(["js/sample1.js", "js/sample2.js"])
   .then(function(result) {
-    console.log(result[0], result[1]);
-  }, utils.reportError);
+    log2console(result[0]);
+    log2console(result[1]);
+  }, log2console);
 
 
 module.exports = loader;

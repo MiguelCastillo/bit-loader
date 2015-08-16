@@ -1,4 +1,5 @@
-var taskRunner = require("./src/taskrunner");
+var taskRunner  = require("./src/taskrunner");
+var log2console = require("log2console");
 
 
 /**
@@ -7,12 +8,7 @@ var taskRunner = require("./src/taskrunner");
 function jsPipeline() {
   this
     .load("./index.js")
-    .then(function(moduleMeta) {
-      console.log(moduleMeta);
-    })
-    .then(function(moduleMeta) {
-      console.log(moduleMeta);
-    });
+    .then(log2console, log2console)
 }
 
 
@@ -22,9 +18,7 @@ function jsPipeline() {
 function coffeePipeline() {
   this
     .load("./src/taskrunner.js")
-    .then(function(moduleMeta) {
-      console.log(moduleMeta);
-    });
+    .then(log2console, log2console);
 }
 
 
@@ -34,9 +28,7 @@ function coffeePipeline() {
 function minifyPipeline() {
   this
     .load("../.jshintrc")
-    .then(function(moduleMeta) {
-      console.log(moduleMeta);
-    });
+    .then(log2console, log2console);
 }
 
 

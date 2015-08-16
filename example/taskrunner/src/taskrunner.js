@@ -2,7 +2,7 @@ var fileReader  = require("./fileReader");
 var resolvePath = require("./resolvePath");
 var Task        = require("./task");
 var Bitloader   = require("bit-loader");
-var types       = Bitloader.types;
+var types       = require("dis-isa");
 
 
 /**

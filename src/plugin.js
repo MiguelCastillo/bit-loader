@@ -1,7 +1,7 @@
-var types  = require("types");
-var Rule   = require("roolio");
-var utils  = require("./utils");
-var Events = require("./events");
+var types       = require("dis-isa");
+var log2console = require("log2console");
+var Rule        = require("roolio");
+var Events      = require("./events");
 
 var pluginId = 0;
 
@@ -169,7 +169,7 @@ Plugin.prototype.import = function(pluginName) {
 
   return loader
     .important(pluginName)
-    .then(pluginImported, utils.reportError);
+    .then(pluginImported, log2console);
 };
 
 
@@ -217,7 +217,7 @@ function pluginHandler(handler, options) {
         }
 
         return moduleMeta;
-      }, utils.reportError);
+      }, log2console);
   };
 }
 
@@ -233,7 +233,7 @@ function pluginHandler(handler, options) {
  * @returns {Promise}
  */
 pluginHandler.iterator = function(deferred, handlerConfig) {
-  return deferred.then(pluginHandler(handlerConfig.handler, handlerConfig.options), utils.reportError);
+  return deferred.then(pluginHandler(handlerConfig.handler, handlerConfig.options), log2console);
 };
 
 
@@ -278,7 +278,7 @@ function configurePluginHandlers(plugin, handlers) {
 
         return plugin.loader
           .import(handlerConfig.deferredName)
-          .then(pluginHandler, utils.reportError);
+          .then(pluginHandler, log2console);
       };
     }
 

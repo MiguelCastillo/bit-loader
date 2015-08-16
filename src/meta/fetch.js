@@ -1,6 +1,6 @@
-var types       = require("types");
+var log2console = require("log2console");
+var types       = require("dis-isa");
 var runPipeline = require("./runPipeline");
-var utils       = require("../utils");
 var logger      = require("../logger").create("Meta/Fetch");
 
 
@@ -30,7 +30,7 @@ MetaFetch.pipeline = function(manager, moduleMeta) {
   }
 
   return runPipeline(manager.pipelines.fetch, moduleMeta)
-    .then(fetchFinished, utils.reportError);
+    .then(fetchFinished, log2console);
 };
 
 
@@ -47,7 +47,7 @@ MetaFetch.fetch = function(manager, moduleMeta) {
   return Promise.resolve(manager.fetch(moduleMeta))
     .then(function(meta) {
       return moduleMeta.configure(meta);
-    }, utils.reportError);
+    }, log2console);
 };
 
 

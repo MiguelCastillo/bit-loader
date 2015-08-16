@@ -1,5 +1,5 @@
+var log2console = require("log2console");
 var runPipeline = require("./runPipeline");
-var utils       = require("../utils");
 var logger      = require("../logger").create("Meta/Resolve");
 
 
@@ -19,7 +19,7 @@ MetaResolve.pipeline = function(manager, moduleMeta) {
   }
 
   return runPipeline(manager.pipelines.resolve, moduleMeta)
-    .then(resolveFinished, utils.reportError);
+    .then(resolveFinished, log2console);
 };
 
 
@@ -35,7 +35,7 @@ MetaResolve.resolve = function(manager, moduleMeta) {
 
       delete meta.name;
       return moduleMeta.configure(meta);
-    }, utils.reportError);
+    }, log2console);
 };
 
 
