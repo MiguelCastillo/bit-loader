@@ -45,7 +45,7 @@
   },
   "dependencies": {
     "dis-isa": "^1.2.2",
-    "belty": "^0.1.2",
+    "belty": "^0.2.0",
     "log2console": "^1.0.3",
     "roolio": "~0.1.1",
     "spromise": "~0.9.3"
