@@ -7,7 +7,7 @@ var compiler    = require("./compiler");
 var resolvePath = require("./resolvePath");
 
 
-Bitloader.Logger
+Bitloader.logger
   .enable()
   .pipe(joint(process.stdout))
   .pipe(joint(fs.createWriteStream("./temp.log")));

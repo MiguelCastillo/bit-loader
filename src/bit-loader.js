@@ -1,6 +1,6 @@
 var types      = require("dis-isa");
 var Rule       = require("roolio");
-var Logger     = require("./logger");
+var logger     = require("./logger");
 var Fetcher    = require("./interfaces/fetcher");
 var Compiler   = require("./interfaces/compiler");
 var Resolver   = require("./interfaces/resolver");
@@ -408,5 +408,5 @@ Bitloader.Fetcher    = Fetcher;
 Bitloader.Compiler   = Compiler;
 Bitloader.Middleware = Middleware;
 Bitloader.Rule       = Rule;
-Bitloader.Logger     = Logger;
+Bitloader.logger     = logger;
 module.exports       = Bitloader;
