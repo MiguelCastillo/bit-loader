@@ -44,9 +44,10 @@
     "sinon": "~1.15.4"
   },
   "dependencies": {
-    "dis-isa": "^1.2.2",
     "belty": "^0.2.0",
+    "dis-isa": "^1.2.2",
     "log2console": "^1.0.3",
+    "loggero": "~1.1.0",
     "roolio": "~0.1.1",
     "spromise": "~0.9.3"
   },
