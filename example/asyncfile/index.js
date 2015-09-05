@@ -1,4 +1,5 @@
 var fs          = require("fs");
+var JSONStream  = require("JSONStream");
 var joint       = require("stream-joint");
 var log2console = require("log2console");
 var Bitloader   = require("bit-loader");
@@ -9,6 +10,7 @@ var resolvePath = require("./resolvePath");
 
 Bitloader.logger
   .enable()
+  .pipe(JSONStream.stringify(false))
   .pipe(joint(process.stdout))
   .pipe(joint(fs.createWriteStream("./temp.log")));
 
