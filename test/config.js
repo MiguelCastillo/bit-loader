@@ -1,16 +1,14 @@
-var require = ( // eslint-disable-line
-  function() {
-    var importer = bitimports.config({
-      "baseUrl": "../",
-      "paths": {
-        "chai": "node_modules/chai/chai"
-      }
-    });
+var System = (function() {
+  var importer = bitimports.config({
+    baseUrl: '../',
+    paths: {
+      chai: 'node_modules/chai/chai'
+    }
+  });
 
-    // Add modules to exclude from pipeline processing
-    importer.ignore(["chai", "dist/bit-loader"]);
+  importer.ignore(['chai', 'dist/bit-loader']);
+  importer.Logger.enableAll();
+  return importer;
+})();
 
-    bitimports.Logger.enableAll();
-    return importer.require;
-  }
-)();
+var require = System.require; // eslint-disable-line
