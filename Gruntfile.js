@@ -2,21 +2,29 @@
 // http://24ways.org/2013/grunt-is-not-weird-and-hard/
 //
 module.exports = function(grunt) {
+
+  require('load-grunt-tasks')(grunt);
+
+  var date = new Date();
+  var today = date.toDateString() + ' ' + date.toLocaleTimeString();
+  var pkg = require('./package.json');
+  var banner = '/*! <%= pkg.name %> v<%= pkg.version %> - ' + today + '. (c) ' + date.getFullYear() + ' Miguel Castillo. Licensed under MIT */';
+
   grunt.initConfig({
-    pkg: grunt.file.readJSON("package.json"),
+    pkg: pkg,
     connect: {
       test: {
         options: {
           port: 8052,
-          hostname: "localhost"
+          hostname: 'localhost'
         }
       },
       keepalive: {
         options: {
           port: 8050,
-          host: "localhost",
+          host: 'localhost',
           keepalive: true,
-          open: "http://localhost:8050/test/SpecRunner.html"
+          open: 'http://localhost:8050/test/SpecRunner.html'
         }
       }
     },
@@ -25,84 +33,74 @@ module.exports = function(grunt) {
         options: {
           log: true,
           logErrors: true,
-          reporter: "Spec",
+          reporter: 'Spec',
           run: false,
           timeout: 10000,
-          urls: ["http://localhost:8052/test/SpecRunner.html"]
+          urls: ['http://localhost:8052/test/SpecRunner.html']
         }
       }
     },
     watch: {
-      test: {
-        files: ["src/**/*.js", "test/**/*.js", "*.js"],
-        tasks: ["build"],
+      build: {
+        files: ['src/**/*.js', 'test/**/*.js', '*.js'],
+        tasks: ['build'],
         options: {
           livereload: 32000
         }
       }
     },
-    jshint: {
+    eslint: {
       all: {
         options: {
-          jshintrc: true,
-          reporter: require("jshint-stylish")
+          //format: require('eslint-tap')
         },
-        src: ["src/**/*.js", "test/**/*.js", "*.js"]
+        src: ['src/**/*.js', 'test/**/*.js', '*.js']
       }
     },
     concurrent: {
-      test: {
-        tasks: ["connect:keepalive", "watch:test"],
+      build: {
+        tasks: ['connect:keepalive', 'watch:build'],
         options: {
           logConcurrentOutput: true
         }
       }
     },
     browserify: {
-      "build": {
-        src: ["src/<%= pkg.name %>.js"],
-        dest: "dist/<%= pkg.name %>.js",
+      build: {
+        src: ['src/<%= pkg.name %>.js'],
+        dest: 'dist/<%= pkg.name %>.js',
         options: {
-          banner: "/*! <%= pkg.name %> v<%= pkg.version %> - <%= grunt.template.today() %>. (c) <%= grunt.template.today('yyyy') %> Miguel Castillo. Licensed under MIT */",
+          banner: banner,
           browserifyOptions: {
-            "detectGlobals": false,
-            "standalone": "bitloader"
+            detectGlobals: false,
+            standalone: 'bitloader'
           }
         }
       }
     },
     uglify: {
-      "build": {
+      build: {
         options: {
-          preserveComments: "some",
+          preserveComments: 'some',
           sourceMap: true
         },
         files: {
-          "dist/<%= pkg.name %>.min.js": ["<%= browserify.build.dest %>"]
+          'dist/<%= pkg.name %>.min.js': ['<%= browserify.build.dest %>']
         }
       }
     },
     release: {
       options: {
-        tagName: "v<%= version %>",
-        tagMessage: "Version <%= version %>",
-        commitMessage: "Release v<%= version %>",
-        afterBump: ["build"]
+        tagName: 'v<%= version %>',
+        tagMessage: 'Version <%= version %>',
+        commitMessage: 'Release v<%= version %>',
+        afterBump: ['build']
       }
     }
   });
 
-  grunt.loadNpmTasks("grunt-mocha");
-  grunt.loadNpmTasks("grunt-release");
-  grunt.loadNpmTasks("grunt-concurrent");
-  grunt.loadNpmTasks("grunt-contrib-uglify");
-  grunt.loadNpmTasks("grunt-contrib-connect");
-  grunt.loadNpmTasks("grunt-contrib-watch");
-  grunt.loadNpmTasks("grunt-contrib-jshint");
-  grunt.loadNpmTasks("grunt-browserify");
-
-  grunt.registerTask("build", ["jshint:all", "browserify:build", "uglify:build"]);
-  grunt.registerTask("server", ["connect:keepalive"]);
-  grunt.registerTask("test", ["connect:test", "mocha:test"]);
-  grunt.registerTask("serve", ["build", "concurrent:test"]);
+  grunt.registerTask('build', ['eslint:all', 'browserify:build', 'uglify:build']);
+  grunt.registerTask('serve', ['build', 'concurrent:build']);
+  grunt.registerTask('test', ['connect:test', 'mocha:test']);
+  grunt.registerTask('server', ['connect:keepalive']);
 };
