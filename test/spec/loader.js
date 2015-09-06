@@ -175,7 +175,7 @@ define(["dist/bit-loader"], function(Bitloader) {
 
 
     describe("When module meta is registered with the `register` interface with no dependencies", function() {
-      var loader, moduleName, hasModuleStub, setModuleStub, factoryStub, moduleCode;
+      var loader, moduleName, setModuleStub, factoryStub, moduleCode;
 
       beforeEach(function() {
         moduleName  = "module1";
@@ -226,7 +226,7 @@ define(["dist/bit-loader"], function(Bitloader) {
 
 
     describe("When module meta is registered with the `register` interface with dependencies", function() {
-      var loader, moduleName, hasModuleStub, setModuleStub, getModuleStub, factoryStub, resolveStub, fetchStub, moduleCode, deep1Module;
+      var loader, moduleName, setModuleStub, factoryStub, resolveStub, fetchStub, moduleCode, deep1Module;
 
       beforeEach(function() {
         moduleName  = "module1";
