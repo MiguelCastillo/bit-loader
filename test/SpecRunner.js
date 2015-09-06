@@ -1,21 +1,10 @@
-var chai = require("chai");
-window.chai   = chai;
-window.expect = chai.expect;
-window.assert = chai.assert;
-
-mocha.setup("bdd");
-
-require([
-  "test/spec/fetch",
-  "test/spec/import",
-  "test/spec/loader",
-  "test/spec/registry",
-  "test/spec/middleware",
-  "test/spec/module",
-  "test/spec/plugin",
-  "test/spec/ignore",
-  "test/spec/transform",
-  "test/spec/bit-loader"
-], function() {
-  mocha.run();
-});
+require('test/spec/fetch');
+require('test/spec/import');
+require('test/spec/loader');
+require('test/spec/registry');
+require('test/spec/middleware');
+require('test/spec/module');
+require('test/spec/plugin');
+require('test/spec/ignore');
+require('test/spec/transform');
+require('test/spec/bit-loader');
