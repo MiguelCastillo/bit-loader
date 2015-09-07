@@ -1,2 +1,2 @@
-var logger = require('loggero');
+var logger = require("loggero");
 module.exports = logger;

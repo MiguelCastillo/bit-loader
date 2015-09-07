@@ -216,7 +216,7 @@ define(["dist/bit-loader"], function(Bitloader) {
 
           modYes = new Bitloader.Module({
             type: Bitloader.Module.Type.AMD,
-            name: 'yes',
+            name: "yes",
             code: "module code",
             factory: factoryStub
           });
@@ -246,7 +246,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
 
         it("then `manager.load` is called once", function() {
-          expect(loadStub.calledWithExactly('yes')).to.equal(true);
+          expect(loadStub.calledWithExactly("yes")).to.equal(true);
         });
 
         it("them `module.factory` is not called", function() {

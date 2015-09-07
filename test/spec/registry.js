@@ -79,7 +79,7 @@ define(["dist/bit-loader"], function(Bitloader) {
       });
 
       it("then id generating is a function", function() {
-        expect(idGenerator).to.be.a('function');
+        expect(idGenerator).to.be.a("function");
       });
 
       describe("and generating one id", function() {
@@ -113,11 +113,11 @@ define(["dist/bit-loader"], function(Bitloader) {
     describe("when creating an id generator with name 'loader'", function() {
       var idGenerator;
       beforeEach(function() {
-        idGenerator = Registry.idGenerator('loader');
+        idGenerator = Registry.idGenerator("loader");
       });
 
       it("then id generating is a function", function() {
-        expect(idGenerator).to.be.a('function');
+        expect(idGenerator).to.be.a("function");
       });
 
       describe("and generating one id", function() {

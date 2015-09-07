@@ -1,4 +1,4 @@
-define(['dist/bit-loader'], function(Bitloader) {
+define(["dist/bit-loader"], function(Bitloader) {
   var Middleware = Bitloader.Middleware;
 
   describe("Middleware Test Suite", function() {
