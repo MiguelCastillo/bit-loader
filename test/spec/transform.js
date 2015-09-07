@@ -1,4 +1,4 @@
-define(['dist/bit-loader'], function(Bitloader) {
+define(["dist/bit-loader"], function(Bitloader) {
 
   describe("Transform Test Suite", function() {
 
@@ -30,11 +30,11 @@ define(['dist/bit-loader'], function(Bitloader) {
         });
 
         it("then result.source is a string", function() {
-          expect(result.source).to.be.a('string');
+          expect(result.source).to.be.a("string");
         });
 
         it("then result.deps to be an array", function() {
-          expect(result.deps).to.be.an('array');
+          expect(result.deps).to.be.an("array");
         });
 
         it("then result.deps is empty", function() {
@@ -63,11 +63,11 @@ define(['dist/bit-loader'], function(Bitloader) {
         });
 
         it("then result.source is a string", function() {
-          expect(result.source).to.be.a('string');
+          expect(result.source).to.be.a("string");
         });
 
         it("then result.deps to be an array", function() {
-          expect(result.deps).to.be.an('array');
+          expect(result.deps).to.be.an("array");
         });
 
         it("then result.deps is empty", function() {

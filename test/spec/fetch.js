@@ -64,7 +64,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
 
         it("then result from import is `this is content of the module`", function() {
-          expect(result).to.equal('this is content of the module');
+          expect(result).to.equal("this is content of the module");
         });
       });
     });
@@ -143,7 +143,7 @@ define(["dist/bit-loader"], function(Bitloader) {
         });
 
         it("then result from import is `this is content of the module`", function() {
-          expect(result).to.equal('this is content of the module');
+          expect(result).to.equal("this is content of the module");
         });
 
         it("then module meta compile is called", function() {

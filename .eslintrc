@@ -14,7 +14,7 @@
     "semi": 1,
     "global-strict": 0,
     "wrap-iife": [2, "inside"],
-    "quotes": [0, "single"],
+    "quotes": [2, "double"],
     "key-spacing": 0,
     "no-trailing-spaces": 0,
     "eol-last": 2
