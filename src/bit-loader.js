@@ -1,6 +1,6 @@
 var types      = require("dis-isa");
 var Rule       = require("roolio");
-var logger     = require("./logger");
+var logger     = require("./logger").disableAll();  // Disable logging by default.
 var Fetcher    = require("./interfaces/fetcher");
 var Compiler   = require("./interfaces/compiler");
 var Resolver   = require("./interfaces/resolver");
