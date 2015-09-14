@@ -1,7 +1,6 @@
-var log2console = require("log2console");
+var logger      = require("loggero").create("Meta/Compiler");
 var runPipeline = require("./runPipeline");
 var Module      = require("../module");
-var logger      = require("../logger").create("Meta/Compiler");
 
 
 function MetaCompile() {
@@ -26,7 +25,7 @@ MetaCompile.pipeline = function(manager, moduleMeta) {
   }
 
   return runPipeline(manager.pipelines.compile, moduleMeta)
-    .then(compilationFinished, log2console);
+    .then(compilationFinished, logger.error);
 };
 
 

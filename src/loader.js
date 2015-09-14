@@ -1,5 +1,5 @@
 var types          = require("dis-isa");
-var log2console    = require("log2console");
+var logger         = require("loggero").create("loader");
 var Module         = require("./module");
 var Pipeline       = require("./pipeline");
 var Registry       = require("./registry");
@@ -113,7 +113,7 @@ Loader.prototype.fetch = function(name, referer) {
 
   var loading = loader
     ._pipelineModuleMeta(moduleMeta)
-    .then(moduleMetaFinished, log2console);
+    .then(moduleMetaFinished, logger.error);
 
   return loader.setLoading(name, loading);
 };
@@ -168,7 +168,7 @@ Loader.prototype.asyncBuild = function(name) {
   if (this.isLoaded(name)) {
     return Promise.resolve().then(function() {
       return loader._linkModuleMeta(name);
-    }, log2console);
+    }, logger.error);
   }
   else if (!this.isPending(name)) {
     throw new TypeError("Unable to build '" + name + "'.");
@@ -187,7 +187,7 @@ Loader.prototype.asyncBuild = function(name) {
     return Promise.all(pending)
       .then(function dependenciesBuilt() {
         return moduleMeta;
-      }, log2console);
+      }, logger.error);
   };
 
   var linkModuleMeta = function() {
@@ -198,8 +198,8 @@ Loader.prototype.asyncBuild = function(name) {
   // Right here is where we handle dynamic registration of modules while are being loaded.
   // E.g. System.register to register a module that's being loaded
   return metaDependency.pipeline(loader.manager, loader.getModule(name))
-    .then(buildDependencies, log2console)
-    .then(linkModuleMeta, log2console);
+    .then(buildDependencies, logger.error)
+    .then(linkModuleMeta, logger.error);
 };
 
 
@@ -256,7 +256,7 @@ Loader.prototype.transform = function(moduleMeta) {
 Loader.prototype.runPipeline = function(moduleMeta) {
   return this.pipeline
     .run(this.manager, moduleMeta)
-    .then(pipelineFinished, log2console);
+    .then(pipelineFinished, logger.error);
 
   function pipelineFinished() {
     return moduleMeta;
@@ -314,7 +314,7 @@ Loader.prototype._load = function(name, referer) {
 
   return loader
     .fetch(name, referer)
-    .then(build, log2console);
+    .then(build, logger.error);
 };
 
 

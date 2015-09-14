@@ -1,5 +1,5 @@
-var log2console = require("log2console");
-var Registry    = require("./registry");
+var logger   = require("loggero").create("import");
+var Registry = require("./registry");
 
 var getRegistryId = Registry.idGenerator("import");
 
@@ -42,7 +42,7 @@ Import.prototype.import = function(name, options) {
 
     return Promise
       .all(this._important)
-      .then(importantFinished, log2console);
+      .then(importantFinished, logger.error);
   }
   else {
     return importer._import(name, options);
@@ -103,7 +103,8 @@ Import.prototype._getModule = function(name, options) {
   // https://github.com/MiguelCastillo/spromise/issues/35
   return new Promise(function deferredModuleResolver(resolve, reject) {
     function moduleError(error) {
-      reject(log2console(error));
+      logger.error(error);
+      reject(error);
     }
 
     function moduleLoaded(mod) {

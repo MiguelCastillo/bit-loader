@@ -1,5 +1,5 @@
+var logger = require("loggero").create("Module/Linker");
 var Module = require("../module");
-var logger = require("../logger").create("Module/Linker");
 
 
 /**
