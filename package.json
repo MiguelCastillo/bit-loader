@@ -53,8 +53,5 @@
     "loggero": "~2.0.0",
     "roolio": "~0.1.1",
     "spromise": "~0.9.3"
-  },
-  "browser": {
-    "logger": "./src/logger.js"
   }
 }
