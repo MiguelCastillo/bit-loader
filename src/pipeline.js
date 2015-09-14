@@ -1,4 +1,4 @@
-var log2console = require("log2console");
+var logger = require("loggero").create("pipeline");
 
 function Pipeline(assets) {
   this.assets = assets;
@@ -13,7 +13,7 @@ Pipeline.prototype.run = function() {
   }
 
   return this.assets.reduce(function(prev, curr) {
-    return prev.then(cb(curr), log2console);
+    return prev.then(cb(curr), logger.error);
   }, Promise.resolve());
 };
 

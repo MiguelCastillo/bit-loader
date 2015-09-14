@@ -1,7 +1,6 @@
-var log2console = require("log2console");
+var logger      = require("loggero").create("Meta/Transform");
 var types       = require("dis-isa");
 var runPipeline = require("./runPipeline");
-var logger      = require("../logger").create("Meta/Transform");
 
 
 function MetaTransform() {
@@ -25,7 +24,7 @@ MetaTransform.pipeline = function(manager, moduleMeta) {
   }
 
   return runPipeline(manager.pipelines.transform, moduleMeta)
-    .then(transformationFinished, log2console);
+    .then(transformationFinished, logger.error);
 };
 
 

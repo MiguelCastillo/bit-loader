@@ -1,6 +1,6 @@
-var log2console = require("log2console");
-var types       = require("dis-isa");
-var utils       = require("belty");
+var logger = require("loggero").create("middleware");
+var types  = require("dis-isa");
+var utils  = require("belty");
 
 
 /**
@@ -290,7 +290,8 @@ function _runProviders(providers, data, canExecuteProvider) {
 
     function providerSequenceError(err) {
       cancelled = true;
-      return log2console(err);
+      logger.error(err);
+      return err;
     }
 
     return result.then(providerSequenceRun, providerSequenceError);
