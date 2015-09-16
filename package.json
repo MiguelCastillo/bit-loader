@@ -27,8 +27,8 @@
   },
   "homepage": "https://github.com/MiguelCastillo/bit-loader",
   "devDependencies": {
-    "bit-imports": "",
-    "browserify": "~11.0.1",
+    "bit-imports": "~0.4.0",
+    "browserify": "~11.1.0",
     "chai": "~3.2.0",
     "eslint-tap": "^1.0.0",
     "grunt": "~0.4.5",
@@ -50,7 +50,7 @@
   "dependencies": {
     "belty": "^0.3.0",
     "dis-isa": "^1.2.2",
-    "loggero": "~2.0.0",
+    "loggero": "~2.0.1",
     "roolio": "~0.1.1",
     "spromise": "~0.9.3"
   }

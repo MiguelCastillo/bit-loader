@@ -12,7 +12,7 @@ Bitloader.logger
   .enable()
   .pipe(JSONStream.stringify(false))
   .pipe(joint(process.stdout))
-  .pipe(joint(fs.createWriteStream("./temp.log")));
+  .pipe(joint(fs.createWriteStream("temp.log")));
 
 
 var loader = new Bitloader({
