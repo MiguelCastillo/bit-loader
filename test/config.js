@@ -7,7 +7,7 @@ var System = (function() {
   });
 
   importer.ignore(["chai", "dist/bit-loader"]);
-  importer.Logger.enableAll();
+  importer.logger.enable();
   return importer;
 })();
 
