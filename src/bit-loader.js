@@ -1,15 +1,20 @@
 var logger     = require("loggero").disable();  // Disable logging by default.
 var types      = require("dis-isa");
 var Rule       = require("roolio");
-var Fetcher    = require("./interfaces/fetcher");
-var Compiler   = require("./interfaces/compiler");
-var Resolver   = require("./interfaces/resolver");
-var Import     = require("./import");
+var fetch      = require("./fetch");
+var compile    = require("./compile");
+var resolve    = require("./resolve");
+var Importer   = require("./importer");
 var Loader     = require("./loader");
 var Module     = require("./module");
 var Plugin     = require("./plugin");
 var Registry   = require("./registry");
-var Middleware = require("./middleware");
+
+var defaults = {
+  fetch: fetch,
+  compile: compile,
+  resolve: resolve
+};
 
 var getRegistryId = Registry.idGenerator("bitloader");
 
@@ -26,55 +31,33 @@ function Bitloader(options) {
   this.context  = Registry.getById(getRegistryId());
   this.plugins  = {};
 
-  this.rules = {
-    ignore: {
-      fetch: new Rule(),
-      transform: new Rule(),
-      dependency: new Rule(),
-      compile: new Rule()
-    }
+  this.pipelines = {
+    resolve    : new Plugin.Manager(this),
+    fetch      : new Plugin.Manager(this),
+    transform  : new Plugin.Manager(this),
+    dependency : new Plugin.Manager(this),
+    compile    : new Plugin.Manager(this)
   };
 
-  this.services = this.pipelines = {
-    resolve    : new Middleware(this),
-    fetch      : new Middleware(this),
-    transform  : new Middleware(this),
-    dependency : new Middleware(this),
-    compile    : new Middleware(this)
-  };
-
-  // Override any of these factories if you need specialized implementation
   this.providers = {
-    // Internal helper that can be overriden
-    loader   : new Bitloader.Loader(this),
-    importer : new Bitloader.Import(this)
+    loader   : new Loader(this),
+    importer : new Importer(this)
   };
-
-  // Public Interface
-  var providers = this.providers;
-
-  // Module loader hooks
-  this.resolve  = options.resolve || (new Bitloader.Resolver()).resolve;
-  this.fetch    = options.fetch   || (new Bitloader.Fetcher()).fetch;
-  this.compile  = options.compile || (new Bitloader.Compiler()).compile;
-
-  // Internal helpers
-  this.load      = providers.loader.load.bind(providers.loader);
-  this.register  = providers.loader.register.bind(providers.loader);
-  this.import    = providers.importer.import.bind(providers.importer);
-  this.important = providers.importer.important.bind(providers.importer);
 
   // Register plugins
   for (var plugin in options.plugins) {
     this.plugin(plugin, options.plugins[plugin]);
   }
 
-  // Register pipeline options.
-  for (var pipeline in options.pipelines) {
-    if (this.pipelines.hasOwnProperty(pipeline)) {
-      this.pipelines[pipeline].use(options.pipelines[pipeline]);
-    }
-  }
+  var providers = this.providers;
+
+  this.resolve   = options.resolve || defaults.resolve;
+  this.fetch     = options.fetch   || defaults.fetch;
+  this.compile   = options.compile || defaults.compile;
+  this.load      = providers.loader.load.bind(providers.loader);
+  this.register  = providers.loader.register.bind(providers.loader);
+  this.import    = providers.importer.import.bind(providers.importer);
+  this.important = providers.importer.important.bind(providers.importer);
 }
 
 
@@ -290,29 +273,28 @@ Bitloader.prototype.ignore = function(rule) {
     throw new TypeError("Must provide a rule configuration");
   }
 
-  var i, length, ruleNames;
+  var i, length, pipelines;
 
-  // Simplify the arguments that can be passed in to the ignore method
   if (types.isArray(rule) || types.isString(rule)) {
     rule = {
       match: rule
     };
   }
 
-  if (!rule.name) {
-    ruleNames = ["transform", "dependency"];
+  if (!rule.pipelines) {
+    pipelines = ["transform", "dependency"];
   }
   else {
-    if (rule.name === "*") {
-      ruleNames = Object.keys(this.rules.ignore);
+    if (rule.pipelines === "*") {
+      pipelines = Object.keys(this.pipelines);
     }
     else {
-      ruleNames = types.isArray(rule.name) ? rule.name : [rule.name];
+      pipelines = types.isArray(rule.pipelines) ? rule.pipelines : [rule.pipelines];
     }
   }
 
-  for (i = 0, length = ruleNames.length; i < length; i++) {
-    this.rules.ignore[ruleNames[i]].addMatcher(rule.match);
+  for (i = 0, length = pipelines.length; i < length; i++) {
+    this.pipelines[pipelines[i]].ignore("name", rule.match);
   }
 
   return this;
@@ -322,8 +304,7 @@ Bitloader.prototype.ignore = function(rule) {
 /**
  * Registers plugins into the pipeline.
  *
- * @param {string} name - Name of the plugin
- * @param {object} options - Object whose keys are the name of the particular
+ * @param {object} settings - Object whose keys are the name of the particular
  *  pipeline they intend to register with. For example, if the plugin is to
  *  register a `transform` and a `dependency` pipeline handler, then the
  *  plugin object will have entries with those names. E.g.
@@ -341,72 +322,36 @@ Bitloader.prototype.ignore = function(rule) {
  *  bitlaoder.plugin(plugin);
  *  ```
  */
-Bitloader.prototype.plugin = function(name, options) {
-  if (types.isPlainObject(name)) {
-    options = name;
-    name = null;
-  }
-
-  var plugin;
+Bitloader.prototype.plugin = function(settings) {
   var loader = this;
 
-  // If plugin exists, then we get it so that we can update it with the new settings.
-  // Otherwise we create a new plugin and configure it with the incoming settings.
-  if (this.plugins.hasOwnProperty(name)) {
-    plugin = this.plugins[name];
-  }
-  else {
-    plugin = new Plugin(name, this);
-    this.plugins[plugin.name] = plugin;
+  Object.keys(settings).forEach(function(pipeline) {
+    var pluginConfig = settings[pipeline];
 
-    plugin.on("added", function(handlers) {
-      handlers = handlers
-        .filter(function(handler) {
-          return handler.deferredName;
-        })
-        .map(function(handler) {
-          return handler.deferredName;
-        });
+    if (!types.isArray(pluginConfig)) {
+      pluginConfig = [pluginConfig];
+    }
 
-      loader.ignore(handlers);
+    pluginConfig.forEach(function(plugin) {
+      if (types.isFunction(plugin)) {
+        loader.pipelines[pipeline].plugin(plugin);
+      }
+      else {
+        loader.pipelines[pipeline].plugin(plugin.handler, plugin);
+      }
     });
-  }
+  });
 
-  // Configure plugin
-  return plugin.configure(options);
-};
-
-
-/**
- * Method to check if a plugin already exists.
- */
-Bitloader.prototype.hasPlugin = function(name) {
-  return this.plugins.hasOwnProperty(name);
-};
-
-
-/**
- * Method to get a plugin that has already been loaded.
- */
-Bitloader.prototype.getPlugin = function(name) {
-  if (this.plugins.hasOwnProperty(name)) {
-    throw new TypeError("Plugin '" + name + "' not found");
-  }
-
-  return this.plugins[name];
+  return this;
 };
 
 
 // Expose constructors and utilities
 Bitloader.Registry   = Registry;
 Bitloader.Loader     = Loader;
-Bitloader.Import     = Import;
+Bitloader.Importer   = Importer;
 Bitloader.Module     = Module;
 Bitloader.Plugin     = Plugin;
-Bitloader.Resolver   = Resolver;
-Bitloader.Fetcher    = Fetcher;
-Bitloader.Compiler   = Compiler;
-Bitloader.Middleware = Middleware;
 Bitloader.Rule       = Rule;
 Bitloader.logger     = logger;
 module.exports       = Bitloader;

@@ -1,6 +1,5 @@
-var logger      = require("loggero").create("Meta/Transform");
-var types       = require("dis-isa");
-var runPipeline = require("./runPipeline");
+var logger = require("loggero").create("Meta/Transform");
+var types  = require("dis-isa");
 
 
 function MetaTransform() {
@@ -15,22 +14,12 @@ function MetaTransform() {
 MetaTransform.pipeline = function(manager, moduleMeta) {
   logger.log(moduleMeta.name, moduleMeta);
 
-  if (!canProcess(manager, moduleMeta)) {
+  if (!types.isString(moduleMeta.source)) {
     return Promise.resolve(moduleMeta);
   }
 
-  function transformationFinished() {
-    return moduleMeta;
-  }
-
-  return runPipeline(manager.pipelines.transform, moduleMeta)
-    .then(transformationFinished, logger.error);
+  return manager.pipelines.transform.run(moduleMeta);
 };
-
-
-function canProcess(manager, moduleMeta) {
-  return types.isString(moduleMeta.source) && !manager.rules.ignore.transform.match(moduleMeta.name);
-}
 
 
 module.exports = MetaTransform;

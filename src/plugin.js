@@ -1,23 +1,118 @@
 var logger = require("loggero").create("plugin");
 var types  = require("dis-isa");
+var utils  = require("belty");
 var Rule   = require("roolio");
-var Events = require("./events");
-
-var pluginId = 0;
 
 
 /**
- * Plugin
+ * Plugin class definition
  */
-function Plugin(name, loader) {
-  loader = loader || {};
-  this.name       = name || ("plugin-" + (pluginId++));
-  this.loader     = loader;
-  this.services   = loader.services || loader.pipelines || {};
-  this._matches   = {};
-  this._delegates = {};
-  this._handlers  = {};
-  this._events    = new Events();
+function Plugin(handler) {
+  this.handler = handler;
+  this._matches = null;
+  this._ignore = null;
+}
+
+
+/**
+ * Factory method to create Plugins
+ *
+ * @handler {string|function} - Plugin handler. Can be a module name to be lodaded,
+ *  or a function.
+ * @options {object} - Options.
+ *
+ * @returns {Plugin} New plugin instance
+ */
+Plugin.create = function(handler, options) {
+  var plugin = new Plugin(handler);
+  return options ? plugin.configure(options) : plugin;
+};
+
+
+/**
+ * Configures plugin with the provided options.
+ */
+Plugin.prototype.configure = function(options) {
+  var prop;
+
+  for (prop in options.match) {
+    if (options.match.hasOwnProperty(prop)) {
+      this.match(prop, options.match[prop]);
+    }
+  }
+
+  for (prop in options.ignore) {
+    if (options.ignore.hasOwnProperty(prop)) {
+      this.ignore(prop, options.ignore[prop]);
+    }
+  }
+
+  this.options = options;
+  return this;
+};
+
+
+/**
+ * Method for adding matching rules used for determining if data
+ * should be processed by the plugin or not.
+ *
+ * @prop {string} - Name of the property to test for matches.
+ * @matches {array<string>|srting} - Matching rule pattern
+ *
+ * @returns {Plugin}
+ */
+Plugin.prototype.match = function(prop, matches) {
+  if (!this._matches) {
+    this._matches = {};
+  }
+
+  if (!this._matches[prop]) {
+    this._matches[prop] = new Rule();
+  }
+
+  this._matches[prop].addMatcher(matches);
+  return this;
+};
+
+
+/**
+ * Add ignore rules to prevent certain data from being processed
+ * by a plugin.
+ */
+Plugin.prototype.ignore = function(prop, matches) {
+  if (!this._ignore) {
+    this._ignore = {};
+  }
+
+  if (!this._ignore[prop]) {
+    this._ignore[prop] = new Rule();
+  }
+
+  this._ignore[prop].addMatcher(matches);
+  return this;
+};
+
+
+/**
+ * Checks if the plugin can operate on the data passed in.
+ */
+Plugin.prototype.canExecute = function(data) {
+  if (this._ignore && runMatches(this._ignore, data)) {
+    return false;
+  }
+
+  return runMatches(this._matches, data);
+};
+
+
+/**
+ * Plugin Manager is a plugin container that facilitates the execution of
+ * plugins.
+ */
+function Manager(loader) {
+  this.loader = loader;
+  this._plugins = [];
+  this._ignore = null;
 }
 
 
@@ -27,311 +122,137 @@ function Plugin(name, loader) {
  *
  * @returns {Plugin}
  */
-Plugin.prototype.configure = function(options) {
+Manager.prototype.plugin = function(handler, options) {
   options = options || {};
+  var plugin = Plugin.create(handler, options);
 
-  // Add matching rules
-  for (var matchName in options.match) {
-    if (!options.match.hasOwnProperty(matchName)) {
-      continue;
+  if (types.isString(handler)) {
+    plugin.ignore("name", handler);
+  }
+
+  this._plugins.push(plugin);
+  return this;
+};
+
+
+/**
+ * Executes all plugins to process the data. This handles plugin
+ * handlers that return promises and it also provides a system to cancel
+ * the promise sequence.
+ */
+Manager.prototype.run = function(data) {
+  if (this._ignore && runMatches(this._ignore, data)) {
+    return Promise.resolve(data);
+  }
+
+  return runPlugin(data, this._plugins, this.loader);
+};
+
+
+/**
+ * Add ignore rules at the manager level to prevent all plugins
+ * from executing.
+ */
+Manager.prototype.ignore = function(prop, matches) {
+  if (!this._ignore) {
+    this._ignore = {};
+  }
+
+  if (!this._ignore[prop]) {
+    this._ignore[prop] = new Rule();
+  }
+
+  this._ignore[prop].addMatcher(matches);
+  return this;
+};
+
+
+/**
+ * Executed a list of plugins feeding data into them for processing.
+ */
+function runPlugin(data, plugins, loader) {
+  var cancelled = false;
+
+  function cancel() {
+    cancelled = true;
+  };
+
+  return plugins
+    .filter(function(plugin) {
+      return plugin.canExecute(data);
+    })
+    .reduce(function(promise, plugin) {
+      if (cancelled) {
+        return promise;
+      }
+
+      return promise
+        .then(loadPlugin(loader, plugin), logger.error)
+        .then(runPluginHandler(data, cancel), logger.error)
+        .then(mergePluginResult(data), logger.error);
+    }, Promise.resolve(data));
+}
+
+
+/**
+ * Method to load a plugin.
+ */
+function loadPlugin(loader, plugin) {
+  return function loadPluginDelegate() {
+    if (types.isString(plugin.handler)) {
+      return loader
+        .import(plugin.handler, logger.error)
+        .then(function(pluginData) {
+          if (types.isFunction(pluginData)) {
+            plugin.handler = pluginData;
+          }
+          else {
+            plugin.handler = pluginData.handler;
+            plugin.configure(pluginData);
+          }
+
+          return plugin;
+        }, logger.error);
     }
 
-    this.addMatchingRules(matchName, options.match[matchName]);
-  }
-
-  // Hook into the different services
-  for (var serviceName in options) {
-    if (!options.hasOwnProperty(serviceName) || serviceName === "match") {
-      continue;
-    }
-
-    this.addHandlers(serviceName, options[serviceName]);
-  }
-
-  return this;
-};
+    return Promise.resolve(plugin);
+  };
+}
 
 
 /**
- * Method for adding matching rules used for determining if data
- * should be processed by the plugin or not.
- *
- * @returns {Plugin}
+ * Method that return a function to be executed with the plugin
+ * to be executed.
  */
-Plugin.prototype.addMatchingRules = function(matchName, matches) {
-  if (matches && matches.length) {
-    if (!this._matches[matchName]) {
-      this._matches[matchName] = new Rule({name: matchName});
-    }
-
-    this._matches[matchName].addMatcher(matches);
-  }
-
-  return this;
-};
+function runPluginHandler(data, cancel) {
+  return function runPluginDelegate(plugin) {
+    return plugin.handler(data, plugin.options, cancel);
+  };
+}
 
 
 /**
- * Adds handlers for a service. This handler is the hook so that
- * plugin methods can process data from the service.
- *
- * @returns {Plugin}
+ * Method the returns a function to process the result from a
+ * plugin
  */
-Plugin.prototype.addHandlers = function(serviceName, handlers) {
-  if (!this.services.hasOwnProperty(serviceName)) {
-    throw new TypeError("Unable to register plugin for '" + serviceName + "'. '" + serviceName + "' is not found");
-  }
-
-  // Configure plugin handlers
-  this._handlers[serviceName] = (this._handlers[serviceName] || []).concat(configurePluginHandlers(this, handlers));
-
-  // Register service delegate if one does not exist. Delegates are the callbacks
-  // registered with the service that when called, the plugins executes all the
-  // plugin's handlers in a promise sequence.
-  if (!this._delegates[serviceName]) {
-    this._delegates[serviceName] = createServiceHandler(this, serviceName);
-    registerServiceHandler(this, this.services[serviceName], this._delegates[serviceName]);
-  }
-
-  return this;
-};
+function mergePluginResult(data) {
+  return function mergeModuleResultDelegate(result) {
+    return result ? utils.extend(data, result) : data;
+  };
+}
 
 
 /**
- * Add service to register plugins with. A service must have a method `use`
- * that takes in a function that is called when the function needs to be
- * executed.
- *
- * @returns {Plugin}
+ * Checks if the handler can process the input data based on whether
+ * or not there are matches to be processed and if any of the matches
+ * do match.
  */
-Plugin.prototype.addService = function(serviceName, service) {
-  if (this.services.hasOwnProperty(serviceName)) {
-    throw new TypeError("Unable to register plugin for '" + serviceName + "'. '" + serviceName + "' is already registered");
-  }
-
-  this.services[serviceName] = service;
-  return this;
-};
-
-
-/**
- * Register listeners for events that a plugin dispatcher
- *
- * @param {string} eventName - Name of the event to listen to.
- * @param {function} handler - Function that is called when the event is dispatched.
- *
- * @returns {Plugin}
- */
-Plugin.prototype.on = function(eventName, handler) {
-  this._events.addListener(eventName, handler);
-  return this;
-};
-
-
-/**
- * Unregisters an event listener previously registered.
- *
- * @param {string} eventName - Name of the event to unregister.
- * @param {function} handler - Function to unregister.
- *
- * @returns {Plugin}
- */
-Plugin.prototype.off = function(eventName, handler) {
-  this._events.removeListener(eventName, handler);
-  return this;
-};
-
-
-/**
- * Method to load a plugin module. This starts loading the module as soon as
- * possible and will hold any subsequent module imports until this module is
- * fully loaded. This is primarily used during bits configuration.
- *
- * @returns {Promise} That when resolved, returns the plugin. Otherwise reports
- *  the error.
- */
-Plugin.prototype.import = function(pluginName) {
-  var plugin = this;
-  var loader = this.loader;
-
-  // Emit an added event for the plugin being imported.
-  this._events.emit("added", [{deferredName: pluginName}]);
-
-  function pluginImported(pluginFactory) {
-    var settings = pluginFactory(loader, plugin);
-
-    if (settings) {
-      plugin.configure(settings);
-    }
-
-    return plugin;
-  }
-
-  return loader
-    .important(pluginName)
-    .then(pluginImported, logger.error);
-};
-
-
-/**
- * Register service handler delegate
- */
-function registerServiceHandler(plugin, service, handler) {
-  service.use({
-    name    : plugin.name,
-    match   : plugin._matches,
-    handler : handler
+function runMatches(matches, data) {
+  return !matches || Object.keys(matches).some(function(match) {
+    return matches[match].match(data[match]);
   });
 }
 
 
-/**
- * Creates service handler to process module meta objects
- */
-function createServiceHandler(plugin, serviceName) {
-  // The service handler iterates through all the plugin handlers
-  // passing in the correspoding module meta to be processed.
-  return function serviceHandlerDelegate(moduleMeta) {
-    return plugin
-      ._handlers[serviceName]
-      .reduce(pluginHandler.iterator, Promise.resolve(moduleMeta));
-  };
-}
-
-
-/**
- * Executes plugin handler passing in the module meta object. Objects
- * resolved from the handler promise will be merged into the module
- * meta object.
- *
- * @returns {function} Delegate function that executes the plugin handler.
- */
-function pluginHandler(handler, options) {
-  return function pluginHandlerDelegate(moduleMeta) {
-    return Promise
-      .resolve(handler(moduleMeta, options))
-      .then(function(result) {
-        // If a plain object is returned, then we merge it in.
-        if (types.isPlainObject(result)) {
-          moduleMeta.configure(result);
-        }
-
-        return moduleMeta;
-      }, logger.error);
-  };
-}
-
-
-/**
- * Iterator for plugin handlers. This is for executing a sequence of handlers.
- *
- * @param {Promise} deferred - Current deferred promise handler being executed.
- *  When this deferred is finished, the next handler willbe executed.
- * @param {object} handlerConfig - Handler object that contains the handler
- *  callback and the options for it.
- *
- * @returns {Promise}
- */
-pluginHandler.iterator = function(deferred, handlerConfig) {
-  return deferred.then(pluginHandler(handlerConfig.handler, handlerConfig.options), logger.error);
-};
-
-
-/**
- * Function that goes through all the handlers and configures each one. This is
- * where handle things like if a handler is a string, then we assume it is the
- * name of a module that we need to load...
- */
-function configurePluginHandlers(plugin, handlers) {
-  if (!handlers) {
-    throw new TypeError("Plugin must have 'handlers' defined");
-  }
-
-  if (!types.isArray(handlers)) {
-    handlers = [handlers];
-  }
-
-  function configureHandler(handlerConfig) {
-    if (!handlerConfig) {
-      throw new TypeError("Plugin handler must be a string, a function, or an object with a handler that is a string or a function");
-    }
-
-    if (types.isFunction(handlerConfig) || types.isString(handlerConfig)) {
-      handlerConfig = {
-        handler: handlerConfig
-      };
-    }
-
-    // Handle dynamic handler loading
-    if (types.isString(handlerConfig.handler)) {
-      // Store name for later access
-      handlerConfig.deferredName = handlerConfig.handler;
-
-      // Create a handler that when called, loads the plugin module
-      handlerConfig.handler = function deferredHandler() {
-        var args = arguments;
-
-        function pluginHandler(handler) {
-          handlerConfig.handler = handler;
-          return handler.apply(undefined, args);
-        }
-
-        return plugin.loader
-          .import(handlerConfig.deferredName)
-          .then(pluginHandler, logger.error);
-      };
-    }
-
-    if (!types.isFunction(handlerConfig.handler)) {
-      throw new TypeError("Plugin handler must be a function or a string");
-    }
-
-    return handlerConfig;
-  }
-
-  // Configure list of handlers.
-  handlers = handlers.map(configureHandler);
-
-  // Dispatch message that a new plugin was configured
-  plugin._events.emit("added", handlers);
-  return handlers;
-}
-
-
-/**
- * Checks if the handler can process the module meta object based on
- * the matching rules for path and name.
- */
-function canExecute(matches, moduleMeta) {
-  var ruleLength, allLength = 0;
-
-  for (var match in matches) {
-    if (!moduleMeta.hasOwnProperty(match) || !matches.hasOwnProperty(match)) {
-      continue;
-    }
-
-    ruleLength = matches[match].getLength();
-    allLength += ruleLength;
-
-    if (ruleLength && matches[match].match(moduleMeta[match])) {
-      return true;
-    }
-  }
-
-  // If there was no matching rule, then we will return true.  That's because
-  // if there weren't any rules put in place to restrict module processing,
-  // then the assumption is that the module can be processed.
-  return !allLength;
-}
-
-
-function createCanExecute(moduleMeta) {
-  return function canExecuteDelegate(plugin) {
-    return canExecute(plugin.match, moduleMeta);
-  };
-}
-
-
-Plugin.canExecute       = canExecute;
-Plugin.createCanExecute = createCanExecute;
+Plugin.Manager = Manager;
 module.exports = Plugin;

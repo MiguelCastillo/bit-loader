@@ -1,7 +1,5 @@
-var logger      = require("loggero").create("Meta/Fetch");
-var types       = require("dis-isa");
-var runPipeline = require("./runPipeline");
-
+var logger = require("loggero").create("Meta/Fetch");
+var Module = require("../module");
 
 function MetaFetch() {
 }
@@ -13,7 +11,7 @@ function MetaFetch() {
 MetaFetch.pipeline = function(manager, moduleMeta) {
   logger.log(moduleMeta.name, moduleMeta);
 
-  if (!canProcess(manager, moduleMeta)) {
+  if (Module.Meta.canCompile(moduleMeta)) {
     return Promise.resolve(moduleMeta);
   }
 
@@ -21,14 +19,15 @@ MetaFetch.pipeline = function(manager, moduleMeta) {
     // If a pipeline item has added source to the module meta, then we
     // are done with this stage.  Otherwise, we will run the default
     // fetch provider
-    if (types.isString(moduleMeta.source)) {
+    if (Module.Meta.canCompile(moduleMeta)) {
       return moduleMeta;
     }
 
     return MetaFetch.fetch(manager, moduleMeta);
   }
 
-  return runPipeline(manager.pipelines.fetch, moduleMeta)
+  return manager.pipelines.fetch
+    .run(moduleMeta)
     .then(fetchFinished, logger.error);
 };
 
@@ -39,7 +38,7 @@ MetaFetch.pipeline = function(manager, moduleMeta) {
 MetaFetch.fetch = function(manager, moduleMeta) {
   logger.log(moduleMeta.name, moduleMeta);
 
-  if (!canProcess(manager, moduleMeta)) {
+  if (Module.Meta.canCompile(moduleMeta)) {
     return Promise.resolve(moduleMeta);
   }
 
@@ -48,11 +47,6 @@ MetaFetch.fetch = function(manager, moduleMeta) {
       return moduleMeta.configure(meta);
     }, logger.error);
 };
-
-
-function canProcess(manager, moduleMeta) {
-  return !types.isString(moduleMeta.source) && !manager.rules.ignore.fetch.match(moduleMeta.name);
-}
 
 
 module.exports = MetaFetch;

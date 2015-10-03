@@ -1,5 +1,5 @@
 require("test/spec/fetch");
-require("test/spec/import");
+require("test/spec/importer");
 require("test/spec/loader");
 require("test/spec/registry");
 require("test/spec/middleware");

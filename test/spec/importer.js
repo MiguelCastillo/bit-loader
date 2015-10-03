@@ -1,5 +1,5 @@
 define(["dist/bit-loader"], function(Bitloader) {
-  var Importer = Bitloader.Import;
+  var Importer = Bitloader.Importer;
 
   describe("Import Suite", function() {
 

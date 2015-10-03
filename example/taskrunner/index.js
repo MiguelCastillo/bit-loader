@@ -8,7 +8,7 @@ var log2console = require("log2console");
 function jsPipeline() {
   this
     .load("./index.js")
-    .then(log2console, log2console)
+    .then(log2console, log2console);
 }
 
 

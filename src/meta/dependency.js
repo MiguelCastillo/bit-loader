@@ -1,6 +1,5 @@
-var logger      = require("loggero").create("Meta/Dependency");
-var runPipeline = require("./runPipeline");
-var Module      = require("../module");
+var logger = require("loggero").create("Meta/Dependency");
+var Module = require("../module");
 
 
 function MetaDependency() {
@@ -16,12 +15,7 @@ function MetaDependency() {
 MetaDependency.pipeline = function(manager, moduleMeta) {
   logger.log(moduleMeta.name, moduleMeta);
 
-  if (!canProcess(manager, moduleMeta)) {
-    return Promise.resolve(moduleMeta);
-  }
-
   function dependenciesFinished() {
-    // Return if the module has no dependencies
     if (Module.Meta.hasDependencies(moduleMeta)) {
       return loadDependencies(manager, moduleMeta);
     }
@@ -29,7 +23,8 @@ MetaDependency.pipeline = function(manager, moduleMeta) {
     return moduleMeta;
   }
 
-  return runPipeline(manager.pipelines.dependency, moduleMeta)
+  return manager.pipelines.dependency
+    .run(moduleMeta)
     .then(dependenciesFinished, logger.error);
 };
 
@@ -46,11 +41,6 @@ function loadDependencies(manager, moduleMeta) {
   }
 
   return Promise.all(loading).then(dependenciesFetched, logger.error);
-}
-
-
-function canProcess(manager, moduleMeta) {
-  return !manager.rules.ignore.dependency.match(moduleMeta.name);
 }
 
 

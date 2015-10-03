@@ -1,6 +1,5 @@
-var logger      = require("loggero").create("Meta/Compiler");
-var runPipeline = require("./runPipeline");
-var Module      = require("../module");
+var logger = require("loggero").create("Meta/Compiler");
+var Module = require("../module");
 
 
 function MetaCompile() {
@@ -16,16 +15,11 @@ function MetaCompile() {
 MetaCompile.pipeline = function(manager, moduleMeta) {
   logger.log(moduleMeta.name, moduleMeta);
 
-  if (!Module.Meta.canCompile(moduleMeta) || !canProcess(manager, moduleMeta)) {
+  if (!Module.Meta.canCompile(moduleMeta)) {
     return Promise.resolve(moduleMeta);
   }
 
-  function compilationFinished() {
-    return moduleMeta;
-  }
-
-  return runPipeline(manager.pipelines.compile, moduleMeta)
-    .then(compilationFinished, logger.error);
+  return manager.pipelines.compile.run(moduleMeta);
 };
 
 
@@ -37,15 +31,10 @@ MetaCompile.pipeline = function(manager, moduleMeta) {
 MetaCompile.compile = function(manager, moduleMeta) {
   logger.log(moduleMeta.name, moduleMeta);
 
-  if (canProcess(manager, moduleMeta) && Module.Meta.canCompile(moduleMeta)) {
+  if (Module.Meta.canCompile(moduleMeta)) {
     moduleMeta.configure(manager.compile(moduleMeta));
   }
 };
-
-
-function canProcess(manager, moduleMeta) {
-  return !manager.rules.ignore.compile.match(moduleMeta.name);
-}
 
 
 module.exports = MetaCompile;

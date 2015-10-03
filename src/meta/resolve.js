@@ -1,5 +1,4 @@
-var logger      = require("loggero").create("Meta/Resolve");
-var runPipeline = require("./runPipeline");
+var logger = require("loggero").create("Meta/Resolve");
 
 
 function MetaResolve() {
@@ -17,7 +16,8 @@ MetaResolve.pipeline = function(manager, moduleMeta) {
     return MetaResolve.resolve(manager, moduleMeta);
   }
 
-  return runPipeline(manager.pipelines.resolve, moduleMeta)
+  return manager.pipelines.resolve
+    .run(moduleMeta)
     .then(resolveFinished, logger.error);
 };
 

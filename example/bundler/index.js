@@ -28,7 +28,7 @@ bitloader.ignore(["react"]);
  * - transform to convert module files to other formats. E.g. JSX to JavaScript
  * - dependency to process and load module dependencies
  */
-bitloader.plugin("js", {
+bitloader.plugin({
   resolve: resolvePath.configure({baseUrl: __filename}),
   fetch: fileReader,
   transform: [babel],

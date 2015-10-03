@@ -56,7 +56,7 @@ function Task(taskrunner, options) {
   }
 
   function then(cb) {
-    loader.pipelines.transform.use(cb);
+    loader.pipelines.transform.plugin(cb);
     return task;
   }
 

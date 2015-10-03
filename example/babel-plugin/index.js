@@ -14,7 +14,7 @@ var bitloader = new Bitloader();
 /**
  * Setup a babel transform
  */
-bitloader.plugin("js", {
+bitloader.plugin({
   resolve: resolvePath.configure({baseUrl: __filename}),
   fetch: fileReader,
   transform: babel

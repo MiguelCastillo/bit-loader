@@ -7,7 +7,7 @@ var loader = new Bitloader({
 
 
 // Register anonymous transform directly in the transform pipeline
-loader.pipelines.transform.use(addStrict);
+loader.pipelines.transform.plugin(addStrict);
 
 
 loader.import(["like1", "like2"]).then(function(result) {
