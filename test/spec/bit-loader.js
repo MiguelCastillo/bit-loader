@@ -36,7 +36,7 @@ define(["dist/bit-loader"], function(Bitloader) {
           compile: compileStub
         });
 
-        bitloader.plugin("js", {
+        bitloader.plugin({
           "fetch"      : fetchStub,
           "transform"  : transformStub,
           "dependency" : dependencyStub,
