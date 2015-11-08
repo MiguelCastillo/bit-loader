@@ -1,22 +1,24 @@
-var logger     = require("loggero").disable();  // Disable logging by default.
-var types      = require("dis-isa");
-var Rule       = require("roolio");
-var fetch      = require("./fetch");
-var compile    = require("./compile");
-var resolve    = require("./resolve");
-var Importer   = require("./importer");
-var Loader     = require("./loader");
+var logger = require("loggero").disable();  // Disable logging by default.
+var types  = require("dis-isa");
+var Rule   = require("roolio");
+var utils  = require("belty");
+
+var Link       = require("./services/link");
+var Resolve    = require("./services/resolve");
+var Fetch      = require("./services/fetch");
+var Transform  = require("./services/transform");
+var Dependency = require("./services/dependency");
+var Compile    = require("./services/compile");
+
+var Fetcher    = require("./controllers/fetcher");
+var Importer   = require("./controllers/importer");
+var Loader     = require("./controllers/loader");
+var Registry   = require("./controllers/registry");
+var Builder    = require("./controllers/builder");
 var Module     = require("./module");
 var Plugin     = require("./plugin");
-var Registry   = require("./registry");
 
-var defaults = {
-  fetch: fetch,
-  compile: compile,
-  resolve: resolve
-};
-
-var getRegistryId = Registry.idGenerator("bitloader");
+var pluginManagerCount = 0;
 
 
 /**
@@ -25,78 +27,58 @@ var getRegistryId = Registry.idGenerator("bitloader");
  * Facade for relevant interfaces to register and import modules
  */
 function Bitloader(options) {
-  options = options || {};
+  options = utils.merge({}, options);
 
   this.settings = options;
-  this.context  = Registry.getById(getRegistryId());
   this.plugins  = {};
 
-  this.pipelines = {
-    resolve    : new Plugin.Manager(this),
-    fetch      : new Plugin.Manager(this),
-    transform  : new Plugin.Manager(this),
-    dependency : new Plugin.Manager(this),
-    compile    : new Plugin.Manager(this)
+  // Services! Components that process modules.
+  this.services = {
+    resolve    : new Resolve(this),
+    fetch      : new Fetch(this),
+    transform  : new Transform(this),
+    dependency : new Dependency(this),
+    compile    : new Compile(this),
+    link       : new Link(this)
   };
 
-  this.providers = {
+  // Register any default user provided providers that the services use.
+  // These guys get executed before any plugins execute. These have higher
+  // execution priority in the execution chain.
+  this.services.resolve.provider(options.resolve);
+  this.services.fetch.provider(options.fetch);
+  this.services.compile.provider(options.compile);
+  this.services.transform.provider(options.transform);
+  this.services.dependency.provider(options.dependency);
+
+  // Controllers!  These guys make use of the services to build pipelines
+  // that build modules. Controllers use services, but services only use
+  // services, not controllers.
+  var controllers = {
+    fetcher  : new Fetcher(this),
     loader   : new Loader(this),
-    importer : new Importer(this)
+    importer : new Importer(this),
+    registry : new Registry(this),
+    builder  : new Builder(this)
   };
+
+
+  // Three methods as defined by:
+  // https://whatwg.github.io/loader/#sec-properties-of-the-loader-prototype-object
+  this.import  = controllers.importer.import.bind(controllers.importer);
+  this.resolve = controllers.loader.resolve.bind(controllers.loader);
+  this.load    = controllers.loader.load.bind(controllers.loader);
+
+  this.fetch       = controllers.fetcher.fetch.bind(controllers.fetcher);
+  this.important   = controllers.importer.important.bind(controllers.importer);
+  this.register    = controllers.registry.register.bind(controllers.registry);
+  this.controllers = controllers;
 
   // Register plugins
   for (var plugin in options.plugins) {
-    this.plugin(plugin, options.plugins[plugin]);
+    this.plugin(options.plugins[plugin]);
   }
-
-  var providers = this.providers;
-
-  this.resolve   = options.resolve || defaults.resolve;
-  this.fetch     = options.fetch   || defaults.fetch;
-  this.compile   = options.compile || defaults.compile;
-  this.load      = providers.loader.load.bind(providers.loader);
-  this.register  = providers.loader.register.bind(providers.loader);
-  this.import    = providers.importer.import.bind(providers.importer);
-  this.important = providers.importer.important.bind(providers.importer);
 }
-
-
-/**
- * Method that converts a module name to a path to the module file.
- *
- * @param {string} name - Name of the module to generate a path for
- * @param {{path: string, name: string}} referer - Object with the
- *  location and name of the requesting module.
- *
- * @returns {Promise} Promise that when resolved, will return an object with
- *  a required field `path` where we can load the module file from.
- */
-Bitloader.prototype.resolve = function(){};
-
-
-/**
- * Method to read files from storage. This is to be implemented by the code
- * making use of Bitloader.
- *
- * @param {string} name - Name of the module whose file content needs to be
- *  fetched.
- * @param {{path: string, name: string}} referer - Object with the
- *  location and name of the requesting module.
- *
- * @returns {Promise} Promise that when resolved, a module meta object
- *  with a "source" property is returned. The "source" property is where
- *  the content of the file is stored.
- */
-Bitloader.prototype.fetch = function(){};
-
-
-/**
- * Method for asynchronously loading modules.
- *
- * @returns {Pormise} That when resolved, it returns the full instance of the
- *  module loaded
- */
-Bitloader.prototype.load = function(){};
 
 
 /**
@@ -109,17 +91,23 @@ Bitloader.prototype.load = function(){};
  * @returns {Promise} That when resolved, all the imported modules are passed
  *  back as arguments.
  */
-Bitloader.prototype.import = function(){};
+Bitloader.prototype.import = function(/*name, referrer*/) {};
 
 
 /**
- * Method that converts source file to a module code that can be consumed by
- * the host application.
- *
- * @returns {Module} Module instance with code that can be consumed by the host
- *  application.
+ * Method that converts a module name to a module path that can be used for
+ * loading a module from storage.
  */
-Bitloader.prototype.compile = function(){};
+Bitloader.prototype.resolve = function(/*name, referrer*/) {};
+
+
+/**
+ * Method for asynchronously loading modules.
+ *
+ * @returns {Pormise} That when resolved, it returns the full instance of the
+ *  module loaded
+ */
+Bitloader.prototype.load = function(/*name, referrer*/) {};
 
 
 /**
@@ -132,23 +120,41 @@ Bitloader.prototype.compile = function(){};
  * @param {Function} factory - Function to be called in order to instantiate
  *  (realize) the module
  */
-Bitloader.prototype.register = function(){};
+Bitloader.prototype.register = function(/*name, deps, factory, referrer*/) {};
 
 
 /**
- * Clears the context, which means that all cached modules and other pertinent data
- * will be deleted.
+ * Helper method to push source string through the transformation pipeline
+ *
+ * @param {string} source - Source code to transform.
+ * @returns {Promise} When resolved, the transformed source is returned.
+ */
+Bitloader.prototype.transform = function(source) {
+  return this.services.transform.run(new Module.Meta({
+    name: "@transform",
+    source: source
+  }))
+  .then(function(moduleMeta) {
+    return moduleMeta.source;
+  });
+};
+
+
+/**
+ * Clears the registry, which means that all cached modules and other pertinent
+ * data will be deleted.
  */
 Bitloader.prototype.clear = function() {
-  this.context.clear();
+  this.controllers.registry.clear();
+  return this;
 };
 
 
 /**
  * Checks if the module instance is in the module registry
  */
-Bitloader.prototype.hasModule = function(name) {
-  return this.context.hasModule(name) || this.providers.loader.isLoaded(name);
+Bitloader.prototype.hasModule = function(id) {
+  return this.controllers.registry.hasModule(id);
 };
 
 
@@ -156,109 +162,61 @@ Bitloader.prototype.hasModule = function(name) {
  * Returns the module instance if one exists.  If the module instance isn't in the
  * module registry, then a TypeError exception is thrown
  */
-Bitloader.prototype.getModule = function(name) {
-  if (!this.hasModule(name)) {
-    throw new TypeError("Module `" + name + "` has not yet been loaded");
-  }
-
-  if (!this.context.hasModule(name)) {
-    return this.context.setModule(Module.State.LOADED, name, this.providers.loader.syncBuild(name));
-  }
-
-  return this.context.getModule(name);
-};
-
-
-/**
- * Add a module instance to the module registry.  And if the module already exists in
- * the module registry, then a TypeError exception is thrown.
- *
- * @param {Module} mod - Module instance to add to the module registry
- *
- * @returns {Module} Module instance added to the registry
- */
-Bitloader.prototype.setModule = function(mod) {
-  var name = mod.name;
-
-  if (!(mod instanceof(Module))) {
-    throw new TypeError("Module `" + name + "` is not an instance of Module");
-  }
-
-  if (!name || !types.isString(name)) {
-    throw new TypeError("Module must have a name");
-  }
-
-  if (this.context.hasModule(name)) {
-    throw new TypeError("Module instance `" + name + "` already exists");
-  }
-
-  return this.context.setModule(Module.State.LOADED, name, mod);
+Bitloader.prototype.getModule = function(id) {
+  return this.controllers.registry.getModule(id);
 };
 
 
 /**
  * Interface to delete a module from the registry.
  *
- * @param {string} name - Name of the module to delete
+ * @param {string} id - Id of the module to delete
  *
  * @returns {Module} Deleted module
  */
-Bitloader.prototype.deleteModule = function(name) {
-  if (!this.context.hasModule(name)) {
-    throw new TypeError("Module instance `" + name + "` does not exists");
+Bitloader.prototype.deleteModule = function(mod) {
+  if (!(mod instanceof(Module))) {
+    throw new TypeError("Input is not an instance of Module");
   }
 
-  return this.context.deleteModule(name);
+  if (!this.controllers.registry.hasModule(mod.id)) {
+    throw new TypeError("Module instance `" + mod.name + "` does not exists");
+  }
+
+  return this.controllers.registry.deleteModule(mod.id);
 };
 
 
 /**
- * Returns the module code from the module registry. If the module code has not
- * yet been fully compiled, then we defer to the loader to build the module and
- * return the code.
+ * Returns the module exports from the module registry. If the module exports has not
+ * yet been fully compiled, then we defer to the loader to build the module and return
+ * the exports.
  *
- * @param {string} name - The name of the module code to get from the module registry
+ * @param {string} id - The id of the module exports to get from the module registry
  *
- * @return {object} The module code.
+ * @return {object} The module exports.
  */
-Bitloader.prototype.getModuleCode = function(name) {
-  if (!this.hasModule(name)) {
-    throw new TypeError("Module `" + name + "` has not yet been loaded");
-  }
-
-  return this.getModule(name).code;
+Bitloader.prototype.getModuleExports = function(id) {
+  return this.getModule(id).exports;
 };
 
 
 /**
- * Sets module evaluated code directly in the module registry.
+ * Sets module evaluated exports directly in the module registry.
  *
  * @param {string} name - The name of the module, which is used by other modules
  *  that need it as a dependency.
- * @param {object} code - The evaluated code to be set
+ * @param {object} exports - The evaluated exports to be set
  *
- * @returns {object} The evaluated code.
+ * @returns {object} The module instance with the exports information.
  */
-Bitloader.prototype.setModuleCode = function(name, code) {
-  if (this.hasModule(name)) {
-    throw new TypeError("Module code for `" + name + "` already exists");
-  }
-
+Bitloader.prototype.setModuleExports = function(name, exports) {
   var mod = new Module({
     name: name,
-    code: code
+    exports: exports
   });
 
-  return this.setModule(mod).code;
-};
-
-
-/**
- * Checks is the module has been fully finalized, which is when the module instance
- * get stored in the module registry
- */
-Bitloader.prototype.isModuleCached = function(name) {
-  return this.context.hasModule(name);
+  return this.controllers.registry.setModule(Module.State.READY, mod);
 };
 
 
@@ -294,7 +252,7 @@ Bitloader.prototype.ignore = function(rule) {
   }
 
   for (i = 0, length = pipelines.length; i < length; i++) {
-    this.pipelines[pipelines[i]].ignore("name", rule.match);
+    this.services[pipelines[i]].ignore("name", rule.match);
   }
 
   return this;
@@ -322,36 +280,23 @@ Bitloader.prototype.ignore = function(rule) {
  *  bitlaoder.plugin(plugin);
  *  ```
  */
-Bitloader.prototype.plugin = function(settings) {
-  var loader = this;
+Bitloader.prototype.plugin = function(name, settings) {
+  if (!types.isString(name)) {
+    settings = name;
+    name = pluginManagerCount++;
+  }
 
-  Object.keys(settings).forEach(function(pipeline) {
-    var pluginConfig = settings[pipeline];
+  if (!this.plugins[name]) {
+    this.plugins[name] = new Plugin.Manager(this, this.services);
+  }
 
-    if (!types.isArray(pluginConfig)) {
-      pluginConfig = [pluginConfig];
-    }
-
-    pluginConfig.forEach(function(plugin) {
-      if (types.isFunction(plugin)) {
-        loader.pipelines[pipeline].plugin(plugin);
-      }
-      else {
-        loader.pipelines[pipeline].plugin(plugin.handler, plugin);
-      }
-    });
-  });
-
+  this.plugins[name].configure(settings);
   return this;
 };
 
 
 // Expose constructors and utilities
-Bitloader.Registry   = Registry;
-Bitloader.Loader     = Loader;
-Bitloader.Importer   = Importer;
-Bitloader.Module     = Module;
-Bitloader.Plugin     = Plugin;
-Bitloader.Rule       = Rule;
-Bitloader.logger     = logger;
-module.exports       = Bitloader;
+Bitloader.Module = Module;
+Bitloader.Rule   = Rule;
+Bitloader.logger = logger;
+module.exports   = Bitloader;

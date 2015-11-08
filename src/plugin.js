@@ -1,17 +1,25 @@
-var logger = require("loggero").create("plugin");
-var types  = require("dis-isa");
-var utils  = require("belty");
-var Rule   = require("roolio");
+var Matches = require("./matches");
+var logger  = require("loggero").create("plugin");
+var types   = require("dis-isa");
+var utils   = require("belty");
 
 
 /**
  * Plugin class definition
  */
-function Plugin(handler) {
+function Handler(handler) {
+  Matches.call(this);
+
   this.handler = handler;
-  this._matches = null;
-  this._ignore = null;
+
+  if (types.isString(handler)) {
+    this.ignore("name", handler);
+  }
 }
+
+
+Handler.prototype = Object.create(Matches.prototype);
+Handler.prototype.constructor = Handler;
 
 
 /**
@@ -21,117 +29,81 @@ function Plugin(handler) {
  *  or a function.
  * @options {object} - Options.
  *
- * @returns {Plugin} New plugin instance
+ * @returns {Handler} New Handler instance
  */
-Plugin.create = function(handler, options) {
-  var plugin = new Plugin(handler);
-  return options ? plugin.configure(options) : plugin;
+Handler.create = function(handler, options) {
+  handler = new Handler(handler);
+  return options ? handler.configure(options) : handler;
 };
 
 
 /**
- * Configures plugin with the provided options.
+ * Configures handler with the provided options.
  */
-Plugin.prototype.configure = function(options) {
-  var prop;
+Handler.prototype.configure = function(options) {
+  Matches.prototype.configure.call(this, options);
 
-  for (prop in options.match) {
-    if (options.match.hasOwnProperty(prop)) {
-      this.match(prop, options.match[prop]);
-    }
+  if (options.hasOwnProperty("handler")) {
+    this.handler = options.handler;
   }
 
-  for (prop in options.ignore) {
-    if (options.ignore.hasOwnProperty(prop)) {
-      this.ignore(prop, options.ignore[prop]);
-    }
+  if (options.hasOwnProperty("name")) {
+    this.name = options.name;
   }
 
-  this.options = options;
+  this.options = utils.merge({}, this.options, options);
   return this;
 };
 
 
-/**
- * Method for adding matching rules used for determining if data
- * should be processed by the plugin or not.
- *
- * @prop {string} - Name of the property to test for matches.
- * @matches {array<string>|srting} - Matching rule pattern
- *
- * @returns {Plugin}
- */
-Plugin.prototype.match = function(prop, matches) {
-  if (!this._matches) {
-    this._matches = {};
+Handler.prototype.run = function(data, cancel) {
+  if (!this.canExecute(data)) {
+    return Promise.resolve(data);
   }
 
-  if (!this._matches[prop]) {
-    this._matches[prop] = new Rule();
-  }
-
-  this._matches[prop].addMatcher(matches);
-  return this;
+  return this.handler(data, this.options, cancel);
 };
 
 
-/**
- * Add ignore rules to prevent certain data from being processed
- * by a plugin.
- */
-Plugin.prototype.ignore = function(prop, matches) {
-  if (!this._ignore) {
-    this._ignore = {};
-  }
-
-  if (!this._ignore[prop]) {
-    this._ignore[prop] = new Rule();
-  }
-
-  this._ignore[prop].addMatcher(matches);
-  return this;
-};
-
-
-/**
- * Checks if the plugin can operate on the data passed in.
- */
-Plugin.prototype.canExecute = function(data) {
-  if (this._ignore && runMatches(this._ignore, data)) {
-    return false;
-  }
-
-  return runMatches(this._matches, data);
-};
-
-
-/**
- * Plugin Manager is a plugin container that facilitates the execution of
- * plugins.
- */
-function Manager(loader) {
+function Plugin(name, loader) {
   this.loader = loader;
-  this._plugins = [];
-  this._ignore = null;
+  this.name = name;
+  this.handlers = [];
 }
 
 
-/**
- * Configure plugin. This is a way to setup matching rules and handlers
- * in a single convenient call.
- *
- * @returns {Plugin}
- */
-Manager.prototype.plugin = function(handler, options) {
-  options = options || {};
-  var plugin = Plugin.create(handler, options);
-
-  if (types.isString(handler)) {
-    plugin.ignore("name", handler);
+Plugin.prototype.configure = function(options) {
+  if (!types.isArray(options)) {
+    options = [options];
   }
 
-  this._plugins.push(plugin);
+  options
+    .map(function(option) {
+      if (types.isFunction(option) || types.isString(option)) {
+        option = {
+          handler: option
+        };
+        return option;
+      }
+    })
+    .map(function(option) {
+      return Handler.create(option.handler, option);
+    })
+    .reduce(function(plugin, handler) {
+      plugin.handlers.push(handler);
+      return plugin;
+    }, this);
+
   return this;
+};
+
+
+Plugin.prototype.run = function(data) {
+//  if (!this.canExecute(data)) {
+//    return Promise.resolve(data);
+//  }
+
+  return runHandlers(data, this.handlers, this.loader);
 };
 
 
@@ -140,119 +112,136 @@ Manager.prototype.plugin = function(handler, options) {
  * handlers that return promises and it also provides a system to cancel
  * the promise sequence.
  */
-Manager.prototype.run = function(data) {
-  if (this._ignore && runMatches(this._ignore, data)) {
-    return Promise.resolve(data);
-  }
-
-  return runPlugin(data, this._plugins, this.loader);
-};
-
-
-/**
- * Add ignore rules at the manager level to prevent all plugins
- * from executing.
- */
-Manager.prototype.ignore = function(prop, matches) {
-  if (!this._ignore) {
-    this._ignore = {};
-  }
-
-  if (!this._ignore[prop]) {
-    this._ignore[prop] = new Rule();
-  }
-
-  this._ignore[prop].addMatcher(matches);
-  return this;
-};
-
-
-/**
- * Executed a list of plugins feeding data into them for processing.
- */
-function runPlugin(data, plugins, loader) {
+function runHandlers(data, handlers, loader) {
   var cancelled = false;
-
   function cancel() {
     cancelled = true;
   };
 
-  return plugins
-    .filter(function(plugin) {
-      return plugin.canExecute(data);
+  return handlers
+    .filter(function(handler) {
+      return handler.canExecute(data);
     })
-    .reduce(function(promise, plugin) {
+    .reduce(function(promise, handler) {
       if (cancelled) {
         return promise;
       }
 
       return promise
-        .then(loadPlugin(loader, plugin), logger.error)
-        .then(runPluginHandler(data, cancel), logger.error)
-        .then(mergePluginResult(data), logger.error);
-    }, Promise.resolve(data));
+        .then(loadHandler(loader, handler))
+        .then(runHandler(data, cancel))
+        .then(mergeHandlerResult(data));
+    }, Promise.resolve());
 }
 
 
 /**
- * Method to load a plugin.
+ * Method to load a handler.
  */
-function loadPlugin(loader, plugin) {
+function loadHandler(loader, handler) {
   return function loadPluginDelegate() {
-    if (types.isString(plugin.handler)) {
-      return loader
-        .import(plugin.handler, logger.error)
-        .then(function(pluginData) {
-          if (types.isFunction(pluginData)) {
-            plugin.handler = pluginData;
-          }
-          else {
-            plugin.handler = pluginData.handler;
-            plugin.configure(pluginData);
-          }
-
-          return plugin;
-        }, logger.error);
+    if (!types.isString(handler.handler)) {
+      return Promise.resolve(handler);
     }
 
-    return Promise.resolve(plugin);
+    return loader
+      .import(handler.handler)
+      .then(function(settings) {
+        if (types.isFunction(settings)) {
+          settings = {
+            handler: settings
+          };
+        }
+
+        return handler.configure(settings);
+      });
   };
 }
 
 
 /**
- * Method that return a function to be executed with the plugin
- * to be executed.
+ * Method that return a function that executes a plugin handler.
  */
-function runPluginHandler(data, cancel) {
-  return function runPluginDelegate(plugin) {
-    return plugin.handler(data, plugin.options, cancel);
+function runHandler(data, cancel) {
+  return function runHandlerDelegate(handler) {
+    return handler.run(data, cancel);
   };
 }
 
 
 /**
- * Method the returns a function to process the result from a
- * plugin
+ * Method the returns a function to process the result from a plugin
  */
-function mergePluginResult(data) {
+function mergeHandlerResult(data) {
   return function mergeModuleResultDelegate(result) {
-    return result ? utils.extend(data, result) : data;
+    return utils.extend(data, result);
   };
 }
 
 
 /**
- * Checks if the handler can process the input data based on whether
- * or not there are matches to be processed and if any of the matches
- * do match.
+ * Plugin Manager is a plugin container that facilitates the execution of
+ * plugins.
  */
-function runMatches(matches, data) {
-  return !matches || Object.keys(matches).some(function(match) {
-    return matches[match].match(data[match]);
-  });
+function Manager(loader, services) {
+  this._loader = loader;
+  this._services = services;
+  this._plugins = {};
+  this._registrations = {};
 }
+
+
+Manager.prototype = Object.create(Matches.prototype);
+Manager.prototype.constructor = Manager;
+
+
+/**
+ * Configure plugin. This is a way to setup matching rules and handlers
+ * in a single convenient call.
+ *
+ * @returns {Plugin}
+ */
+Manager.prototype.configure = function(settings) {
+  var manager = this;
+  var loader = this._loader;
+  var services = this._services;
+  var plugins = this._plugins;
+  var registrations = this._registrations;
+
+  // Process match/ignore options.
+  Matches.prototype.configure.call(this, settings);
+
+  Object.keys(settings)
+    .filter(function(service) {
+      return service !== "match" || service !== "ignore";
+    })
+    .map(function(service) {
+      return plugins[service] || (plugins[service] = new Plugin(service, loader));
+    })
+    .map(function(plugin) {
+      return plugin.configure(settings[plugin.name]);
+    })
+    .filter(function(plugin) {
+      return !registrations[plugin.name];
+    })
+    .map(function(plugin) {
+      function registration(data) {
+        if (!manager.canExecute(data)) {
+          return data;
+        }
+
+        return plugin.run(data);
+      };
+
+      registrations[plugin.name] = registration;
+      services[plugin.name].use(registration);
+      return registration;
+    });
+
+  return this;
+};
 
 
 Plugin.Manager = Manager;
+Plugin.Handler = Handler;
 module.exports = Plugin;

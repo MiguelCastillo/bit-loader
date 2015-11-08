@@ -1,8 +1,4 @@
 require("test/spec/fetch");
-require("test/spec/importer");
-require("test/spec/loader");
-require("test/spec/registry");
-require("test/spec/module");
-require("test/spec/plugin");
-require("test/spec/transform");
-require("test/spec/bit-loader");
+require("test/spec/build");
+require("test/spec/load");
+require("test/spec/import");
