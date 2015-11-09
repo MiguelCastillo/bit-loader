@@ -1,7 +1,7 @@
-var Matches = require("./matches");
-var logger  = require("loggero").create("plugin");
+//var logger  = require("loggero").create("plugin");
 var types   = require("dis-isa");
 var utils   = require("belty");
+var Matches = require("./matches");
 
 
 /**

@@ -1,4 +1,4 @@
-var logger = require("loggero").create("pipeline");
+//var logger = require("loggero").create("pipeline");
 
 
 function Pipeline(handlers) {

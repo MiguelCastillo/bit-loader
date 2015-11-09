@@ -10,6 +10,7 @@ var Transform  = require("./services/transform");
 var Dependency = require("./services/dependency");
 var Compile    = require("./services/compile");
 
+var Resolver   = require("./controllers/resolver");
 var Fetcher    = require("./controllers/fetcher");
 var Importer   = require("./controllers/importer");
 var Loader     = require("./controllers/loader");
@@ -55,6 +56,7 @@ function Bitloader(options) {
   // that build modules. Controllers use services, but services only use
   // services, not controllers.
   var controllers = {
+    resolver : new Resolver(this),
     fetcher  : new Fetcher(this),
     loader   : new Loader(this),
     importer : new Importer(this),
@@ -66,7 +68,7 @@ function Bitloader(options) {
   // Three methods as defined by:
   // https://whatwg.github.io/loader/#sec-properties-of-the-loader-prototype-object
   this.import  = controllers.importer.import.bind(controllers.importer);
-  this.resolve = controllers.loader.resolve.bind(controllers.loader);
+  this.resolve = controllers.resolver.resolve.bind(controllers.resolver);
   this.load    = controllers.loader.load.bind(controllers.loader);
 
   this.fetch       = controllers.fetcher.fetch.bind(controllers.fetcher);

@@ -1,6 +1,5 @@
 //var logger = require("loggero").create("controllers/loader");
 var types  = require("dis-isa");
-var Module = require("../module");
 
 
 /**
@@ -39,14 +38,6 @@ Loader.prototype.load = function(names, referrer) {
   }
 
   return Promise.all(names.map(load(this, referrer)));
-};
-
-
-Loader.prototype.resolve = function(name, referrer) {
-  return this.manager.services.resolve.run(new Module.Meta({
-    name: name,
-    referrer: referrer
-  }));
 };
 
 

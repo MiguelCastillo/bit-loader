@@ -23,16 +23,8 @@ function Fecther(manager) {
 
 
 Fecther.prototype.fetch = function(name, referrer) {
-  return resolve(this.manager, name, referrer).then(tryRunPipeline(this));
+  return this.manager.controllers.resolver.resolve(name, referrer).then(tryRunPipeline(this));
 };
-
-
-function resolve(manager, name, referrer) {
-  return manager.services.resolve.run(new Module.Meta({
-    name: name,
-    referrer: referrer
-  }));
-}
 
 
 function fetch(manager) {
