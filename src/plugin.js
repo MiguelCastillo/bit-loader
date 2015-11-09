@@ -174,7 +174,7 @@ function runHandler(data, cancel) {
  */
 function mergeHandlerResult(data) {
   return function mergeModuleResultDelegate(result) {
-    return utils.extend(data, result);
+    return data.configure(result);
   };
 }
 
@@ -225,7 +225,7 @@ Manager.prototype.configure = function(settings) {
       return !registrations[plugin.name];
     })
     .map(function(plugin) {
-      function registration(data) {
+      function pluginRunner(data) {
         if (!manager.canExecute(data)) {
           return data;
         }
@@ -233,9 +233,9 @@ Manager.prototype.configure = function(settings) {
         return plugin.run(data);
       };
 
-      registrations[plugin.name] = registration;
-      services[plugin.name].use(registration);
-      return registration;
+      registrations[plugin.name] = pluginRunner;
+      services[plugin.name].use(pluginRunner);
+      return pluginRunner;
     });
 
   return this;
