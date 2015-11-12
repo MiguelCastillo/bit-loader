@@ -66,7 +66,6 @@ function Bitloader(options) {
     builder  : new Builder(this)
   };
 
-
   // Three methods as defined by:
   // https://whatwg.github.io/loader/#sec-properties-of-the-loader-prototype-object
   this.import  = controllers.importer.import.bind(controllers.importer);
@@ -81,13 +80,6 @@ function Bitloader(options) {
   // Register plugins
   for (var plugin in options.plugins) {
     this.plugin(options.plugins[plugin]);
-  }
-
-  // Make this option a bit obtuse - I wanna make a lil difficult for people to use.
-  if (options.doNotIgnoreNodeModules !== true) {
-    ["transform", "dependency"].forEach(function(item) {
-      services[item].ignore("path", new RegExp("node_modules/"));
-    });
   }
 }
 
