@@ -6,9 +6,15 @@ var pstream     = require("p-stream");
  * Convenience factory for specifying the instance of bit loader to bundle up
  */
 function bundlerFactory(loader, options) {
-  return function bundlerDelegate(modules) {
-    return bundler(loader, options, modules);
+  function bundlerDelegate(modules) {
+    return bundler(loader, options || {}, modules);
+  }
+
+  bundlerDelegate.bundle = function(names) {
+    return loader.fetch(names).then(bundlerDelegate);
   };
+
+  return bundlerDelegate;
 }
 
 
@@ -28,24 +34,24 @@ function bundler(loader, options, modules) {
       return;
     }
 
-    var meta = mod.meta;
+    mod = loader.getModule(mod.id);
 
     // browser pack chunk
     var browserpack = {
-      id     : meta.id,
-      source : meta.source,
+      id     : mod.id,
+      source : mod.source,
       deps   : {}
     };
 
     // Gather up all dependencies
     var i, length, dep;
     for (i = 0, length = mod.deps.length; i < length; i++) {
-      dep = loader.getModule(mod.deps[i]);
+      dep = mod.deps[i];
       stack.push(dep);
       browserpack.deps[dep.id] = dep.id;
     }
 
-    finished[meta.id] = browserpack;
+    finished[mod.id] = browserpack;
     mods.unshift(browserpack);
   }
 

@@ -14,11 +14,8 @@ var resolvePath = require("./src/resolvePath");
 var bitloader = new Bitloader();
 
 
-/**
- * Add any modules that shouldn't be processed by the `transform` and `dependency`
- * pipelines right here.  The match is done on the module id being imported
- */
-bitloader.ignore(["react"]);
+// We don't really wanna process react...
+bitloader.ignore("react");
 
 
 /**
@@ -39,6 +36,22 @@ bitloader.plugin({
 /**
  * Import two modules. One with just ES2015 and the other with React JSX and ES2015
  */
-bitloader.load(["./js/Name.js"])
-  .then(bundler(bitloader), log2console)
-  .then(log2console, log2console);
+bitloader
+  .fetch(["./js/Name.js"])
+  .then(bundler(bitloader, {}))
+  .then(log2console, printStack);
+
+
+//bundler(bitloader, {})
+//  .bundle(["./js/Name.js"])
+//  .then(log2console, printStack);
+
+
+function printStack(err) {
+  if (err && err.stack) {
+    console.error(err.stack);
+  }
+  else {
+    console.log(err);
+  }
+}

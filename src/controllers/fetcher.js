@@ -1,4 +1,5 @@
 //var logger   = require("loggero").create("controllers/fetch");
+var types    = require("dis-isa");
 var helpers  = require("./helpers");
 var Module   = require("../module");
 var Pipeline = require("../pipeline");
@@ -22,9 +23,28 @@ function Fecther(manager) {
 }
 
 
-Fecther.prototype.fetch = function(name, referrer) {
-  return this.manager.controllers.resolver.resolve(name, referrer).then(tryRunPipeline(this));
+Fecther.prototype.fetch = function(names, referrer) {
+  referrer = referrer || {};
+  var fetcher = this;
+
+  if (types.isString(names)) {
+    return _fetch(fetcher, names, referrer);
+  }
+  else {
+    return Promise.all(names.map(function(name) {
+      return _fetch(fetcher, name, referrer);
+    }));
+  }
 };
+
+
+function _fetch(fetcher, name, referrer) {
+  return fetcher.manager.controllers.resolver.resolve(name, {
+    name: referrer.name,
+    path: referrer.path,
+    id: referrer.id
+  }).then(tryRunPipeline(fetcher));
+}
 
 
 function fetch(manager) {
