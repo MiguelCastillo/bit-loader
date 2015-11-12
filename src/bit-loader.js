@@ -66,6 +66,8 @@ function Bitloader(options) {
     builder  : new Builder(this)
   };
 
+  this.controllers = controllers;
+
   // Three methods as defined by:
   // https://whatwg.github.io/loader/#sec-properties-of-the-loader-prototype-object
   this.import  = controllers.importer.import.bind(controllers.importer);
@@ -75,7 +77,6 @@ function Bitloader(options) {
   this.fetch       = controllers.fetcher.fetch.bind(controllers.fetcher);
   this.important   = controllers.importer.important.bind(controllers.importer);
   this.register    = controllers.registry.register.bind(controllers.registry);
-  this.controllers = controllers;
 
   // Register plugins
   for (var plugin in options.plugins) {
@@ -131,6 +132,31 @@ Bitloader.prototype.load = function(/*name, referrer*/) {};
  *  (realize) the module
  */
 Bitloader.prototype.register = function(/*name, deps, factory, referrer*/) {};
+
+
+/**
+ * Method to get the source of a module.
+ *
+ * @param {string | Array.<string>} names - Name(s) of the modules to load.
+ * @referrer {{path: string, name: string}} referrer - Module requesting
+ *  the source.  Essential for processing relative paths.
+ *
+ * @returns {Promise} When resolved, the source(s) are returned
+ */
+Bitloader.prototype.getSource = function(names, referrer) {
+  var loader = this;
+  return this.controllers.fetcher
+    .fetch(names, referrer)
+    .then(function(moduleMetas) {
+      if (types.isString(names)) {
+        return loader.getModule(moduleMetas.id).source;
+      }
+
+      return moduleMetas.map(function(moduleMeta) {
+        return loader.getModule(moduleMeta.id).source;
+      });
+    });
+};
 
 
 /**

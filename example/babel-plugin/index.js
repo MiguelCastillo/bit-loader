@@ -24,6 +24,13 @@ bitloader.plugin({
 /**
  * Import two modules. One with just ES2015 and the other with React JSX and ES2015
  */
-bitloader.import(["./js/Name.js", "./js/HelloWorld.jsx"]).then(function(result) {
+bitloader.getSource(["./js/Name.js", "./js/HelloWorld.jsx"]).then(function(result) {
   log2console(result[0] + "\n" + result[1]);
+}, function(err) {
+  if (err && err.stack) {
+    console.log(err.stack);
+  }
+  else {
+    console.log(err);
+  }
 });
