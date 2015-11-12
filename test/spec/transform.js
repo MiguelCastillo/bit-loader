@@ -10,7 +10,7 @@ describe("Transform Test Suite", function() {
     });
 
 
-    describe("when transforming an anonymous function", function() {
+    describe("and transforming an anonymous function", function() {
       var source, transformStub;
 
       beforeEach(function() {
@@ -31,27 +31,19 @@ describe("Transform Test Suite", function() {
 
 
     describe("when transforming with a registered plugin", function() {
-      var source, transformedSource, transformPluginStub, transformStub;
+      var inputSource, outputSource, transformPluginStub, transformStub;
 
       beforeEach(function() {
-        source = "var x = 1;";
-        transformedSource = "var a = 1;";
+        inputSource = "var x = 1;";
+        outputSource = "var a = `contains the transformed value, and it is different than the input`;";
+        transformPluginStub = sinon.stub().returns({ source: outputSource });
         transformStub = sinon.stub();
-        transformPluginStub = sinon.stub().returns({ source: transformedSource });
 
         bitloader.plugin({
           transform: transformPluginStub
         });
 
-        return bitloader.transform(source).then(transformStub);
-      });
-
-      it("then transform callback is called once", function() {
-        sinon.assert.calledOnce(transformStub);
-      });
-
-      it("then transform callback is called with transformed string", function() {
-        sinon.assert.calledWith(transformStub, transformedSource);
+        return bitloader.transform(inputSource).then(transformStub);
       });
 
       it("then transform plugin is called once", function() {
@@ -59,7 +51,15 @@ describe("Transform Test Suite", function() {
       });
 
       it("then transform plugin is called with the unprocessed string", function() {
-        sinon.assert.calledWith(transformPluginStub, sinon.match({ source: source }));
+        sinon.assert.calledWith(transformPluginStub, sinon.match({ source: inputSource }));
+      });
+
+      it("then transform callback is called once", function() {
+        sinon.assert.calledOnce(transformStub);
+      });
+
+      it("then transform callback is called with transformed string", function() {
+        sinon.assert.calledWith(transformStub, outputSource);
       });
     });
   });
