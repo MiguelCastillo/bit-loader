@@ -83,8 +83,9 @@ Plugin.prototype.configure = function(options) {
         option = {
           handler: option
         };
-        return option;
       }
+
+      return option;
     })
     .map(function(option) {
       return Handler.create(option.handler, option);
