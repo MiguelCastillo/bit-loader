@@ -34,7 +34,7 @@ function Bitloader(options) {
   this.plugins  = {};
 
   // Services! Components that process modules.
-  this.services = {
+  var services = {
     resolve    : new Resolve(this),
     fetch      : new Fetch(this),
     transform  : new Transform(this),
@@ -42,6 +42,8 @@ function Bitloader(options) {
     compile    : new Compile(this),
     link       : new Link(this)
   };
+
+  this.services = services;
 
   // Register any default user provided providers that the services use.
   // These guys get executed before any plugins execute. These have higher
@@ -79,6 +81,13 @@ function Bitloader(options) {
   // Register plugins
   for (var plugin in options.plugins) {
     this.plugin(options.plugins[plugin]);
+  }
+
+  // Make this option a bit obtuse - I wanna make a lil difficult for people to use.
+  if (options.doNotIgnoreNodeModules !== true) {
+    ["transform", "dependency"].forEach(function(item) {
+      services[item].ignore("path", new RegExp("node_modules/"));
+    });
   }
 }
 
