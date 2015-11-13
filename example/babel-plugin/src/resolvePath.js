@@ -72,7 +72,7 @@ function resolvePath(moduleMeta, options) {
 
 
 /**
- * Gets the path for the module requesting the moduleMeta being resolved.  This is what
+ * Gets the path for the module requesting the moduleMeta being resolved. This is what
  * happens when a dependency is loaded.
  */
 function getParentPath(moduleMeta, options) {

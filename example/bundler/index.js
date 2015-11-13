@@ -11,11 +11,11 @@ var resolvePath = require("./src/resolvePath");
 /**
  * Create bit loader. We register a single plugin for processing module files
  */
-var bitloader = new Bitloader();
+var loader = new Bitloader();
 
 
 // We don't really wanna process react...
-bitloader.ignore("react");
+loader.ignore("react");
 
 
 /**
@@ -25,7 +25,7 @@ bitloader.ignore("react");
  * - transform to convert module files to other formats. E.g. JSX to JavaScript
  * - dependency to process and load module dependencies
  */
-bitloader.plugin({
+loader.plugin({
   resolve: resolvePath.configure({baseUrl: __filename}),
   fetch: fileReader,
   transform: [babel],
@@ -36,13 +36,15 @@ bitloader.plugin({
 /**
  * Import two modules. One with just ES2015 and the other with React JSX and ES2015
  */
-bitloader
+loader
   .fetch(["./js/Name.js"])
-  .then(bundler(bitloader, {}))
+  .then(bundler(loader, {}))
   .then(log2console, printStack);
 
 
-//bundler(bitloader, {})
+// Alternate syntax.
+//
+//bundler(loader, {})
 //  .bundle(["./js/Name.js"])
 //  .then(log2console, printStack);
 
