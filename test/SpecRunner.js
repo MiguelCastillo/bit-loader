@@ -1,10 +1,6 @@
-require("test/spec/fetch");
-require("test/spec/import");
-require("test/spec/loader");
-require("test/spec/registry");
-require("test/spec/middleware");
-require("test/spec/module");
-require("test/spec/plugin");
-require("test/spec/ignore");
-require("test/spec/transform");
 require("test/spec/bit-loader");
+require("test/spec/fetch");
+require("test/spec/build");
+require("test/spec/load");
+require("test/spec/import");
+require("test/spec/transform");

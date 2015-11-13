@@ -1,81 +1,66 @@
-define(["dist/bit-loader"], function(Bitloader) {
+var Bitloader = require("dist/bit-loader");
 
-  describe("Transform Test Suite", function() {
+describe("Transform Test Suite", function() {
 
-    describe("When calling `transform`", function() {
-      var bitloader;
+  describe("When calling `transform`", function() {
+    var bitloader;
+
+    beforeEach(function() {
+      bitloader = new Bitloader();
+    });
+
+
+    describe("and transforming an anonymous function", function() {
+      var source, transformStub;
 
       beforeEach(function() {
-        bitloader = new Bitloader();
+        transformStub = sinon.stub();
+        source = "function() {}";
+        return bitloader.transform(source).then(transformStub);
       });
 
 
-      describe("when transforming an anonymous function", function() {
-        var result, source, moduleMeta;
-
-        beforeEach(function() {
-          source = "function() {}";
-          moduleMeta = {source: source};
-
-          return bitloader.providers.loader
-            .transform(moduleMeta)
-            .then(function(_result) {
-              result = _result;
-            });
-        });
-
-
-        it("then result is moduleMeta", function() {
-          expect(result).to.equal(moduleMeta);
-        });
-
-        it("then result.source is a string", function() {
-          expect(result.source).to.be.a("string");
-        });
-
-        it("then result.deps to be an array", function() {
-          expect(result.deps).to.be.an("array");
-        });
-
-        it("then result.deps is empty", function() {
-          expect(result.deps.length).to.equal(0);
-        });
+      it("then the transform callback is called once", function() {
+        sinon.assert.calledOnce(transformStub);
       });
 
-
-      describe("when transforming an function and one CJS dependency", function() {
-        var result, source, moduleMeta;
-
-        beforeEach(function() {
-          source = "var x = require('x'); function hello() {}";
-          moduleMeta = {source: source};
-
-          return bitloader.providers.loader
-            .transform(moduleMeta)
-            .then(function(_result) {
-              result = _result;
-            });
-        });
-
-
-        it("then result is moduleMeta", function() {
-          expect(result).to.equal(moduleMeta);
-        });
-
-        it("then result.source is a string", function() {
-          expect(result.source).to.be.a("string");
-        });
-
-        it("then result.deps to be an array", function() {
-          expect(result.deps).to.be.an("array");
-        });
-
-        it("then result.deps is empty", function() {
-          expect(result.deps.length).to.equal(0);
-        });
+      it("then the transform callback is called with the input string", function() {
+        sinon.assert.calledWith(transformStub, source);
       });
     });
 
-  });
 
+    describe("when transforming with a registered plugin", function() {
+      var inputSource, outputSource, transformPluginStub, transformStub;
+
+      beforeEach(function() {
+        inputSource = "var x = 1;";
+        outputSource = "var a = `contains the transformed value, and it is different than the input`;";
+        transformPluginStub = sinon.stub().returns({ source: outputSource });
+        transformStub = sinon.stub();
+
+        bitloader.plugin({
+          transform: transformPluginStub
+        });
+
+        return bitloader.transform(inputSource).then(transformStub);
+      });
+
+      it("then transform plugin is called once", function() {
+        sinon.assert.calledOnce(transformPluginStub);
+      });
+
+      it("then transform plugin is called with the unprocessed string", function() {
+        sinon.assert.calledWith(transformPluginStub, sinon.match({ source: inputSource }));
+      });
+
+      it("then transform callback is called once", function() {
+        sinon.assert.calledOnce(transformStub);
+      });
+
+      it("then transform callback is called with transformed string", function() {
+        sinon.assert.calledWith(transformStub, outputSource);
+      });
+    });
+  });
 });

@@ -12,7 +12,6 @@ $ node asyncfile
 That will install the dependencies and run the `asyncfile` example.  Now that you have the dependencies installed, you can just run all other examples.
 
 ```
-$ node taskrunner
 $ node fetch-hook
 $ node babel-plugin
 ```

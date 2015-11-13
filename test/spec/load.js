@@ -1,7 +1,7 @@
 var Bitloader = require("src/bit-loader");
 
-describe("Import Test Suite", function() {
-  describe("When importing a module with source that exports a string", function() {
+describe("Load Test Suite", function() {
+  describe("When loading a module with source that exports a string", function() {
     var loader, resultStub, resolveStub, fetchStub, resolveData, fetchData;
 
     beforeEach(function() {
@@ -17,15 +17,15 @@ describe("Import Test Suite", function() {
         fetch: fetchStub
       });
 
-      return loader.import("hello").then(resultStub);
+      return loader.load("hello").then(resultStub);
     });
 
-    it("then the result is a string with the source module", function() {
-      sinon.assert.calledWith(resultStub, sinon.match.string);
+    it("then the result is the module", function() {
+      sinon.assert.calledWith(resultStub, sinon.match.object);
     });
 
     it("then the module exports the string from the source", function() {
-      sinon.assert.calledWith(resultStub, "source content");
+      sinon.assert.calledWith(resultStub, sinon.match({exports: "source content"}));
     });
   });
 });

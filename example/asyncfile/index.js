@@ -3,9 +3,8 @@ var JSONStream  = require("JSONStream");
 var joint       = require("stream-joint");
 var log2console = require("log2console");
 var Bitloader   = require("bit-loader");
-var fileReader  = require("./fileReader");
-var compiler    = require("./compiler");
-var resolvePath = require("./resolvePath");
+var fileReader  = require("./src/fileReader");
+var resolvePath = require("./src/resolvePath");
 
 
 Bitloader.logger
@@ -17,8 +16,7 @@ Bitloader.logger
 
 var loader = new Bitloader({
   resolve: resolvePath.configure({baseUrl: __filename}),
-  fetch: fileReader,
-  compile: compiler
+  fetch: fileReader
 });
 
 
@@ -29,6 +27,3 @@ loader
     log2console(result[0]);
     log2console(result[1]);
   }, log2console);
-
-
-module.exports = loader;
