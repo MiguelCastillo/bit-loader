@@ -46,13 +46,13 @@ function Bitloader(options) {
   this.services = services;
 
   // Register any default user provided providers that the services use.
-  // These guys get executed before any plugins execute. These have higher
-  // execution priority in the execution chain.
-  this.services.resolve.provider(options.resolve);
-  this.services.fetch.provider(options.fetch);
-  this.services.compile.provider(options.compile);
-  this.services.transform.provider(options.transform);
-  this.services.dependency.provider(options.dependency);
+  // These guys run after plugins run.
+  for (provider in options) {
+    if (this.services.hasOwnProperty(provider)) {
+      this.services[provider].provider(options[provider]);
+    }
+  }
+
 
   // Controllers!  These guys make use of the services to build pipelines
   // that build modules. Controllers use services, but services only use

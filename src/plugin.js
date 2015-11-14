@@ -203,44 +203,65 @@ Manager.prototype.constructor = Manager;
  * @returns {Plugin}
  */
 Manager.prototype.configure = function(settings) {
-  var manager = this;
-  var loader = this._loader;
-  var services = this._services;
-  var plugins = this._plugins;
-  var registrations = this._registrations;
-
   // Process match/ignore options.
   Matches.prototype.configure.call(this, settings);
 
   Object.keys(settings)
-    .filter(function(service) {
-      return service !== "match" || service !== "ignore";
-    })
-    .map(function(service) {
-      return plugins[service] || (plugins[service] = new Plugin(service, loader));
-    })
-    .map(function(plugin) {
-      return plugin.configure(settings[plugin.name]);
-    })
-    .filter(function(plugin) {
-      return !registrations[plugin.name];
-    })
-    .map(function(plugin) {
-      function pluginRunner(data) {
-        if (!manager.canExecute(data)) {
-          return data;
-        }
-
-        return plugin.run(data);
-      };
-
-      registrations[plugin.name] = pluginRunner;
-      services[plugin.name].use(pluginRunner);
-      return pluginRunner;
-    });
+    .filter(isPlugabble)
+    .map(getPlugin(this))
+    .map(configurePlugin(settings))
+    .filter(canRegisterPlugin(this))
+    .map(registerPlugin(this));
 
   return this;
 };
+
+
+function isPlugabble(service) {
+  return service !== "match" && service !== "ignore";
+}
+
+
+function getPlugin(manager) {
+  return function createPluginDelegate(pluginName) {
+    if (!manager._plugins[pluginName]) {
+      manager._plugins[pluginName] = new Plugin(pluginName, manager._loader);
+    }
+
+    return manager._plugins[pluginName];
+  };
+}
+
+
+function configurePlugin(settings) {
+  return function configurePluginDelegate(plugin) {
+    return plugin.configure(settings[plugin.name]);
+  };
+}
+
+
+function canRegisterPlugin(manager) {
+  return function canRegisterDelegate(plugin) {
+    return !manager._registrations[plugin.name];
+  };
+}
+
+
+function registerPlugin(manager) {
+  return function pluginRunnerDelegate(plugin) {
+    function pluginRunner(data) {
+      if (!manager.canExecute(data)) {
+        return data;
+      }
+
+      return plugin.run(data);
+    };
+
+    manager._registrations[plugin.name] = pluginRunner;
+    manager._services[plugin.name].use(pluginRunner);
+    return pluginRunner;
+  };
+}
 
 
 Plugin.Manager = Manager;

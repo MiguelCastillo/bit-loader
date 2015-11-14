@@ -47,7 +47,7 @@ function load(loader, referrer) {
       return Promise.reject("Must provide the name of the module to load");
     }
 
-    return fetch(loader, name, referrer).then(buildMeta(loader));
+    return fetch(loader, name, referrer).then(build(loader));
   };
 }
 
@@ -57,7 +57,7 @@ function fetch(loader, name, referrer) {
 }
 
 
-function buildMeta(loader) {
+function build(loader) {
   return function(moduleMeta) {
     return loader.manager.controllers.builder.build(moduleMeta.id);
   };
