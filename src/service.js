@@ -36,8 +36,8 @@ Service.prototype.run = Service.prototype.runAsync = function(moduleMeta) {
   }
 
   return Promise.resolve(moduleMeta)
-    .then(processResultAsync(this, runProvider(this)))
-    .then(processResultAsync(this, runPipelineAsync(this)));
+    .then(processResultAsync(this, runPipelineAsync(this)))
+    .then(processResultAsync(this, runProvider(this)));
 };
 
 
@@ -49,8 +49,8 @@ Service.prototype.runSync = function(moduleMeta) {
   }
 
   return [
-    processResultSync(this, runProvider(this)),
     processResultSync(this, runPipelineSync(this)),
+    processResultSync(this, runProvider(this)),
   ].reduce(function(data, handler) {
     return handler(data);
   }, moduleMeta);
@@ -64,7 +64,7 @@ Service.prototype.processResult = function(moduleMeta, result) {
 
 function runProvider(service) {
   return function runProviderDelegate(moduleMeta) {
-    if (!service._provider) {
+    if (!service._provider || !service.canProcess(moduleMeta)) {
       return moduleMeta;
     }
 

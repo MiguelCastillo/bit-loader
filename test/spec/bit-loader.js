@@ -41,24 +41,16 @@ describe("Bitloader Test Suite", function() {
       return bitloader.import("js");
     });
 
-    it("then default 'fetch' is called once", function() {
-      sinon.assert.calledOnce(defaultFetchStub);
-    });
-
-    it("then default `fetch` is called with a module meta with path `some/path`", function() {
-      sinon.assert.calledWith(defaultFetchStub, sinon.match({path: "some/path"}));
+    it("then default 'fetch' is NOT called", function() {
+      sinon.assert.notCalled(defaultFetchStub);
     });
 
     it("then default 'compile' is NOT called", function() {
       sinon.assert.notCalled(defaultCompileStub);
     });
 
-    it("then default `resolve` is called once", function() {
-      sinon.assert.calledOnce(defaultResolveStub);
-    });
-
-    it("then default `resolve` is called with a module meta with name `js`", function() {
-      sinon.assert.calledWith(defaultResolveStub, sinon.match({name: "js"}));
+    it("then default `resolve` is NOT called", function() {
+      sinon.assert.notCalled(defaultResolveStub);
     });
 
     it("then `resolve` plugin is called once", function() {
