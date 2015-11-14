@@ -1,7 +1,7 @@
 {
   "name": "bit-loader",
   "version": "1.0.2",
-  "description": "Framework for building module loaders with very little effort",
+  "description": "Framework for building module loaders with very little effort for noobs",
   "main": "src/bit-loader.js",
   "directories": {
     "test": "tests"
