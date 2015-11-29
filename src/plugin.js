@@ -115,32 +115,41 @@ Plugin.prototype.run = function(data) {
  */
 function runHandlers(data, handlers, loader) {
   var cancelled = false;
+
   function cancel() {
     cancelled = true;
   };
 
-  return handlers
-    .filter(function(handler) {
-      return handler.canExecute(data);
-    })
-    .reduce(function(promise, handler) {
-      if (cancelled) {
-        return promise;
-      }
+  function canRun(data) {
+    if (!cancelled) {
+      return data;
+    }
+  }
 
-      return promise
-        .then(loadHandler(loader, handler))
-        .then(runHandler(data, cancel))
-        .then(mergeHandlerResult(data));
-    }, Promise.resolve());
+  return handlers
+    .filter(canExecuteHandler(data))
+    .map(loadHandler(loader))
+    .reduce(function(current, handler) {
+      return current
+        .then(canRun)
+        .then(runHandler(handler, cancel))
+        .then(mergeHandlerResult());
+    }, Promise.resolve(data));
+}
+
+
+function canExecuteHandler(data) {
+  return function(handler) {
+    return handler.canExecute(data);
+  };
 }
 
 
 /**
  * Method to load a handler.
  */
-function loadHandler(loader, handler) {
-  return function loadPluginDelegate() {
+function loadHandler(loader) {
+  return function loadPluginDelegate(handler) {
     if (!types.isString(handler.handler)) {
       return Promise.resolve(handler);
     }
@@ -163,9 +172,17 @@ function loadHandler(loader, handler) {
 /**
  * Method that return a function that executes a plugin handler.
  */
-function runHandler(data, cancel) {
-  return function runHandlerDelegate(handler) {
-    return handler.run(data, cancel);
+function runHandler(handler, cancel) {
+  return function runHandlerDelegate(data) {
+    return Promise.resolve(handler)
+      .then(function(handler) {
+        if (data) {
+          return {
+            data: data,
+            result: handler.run(data, cancel)
+          };
+        }
+      });
   };
 }
 
@@ -173,9 +190,11 @@ function runHandler(data, cancel) {
 /**
  * Method the returns a function to process the result from a plugin
  */
-function mergeHandlerResult(data) {
-  return function mergeModuleResultDelegate(result) {
-    return data.configure(result);
+function mergeHandlerResult() {
+  return function mergeModuleResultDelegate(resultContext) {
+    if (resultContext) {
+      return resultContext.data.configure(resultContext.result);
+    }
   };
 }
 
