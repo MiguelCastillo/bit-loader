@@ -93,7 +93,11 @@ Matches.prototype.canExecute = function(data) {
  */
 function runMatches(matches, data) {
   return !matches || Object.keys(matches).some(function(match) {
-    return matches[match].match(data[match]);
+    if (data && data.hasOwnProperty(match)) {
+      return matches[match].match(data[match]);
+    }
+
+    return true;
   });
 }
 
