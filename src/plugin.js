@@ -174,14 +174,20 @@ function loadHandler(loader) {
  */
 function runHandler(handler, cancel) {
   return function runHandlerDelegate(data) {
-    return Promise.resolve(handler)
+    if (!data) {
+      return Promise.resolve();
+    }
+
+    return Promise
+      .resolve(handler)
       .then(function(handler) {
-        if (data) {
-          return {
-            data: data,
-            result: handler.run(data, cancel)
-          };
-        }
+        return handler.run(data, cancel);
+      })
+      .then(function(result) {
+        return {
+          data: data,
+          result: result
+        };
       });
   };
 }
