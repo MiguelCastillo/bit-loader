@@ -74,20 +74,13 @@ function Bitloader(options) {
   this.resolve = controllers.resolver.resolve.bind(controllers.resolver);
   this.load    = controllers.loader.load.bind(controllers.loader);
 
-  this.fetch       = controllers.fetcher.fetch.bind(controllers.fetcher);
-  this.important   = controllers.importer.important.bind(controllers.importer);
-  this.register    = controllers.registry.register.bind(controllers.registry);
+  this.fetch     = controllers.fetcher.fetch.bind(controllers.fetcher);
+  this.important = controllers.importer.important.bind(controllers.importer);
+  this.register  = controllers.registry.register.bind(controllers.registry);
 
   // Register plugins
   for (var plugin in options.plugins) {
     this.plugin(options.plugins[plugin]);
-  }
-
-  // Make this option a bit obtuse - I wanna make it a lil difficult for people to
-  // enable processing of node_modules since it can be rather difficult to tweak
-  // configurations to properly excluce modules to be processed.
-  if (options.doNotIgnoreNodeModules !== true) {
-    this.services.transform.ignore("path", /node_modules\//);
   }
 }
 
