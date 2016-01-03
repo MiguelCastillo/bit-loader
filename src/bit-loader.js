@@ -47,7 +47,7 @@ function Bitloader(options) {
 
   // Register any default user provided providers that the services use.
   // These guys run after plugins run.
-  for (provider in options) {
+  for (var provider in options) {
     if (this.services.hasOwnProperty(provider)) {
       this.services[provider].provider(options[provider]);
     }
