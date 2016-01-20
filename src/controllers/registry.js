@@ -1,7 +1,6 @@
 //var logger = require("loggero").create("controllers/registry");
 var Module = require("../module");
 var Repository = require("../repository");
-var moduleId = 0;
 
 
 //
@@ -20,14 +19,12 @@ function Registry(manager) {
 }
 
 
-Registry.prototype.register = function(name, deps, factory, referrer) {
+Registry.prototype.register = function(name, exports) {
   return this.setModule(new Module.Meta({
-    id: getUniqueModuleId(this),
+    id: name,
     name: name,
-    deps: deps,
-    factory: factory,
-    referrer: referrer
-  }), Module.State.REGISTERED);
+    exports: exports
+  }), Module.State.READY);
 };
 
 
@@ -73,17 +70,6 @@ Registry.prototype.getModuleState = function(id) {
 
   return this.repository.getItem(id).state;
 };
-
-
-function getUniqueModuleId(registry) {
-  var id;
-
-  do {
-    id = moduleId++;
-  } while (registry.repository.hasItem(id));
-
-  return id;
-}
 
 
 module.exports = Registry;

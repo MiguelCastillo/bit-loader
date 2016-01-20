@@ -1,4 +1,5 @@
 var Bitloader = require("src/bit-loader");
+var Module = require("src/module");
 
 describe("Build Test Suite", function() {
   var loader, moduleMeta, result;
@@ -9,7 +10,7 @@ describe("Build Test Suite", function() {
 
   describe("When building a module meta object with source that exports a string", function() {
     beforeEach(function() {
-      moduleMeta = loader.controllers.registry.register("test module");
+      moduleMeta = new Module.Meta("test module");
       moduleMeta = moduleMeta.configure({ source: "module.exports = 'test';" });
       moduleMeta = loader.controllers.registry.setModule(moduleMeta, "loaded");
 
@@ -26,7 +27,7 @@ describe("Build Test Suite", function() {
 
     beforeEach(function() {
       getDependencyExportsByNameStub = sinon.stub().returns(1);
-      moduleMeta = loader.controllers.registry.register("test module");
+      moduleMeta = new Module.Meta("test module");
       moduleMeta = moduleMeta.configure({ source: "var a = require('a'); module.exports = {name: 'test', dep: a};" });
       moduleMeta = moduleMeta.configure({ getDependencyExportsByName: getDependencyExportsByNameStub });
       moduleMeta = loader.controllers.registry.setModule(moduleMeta, "loaded");
@@ -47,11 +48,11 @@ describe("Build Test Suite", function() {
     var dependencyMeta;
 
     beforeEach(function() {
-      dependencyMeta = loader.controllers.registry.register("a");
-      dependencyMeta = dependencyMeta.configure({ source: "module.exports = 1;" });
+      dependencyMeta = new Module.Meta("a");
+      dependencyMeta = dependencyMeta.configure({ id: "a", source: "module.exports = 1;" });
       dependencyMeta = loader.controllers.registry.setModule(dependencyMeta, "loaded");
 
-      moduleMeta = loader.controllers.registry.register("test module");
+      moduleMeta = new Module.Meta("test module");
       moduleMeta = moduleMeta.configure({ deps: [ dependencyMeta ] });
       moduleMeta = moduleMeta.configure({ source: "var a = require('a'); module.exports = {name: 'test', dep: a};" });
       moduleMeta = loader.controllers.registry.setModule(moduleMeta, "loaded");

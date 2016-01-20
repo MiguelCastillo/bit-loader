@@ -217,39 +217,6 @@ Bitloader.prototype.deleteModule = function(mod) {
 
 
 /**
- * Returns the module exports from the module registry. If the module exports has not
- * yet been fully compiled, then we defer to the loader to build the module and return
- * the exports.
- *
- * @param {string} id - The id of the module exports to get from the module registry
- *
- * @return {object} The module exports.
- */
-Bitloader.prototype.getModuleExports = function(id) {
-  return this.getModule(id).exports;
-};
-
-
-/**
- * Sets module evaluated exports directly in the module registry.
- *
- * @param {string} name - The name of the module, which is used by other modules
- *  that need it as a dependency.
- * @param {object} exports - The evaluated exports to be set
- *
- * @returns {object} The module instance with the exports information.
- */
-Bitloader.prototype.setModuleExports = function(name, exports) {
-  var mod = new Module({
-    name: name,
-    exports: exports
-  });
-
-  return this.controllers.registry.setModule(Module.State.READY, mod);
-};
-
-
-/**
  * Add ignore rules for configuring what the different pipelines shoud not process.
  *
  * @param {Object} rule - Rule configuration
