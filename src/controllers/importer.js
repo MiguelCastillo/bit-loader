@@ -1,4 +1,5 @@
 var logger = require("loggero").create("controllers/importer");
+var Module = require("../module");
 
 
 /**
@@ -50,6 +51,11 @@ Import.prototype.important = function(names, options) {
 Import.prototype._getModule = function(name, options) {
   options = options || {};
   var manager = this.manager;
+  var registry = manager.controllers.registry;
+
+  if (registry.hasModule(name) && registry.getModuleState(name) === Module.State.READY) {
+    return Promise.resolve(registry.getModule(name).exports);
+  }
 
   // Wrap in a separate promise to handle this:
   // https://github.com/MiguelCastillo/spromise/issues/35
