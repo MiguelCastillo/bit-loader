@@ -133,7 +133,7 @@ function runHandlers(data, handlers, loader) {
       return current
         .then(canRun)
         .then(runHandler(handler, cancel))
-        .then(mergeHandlerResult());
+        .then(mergeResult);
     }, Promise.resolve(data));
 }
 
@@ -196,12 +196,10 @@ function runHandler(handler, cancel) {
 /**
  * Method the returns a function to process the result from a plugin
  */
-function mergeHandlerResult() {
-  return function mergeModuleResultDelegate(resultContext) {
-    if (resultContext) {
-      return resultContext.data.configure(resultContext.result);
-    }
-  };
+function mergeResult(resultContext) {
+  if (resultContext) {
+    return resultContext.data.configure(resultContext.result);
+  }
 }
 
 

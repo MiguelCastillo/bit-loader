@@ -1,4 +1,4 @@
-var Bitloader = require("src/bit-loader");
+import Bitloader from "src/bit-loader";
 
 describe("Load Test Suite", function() {
   describe("When loading a module with source that exports a string", function() {

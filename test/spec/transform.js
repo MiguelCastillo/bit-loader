@@ -1,4 +1,4 @@
-var Bitloader = require("src/bit-loader");
+import Bitloader from "src/bit-loader";
 
 describe("Transform Test Suite", function() {
 
