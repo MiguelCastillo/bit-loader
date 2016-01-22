@@ -179,10 +179,11 @@ describe("Plugin Test Suite", () => {
       });
 
       describe("with two registered handlers and the first handler has an ignore matching rule and is a string name", () => {
-        var handler1, handler2, handlerResult1, handlerResult2, name;
+        var handler1, handler2, handlerResult1, handlerResult2, name, moduleName;
 
         beforeEach(() => {
-          data = new Module.Meta("modulename").configure({ "source": chance().string() });
+          moduleName = chance().string();
+          data = new Module.Meta(moduleName).configure({ "source": chance().string() });
           handlerResult1 = { "source": chance().string() };
           handlerResult2 = { "source": chance().string() };
           handler1 = sinon.stub().returns(handlerResult1);
@@ -195,7 +196,7 @@ describe("Plugin Test Suite", () => {
           plugin.configure([{
             handler: name,
             ignore: {
-              name: "modulename"
+              name: moduleName
             }
           }, handler2]);
 
