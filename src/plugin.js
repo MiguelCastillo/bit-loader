@@ -61,7 +61,7 @@ Handler.prototype.run = function(data, cancel) {
     return Promise.resolve(data);
   }
 
-  return this.handler(data, this.options, cancel);
+  return Promise.resolve(this.handler(data, this.options, cancel));
 };
 
 
