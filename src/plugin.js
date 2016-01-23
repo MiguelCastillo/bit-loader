@@ -99,21 +99,12 @@ Plugin.prototype.configure = function(options) {
 };
 
 
-Plugin.prototype.run = function(data) {
-//  if (!this.canExecute(data)) {
-//    return Promise.resolve(data);
-//  }
-
-  return runHandlers(data, this.handlers, this.loader);
-};
-
-
 /**
- * Executes all plugins to process the data. This handles plugin
- * handlers that return promises and it also provides a system to cancel
- * the promise sequence.
+ * Runs all plugin handlers to process the data.
  */
-function runHandlers(data, handlers, loader) {
+Plugin.prototype.run = function(data) {
+  var handlers = this.handlers;
+  var loader = this.loader;
   var cancelled = false;
 
   function cancel() {
@@ -135,7 +126,7 @@ function runHandlers(data, handlers, loader) {
         .then(runHandler(handler, cancel))
         .then(mergeResult);
     }, Promise.resolve(data));
-}
+};
 
 
 function canExecuteHandler(data) {
@@ -279,6 +270,14 @@ function registerPlugin(manager) {
 
       return plugin.run(data);
     };
+
+    if (!manager._services) {
+      throw TypeError("Unable to register plugin. Services have not been configured");
+    }
+
+    if (!manager._services.hasOwnProperty(plugin.name)) {
+      throw TypeError("Unable to register plugin. '" + plugin.name + "' service does not exist");
+    }
 
     manager._registrations[plugin.name] = pluginRunner;
     manager._services[plugin.name].use(pluginRunner);

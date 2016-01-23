@@ -225,4 +225,77 @@ describe("Plugin Test Suite", () => {
       });
     });
   });
+
+  describe("When creating a Manager with no options", () => {
+    var manager;
+
+    beforeEach(() => {
+      manager = new Plugin.Manager();
+    });
+
+    describe("and configuring a `transform` plugin", () => {
+      var act;
+
+      beforeEach(() => {
+        act = () => {
+          manager.configure({
+            transform: () => {}
+          });
+        };
+      });
+
+      it("then an exception is thrown because services to register plugins with are not configured", () => {
+        expect(act).to.throw(TypeError, "Unable to register plugin. Services have not been configured");
+      });
+    });
+  });
+
+  describe("When creating a manager with transform services", () => {
+    var manager, transformService, transformPlugin;
+
+    beforeEach(() => {
+      transformService = sinon.stub();
+      transformPlugin = sinon.stub();
+      manager = new Plugin.Manager(null, {
+        transform: {
+          use: transformService
+        }
+      });
+    });
+
+    describe("and registering a transform plugin", () => {
+      beforeEach(() => {
+        manager.configure({
+          transform: transformPlugin
+        });
+      });
+
+      it("then the transform service is called to register the plugin", () => {
+        sinon.assert.calledOnce(transformService);
+      });
+
+      it("then the trasform service is called to register a function", () => {
+        sinon.assert.calledWith(transformService, sinon.match.func);
+      });
+    });
+
+    describe("and registering a plugin with a service that does not exist", () => {
+      var act, serviceName;
+
+      beforeEach(() => {
+        serviceName = chance().string();
+
+        act = () => {
+          manager.configure({
+            [serviceName]: () => {}
+          });
+        };
+      });
+
+      it("then the plugin registration throw an error", () => {
+        expect(act).to.throw(TypeError, "Unable to register plugin. '" + serviceName + "' service does not exist");
+      });
+    });
+  });
+
 });
