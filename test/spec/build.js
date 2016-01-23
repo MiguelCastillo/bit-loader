@@ -1,5 +1,6 @@
-var Bitloader = require("src/bit-loader");
-var Module = require("src/module");
+import { expect } from "chai";
+import Bitloader from "src/bit-loader";
+import Module from "src/module";
 
 describe("Build Test Suite", function() {
   var loader, moduleMeta, result;

@@ -61,7 +61,7 @@ Handler.prototype.run = function(data, cancel) {
     return Promise.resolve(data);
   }
 
-  return this.handler(data, this.options, cancel);
+  return Promise.resolve(this.handler(data, this.options, cancel));
 };
 
 
@@ -99,21 +99,12 @@ Plugin.prototype.configure = function(options) {
 };
 
 
-Plugin.prototype.run = function(data) {
-//  if (!this.canExecute(data)) {
-//    return Promise.resolve(data);
-//  }
-
-  return runHandlers(data, this.handlers, this.loader);
-};
-
-
 /**
- * Executes all plugins to process the data. This handles plugin
- * handlers that return promises and it also provides a system to cancel
- * the promise sequence.
+ * Runs all plugin handlers to process the data.
  */
-function runHandlers(data, handlers, loader) {
+Plugin.prototype.run = function(data) {
+  var handlers = this.handlers;
+  var loader = this.loader;
   var cancelled = false;
 
   function cancel() {
@@ -133,9 +124,9 @@ function runHandlers(data, handlers, loader) {
       return current
         .then(canRun)
         .then(runHandler(handler, cancel))
-        .then(mergeHandlerResult());
+        .then(mergeResult);
     }, Promise.resolve(data));
-}
+};
 
 
 function canExecuteHandler(data) {
@@ -196,12 +187,10 @@ function runHandler(handler, cancel) {
 /**
  * Method the returns a function to process the result from a plugin
  */
-function mergeHandlerResult() {
-  return function mergeModuleResultDelegate(resultContext) {
-    if (resultContext) {
-      return resultContext.data.configure(resultContext.result);
-    }
-  };
+function mergeResult(resultContext) {
+  if (resultContext) {
+    return resultContext.data.configure(resultContext.result);
+  }
 }
 
 
@@ -281,6 +270,14 @@ function registerPlugin(manager) {
 
       return plugin.run(data);
     };
+
+    if (!manager._services) {
+      throw TypeError("Unable to register plugin. Services have not been configured");
+    }
+
+    if (!manager._services.hasOwnProperty(plugin.name)) {
+      throw TypeError("Unable to register plugin. '" + plugin.name + "' service does not exist");
+    }
 
     manager._registrations[plugin.name] = pluginRunner;
     manager._services[plugin.name].use(pluginRunner);

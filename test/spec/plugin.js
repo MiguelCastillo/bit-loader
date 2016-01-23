@@ -1,223 +1,301 @@
-define(["dist/bit-loader"], function(Bitloader) {
-  var Plugin = Bitloader.Plugin;
-  var Rule = Bitloader.Rule;
-  var matcher = Rule.matcher;
+import { expect } from "chai";
+import chance from "chance";
+import Plugin from "src/plugin";
+import Module from "src/module";
 
-  describe("Plugin Test Suite", function() {
-    describe("When creating Plugin instances", function() {
-      var plugin;
+describe("Plugin Test Suite", () => {
 
-      beforeEach(function() {
-        plugin = new Plugin();
-      });
+  describe("When creating a plugin with no options", () => {
+    var plugin;
 
-      it("then `plugin` is an instance of `Plugin`", function() {
-        expect(plugin).to.be.an.instanceof(Plugin);
-      });
-
-      describe("and defining matching rules for `file` props with `js` extensions and `1.jsx` values", function() {
-        var matchingRules, ruleName;
-
-        beforeEach(function() {
-          ruleName = "file";
-          matchingRules = [matcher.extension("js"), matcher.string("1.jsx")];
-          plugin.match(ruleName, matchingRules);
-        });
-
-        it("then `matches` rules are added to the plugin", function() {
-          expect(plugin._matches[ruleName]).to.be.an.instanceof(Rule);
-        });
-
-        it("then plugin can execute `file: 1.jsx`", function() {
-          expect(plugin.canExecute({"file": "1.jsx"})).to.equal(true);
-        });
-
-        it("then plugin can execute `file: 1.js`", function() {
-          expect(plugin.canExecute({"file": "1.js"})).to.equal(true);
-        });
-
-        it("then plugin can NOT execute `file: 1.tjs`", function() {
-          expect(plugin.canExecute({"file": "1.tjs"})).to.equal(false);
-        });
-
-        it("then plugin can NOT execute `odd: 3.134`", function() {
-          expect(plugin.canExecute({"odd": "3.134"})).to.equal(false);
-        });
-      });
-
-      describe("and defining ignore rules for `file` props with `css` extensions and `err.css`", function() {
-        var ignoreRules, ruleName;
-
-        beforeEach(function() {
-          ruleName = "file";
-          ignoreRules = [matcher.extension("css"), matcher.string("err.scss")];
-          plugin.ignore(ruleName, ignoreRules);
-        });
-
-        it("then `ignore` rules are added to the plugins", function() {
-            expect(plugin._ignore[ruleName]).to.be.an.instanceof(Rule);
-        });
-
-        it("then plugin can NOT execute `file: app.css`", function() {
-          expect(plugin.canExecute({"file": "app.css"})).to.equal(false);
-        });
-
-        it("then plugin can NOT execute `file: err.scss`", function() {
-          expect(plugin.canExecute({"file": "err.scss"})).to.equal(false);
-        });
-
-        describe("then plugin can execute anything else", function() {
-          it("plugin can execute `path: 1.js`", function() {
-            expect(plugin.canExecute({"file": "1.js"})).to.equal(true);
-          });
-
-          it("plugin can execute `path: no.xml.please`", function() {
-            expect(plugin.canExecute({"file": "no.xml.please"})).to.equal(true);
-          });
-
-          it("plugin can execute `path: app.scss`", function() {
-            expect(plugin.canExecute({"file": "app.scss"})).to.equal(true);
-          });
-        });
-      });
+    beforeEach(() => {
+      plugin = new Plugin();
     });
 
-    describe("Testing Plugin Manager", function() {
-      var pluginManager;
+    it("then `plugin` is an instance of `Plugin`", () => {
+      expect(plugin).to.be.an.instanceof(Plugin);
+    });
 
-      beforeEach(function() {
-        pluginManager = new Plugin.Manager();
+    it("then `plugin` has no name", () => {
+      expect(plugin.name).to.be.undefined;
+    });
+
+    it("then `plugin` has no loader", () => {
+      expect(plugin.loader).to.be.undefined;
+    });
+
+    describe("and running the plugin", () => {
+      var act, result, data;
+
+      beforeEach(() => {
+        act = () => {
+          return plugin.run(data).then((r) => {
+            result = r;
+            return result;
+          });
+        };
       });
 
-      describe("When registering a plugin handler with options", function() {
-        describe("and running plugin with no data", function() {
-          var pluginHandler, pluginOptions;
-
-          beforeEach(function() {
-            pluginOptions = {minify: true};
-            pluginHandler = sinon.stub();
-            pluginManager.plugin(pluginHandler, pluginOptions);
-            return pluginManager.run();
-          });
-
-          it("then the plugin is called with no data, with options, and cancel function", function() {
-            sinon.assert.calledWithExactly(pluginHandler, undefined, pluginOptions, sinon.match.func);
-          });
+      describe("with a random string as data with no registered handlers", () => {
+        beforeEach(() => {
+          data = chance().string();
+          return act();
         });
-      });
 
-      describe("When registering two plugin handlers, and only one with options", function() {
-        describe("and running plugin with no data", function() {
-          var pluginHandler1, pluginHandler2, pluginOptions;
-
-          beforeEach(function() {
-            pluginOptions = {minify: true};
-            pluginHandler1 = sinon.stub();
-            pluginHandler2 = sinon.stub();
-            pluginManager.plugin(pluginHandler1, pluginOptions);
-            pluginManager.plugin(pluginHandler2);
-            return pluginManager.run();
-          });
-
-          it("then the first plugin is called with no data, with options, and cancel function", function() {
-            sinon.assert.calledWithExactly(pluginHandler1, undefined, pluginOptions, sinon.match.func);
-          });
-
-          it("then the second plugin is called with no data, empty options, and cancel function", function() {
-            sinon.assert.calledWithExactly(pluginHandler2, undefined, {}, sinon.match.func);
-          });
+        it("then final result is equal to the input - input does not change", () => {
+          expect(result).to.equal(data);
         });
       });
 
-      describe("When registering a plugin handler with no options", function() {
-        describe("and running plugin with no data", function() {
-          var pluginHandler;
+      describe("with one registered handler function", () => {
+        var handler, handlerResult;
 
-          beforeEach(function() {
-            pluginHandler = sinon.stub();
-            pluginManager.plugin(pluginHandler);
-            return pluginManager.run();
-          });
-
-          it("then running plugins executes the plugin handler", function() {
-            sinon.assert.calledOnce(pluginHandler);
-          });
-
-          it("then the plugin handler is called with no data, empty options, and a cancel function", function() {
-            sinon.assert.calledWithExactly(pluginHandler, undefined, {}, sinon.match.func);
-          });
+        beforeEach(() => {
+          data = new Module.Meta("modulename").configure({ "source": chance().string() });
+          handlerResult = { "source": chance().string() };
+          handler = sinon.stub().returns(handlerResult);
+          plugin.configure(handler);
+          return act();
         });
 
-        describe("and running plugin with a string", function() {
-          var pluginHandler, testData;
+        it("then handler is called once", () => {
+          sinon.assert.calledOnce(handler);
+        });
 
-          beforeEach(function() {
-            testData = "test data";
-            pluginHandler = sinon.stub();
-            pluginManager.plugin(pluginHandler);
-            return pluginManager.run(testData);
-          });
+        it("then handler is called with the input data", () => {
+          sinon.assert.calledWith(handler, data);
+        });
 
-          it("then running plugins executes the plugin handler", function() {
-            sinon.assert.calledOnce(pluginHandler);
-          });
+        it("then result is not the same reference as the input", () => {
+          expect(result).to.not.equal(handlerResult);
+        });
 
-          it("then the plugin handler is called with string, empty options, and a cancel function", function() {
-            sinon.assert.calledWithExactly(pluginHandler, testData, {}, sinon.match.func);
-          });
+        it("then result is returned from the handler", () => {
+          expect(result).to.include(handlerResult);
         });
       });
-
-      describe("When registering two plugin handlers with no options", function() {
-        describe("and running the plugins with no data", function() {
-          var pluginHandler1, pluginHandler2;
-
-          beforeEach(function() {
-            pluginHandler1 = sinon.stub();
-            pluginHandler2 = sinon.stub();
-
-            pluginManager
-              .plugin(pluginHandler1)
-              .plugin(pluginHandler2);
-
-            return pluginManager.run();
-          });
-
-          it("then the first plugin handler is called with no data, empty options, and a cancel function", function() {
-            sinon.assert.calledWithExactly(pluginHandler1, undefined, {}, sinon.match.func);
-          });
-
-          it("then the second plugin handler is called with no data, empty options, and a cancel function", function() {
-            sinon.assert.calledWithExactly(pluginHandler2, undefined, {}, sinon.match.func);
-          });
-        });
-
-        describe("and running the plugins with an object and the first plugin modifies it", function() {
-          var pluginHandler1, pluginHandler2, testData;
-
-          beforeEach(function() {
-            testData = {};
-            pluginHandler1 = sinon.stub().returns({random: 3.14});
-            pluginHandler2 = sinon.stub();
-
-            pluginManager
-              .plugin(pluginHandler1)
-              .plugin(pluginHandler2);
-
-            return pluginManager.run(testData);
-          });
-
-          it("then the first plugin handler is called with data, empty options, and a cancel function", function() {
-            sinon.assert.calledWithExactly(pluginHandler1, testData, {}, sinon.match.func);
-          });
-
-          it("then the second plugin handler is called with modified data, empty options, and a cancel function", function() {
-            sinon.assert.calledWithExactly(pluginHandler2, sinon.match({random: 3.14}), {}, sinon.match.func);
-          });
-        });
-
-      });
-
     });
   });
+
+  describe("When creating a plugin with a module loader", () => {
+    var createPlugin, plugin, loader;
+
+    beforeEach(() => {
+      createPlugin = () => plugin = new Plugin(null, loader);
+    });
+
+    describe("and running the plugin", () => {
+      var act, result, data;
+
+      beforeEach(() => {
+        act = () => {
+          return plugin.run(data).then((r) => {
+            result = r;
+            return result;
+          });
+        };
+      });
+
+      describe("with one registered handler string", () => {
+        var handler, handlerResult, name;
+
+        beforeEach(() => {
+          name = chance().string();
+          data = new Module.Meta("modulename").configure({ "source": chance().string() });
+          handlerResult = { "source": chance().string() };
+          handler = sinon.stub().returns(handlerResult);
+
+          loader = { import: sinon.stub().returns(Promise.resolve(handler)) };
+          createPlugin();
+          plugin.configure(name);
+          return act();
+        });
+
+        it("then module is imported via the module loader", () => {
+          sinon.assert.calledOnce(loader.import);
+        });
+
+        it("then module loader is called with the plugin name", () => {
+          sinon.assert.calledWith(loader.import, name);
+        });
+
+        it("then handler is called once", () => {
+          sinon.assert.calledOnce(handler);
+        });
+
+        it("then handler is called with the input data", () => {
+          sinon.assert.calledWith(handler, data);
+        });
+
+        it("then the final result is not the same reference as the input", () => {
+          expect(result).to.not.equal(handlerResult);
+        });
+
+        it("then the final result is returned from the handler", () => {
+          expect(result).to.include(handlerResult);
+        });
+      });
+
+      describe("with two registered handlers and the first handler is a string", () => {
+        var handler1, handler2, handlerResult1, handlerResult2, name;
+
+        beforeEach(() => {
+          data = new Module.Meta("modulename").configure({ "source": chance().string() });
+          handlerResult1 = { "source": chance().string() };
+          handlerResult2 = { "source": chance().string() };
+          handler1 = sinon.stub().returns(handlerResult1);
+          handler2 = sinon.stub().returns(handlerResult2);
+          name = chance().string();
+
+          loader = { import: sinon.stub().returns(Promise.resolve(handler1)) };
+          createPlugin();
+          plugin.configure([name, handler2]);
+          return act();
+        });
+
+        it("then first handler is imported", () => {
+          sinon.assert.calledWith(loader.import, name);
+        });
+
+        it("then first handler is called once", () => {
+          sinon.assert.calledOnce(handler1);
+        });
+
+        it("then first handler is called with initial data", () => {
+          sinon.assert.calledWith(handler1, data);
+        });
+
+        it("then second handler is called once", () => {
+          sinon.assert.calledOnce(handler2);
+        });
+
+        it("then second handler is called with the result from first handler", () => {
+          sinon.assert.calledWith(handler2, sinon.match(handlerResult1));
+        });
+
+        it("then the final result is the output from the second handler", () => {
+          expect(result).to.include(handlerResult2);
+        });
+      });
+
+      describe("with two registered handlers and the first handler has an ignore matching rule and is a string name", () => {
+        var handler1, handler2, handlerResult1, handlerResult2, name, moduleName;
+
+        beforeEach(() => {
+          moduleName = chance().string();
+          data = new Module.Meta(moduleName).configure({ "source": chance().string() });
+          handlerResult1 = { "source": chance().string() };
+          handlerResult2 = { "source": chance().string() };
+          handler1 = sinon.stub().returns(handlerResult1);
+          handler2 = sinon.stub().returns(handlerResult2);
+          name = chance().string();
+
+          loader = { import: sinon.stub().returns(Promise.resolve(handler1)) };
+          createPlugin();
+
+          plugin.configure([{
+            handler: name,
+            ignore: {
+              name: moduleName
+            }
+          }, handler2]);
+
+          return act();
+        });
+
+        it("then the first handler is never called", () => {
+          sinon.assert.notCalled(handler1);
+        });
+
+        it("then then first handler is never loaded by the module loader", () => {
+          sinon.assert.notCalled(loader.import);
+        });
+
+        it("then second handler is called once", () => {
+          sinon.assert.calledOnce(handler2);
+        });
+
+        it("then second handler is called with the initial data", () => {
+          sinon.assert.calledWith(handler2, sinon.match(data));
+        });
+
+        it("then the final result is the output from the second handler", () => {
+          expect(result).to.include(handlerResult2);
+        });
+      });
+    });
+  });
+
+  describe("When creating a Manager with no options", () => {
+    var manager;
+
+    beforeEach(() => {
+      manager = new Plugin.Manager();
+    });
+
+    describe("and configuring a `transform` plugin", () => {
+      var act;
+
+      beforeEach(() => {
+        act = () => {
+          manager.configure({
+            transform: () => {}
+          });
+        };
+      });
+
+      it("then an exception is thrown because services to register plugins with are not configured", () => {
+        expect(act).to.throw(TypeError, "Unable to register plugin. Services have not been configured");
+      });
+    });
+  });
+
+  describe("When creating a manager with transform services", () => {
+    var manager, transformService, transformPlugin;
+
+    beforeEach(() => {
+      transformService = sinon.stub();
+      transformPlugin = sinon.stub();
+      manager = new Plugin.Manager(null, {
+        transform: {
+          use: transformService
+        }
+      });
+    });
+
+    describe("and registering a transform plugin", () => {
+      beforeEach(() => {
+        manager.configure({
+          transform: transformPlugin
+        });
+      });
+
+      it("then the transform service is called to register the plugin", () => {
+        sinon.assert.calledOnce(transformService);
+      });
+
+      it("then the trasform service is called to register a function", () => {
+        sinon.assert.calledWith(transformService, sinon.match.func);
+      });
+    });
+
+    describe("and registering a plugin with a service that does not exist", () => {
+      var act, serviceName;
+
+      beforeEach(() => {
+        serviceName = chance().string();
+
+        act = () => {
+          manager.configure({
+            [serviceName]: () => {}
+          });
+        };
+      });
+
+      it("then the plugin registration throw an error", () => {
+        expect(act).to.throw(TypeError, "Unable to register plugin. '" + serviceName + "' service does not exist");
+      });
+    });
+  });
+
 });

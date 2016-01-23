@@ -1,4 +1,5 @@
-var Bitloader = require("src/bit-loader");
+import { expect } from "chai";
+import Bitloader from "src/bit-loader";
 
 describe("Bitloader Test Suite", function() {
   var bitloader;

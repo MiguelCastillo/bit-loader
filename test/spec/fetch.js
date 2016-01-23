@@ -1,4 +1,4 @@
-var Bitloader = require("src/bit-loader");
+import Bitloader from "src/bit-loader";
 
 describe("Fetch Test Suite", function() {
   var loader, fetchStub, resolveStub, transformStub, dependencyStub, resolveData, fetchData, transformData;
