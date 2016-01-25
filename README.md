@@ -80,7 +80,9 @@ The example below has a function handler that loads module files from storage an
 ``` javascript
 function fetch(meta, options, cancel) {
   return get(meta.path).then(function(result) {
-    source: result
+    return {
+      source: result
+    };
   });
 }
 
