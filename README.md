@@ -10,7 +10,7 @@
 
 ## Examples
 
-Please checkout the [examples](./example).  There you will find different recipes for settings things up.
+Please checkout the [examples](./example).  There you will find different recipes for setting things up.
 
 
 ## Install npm dependencies, build, and test
@@ -26,59 +26,39 @@ All build artifacts will be in the `dist` folder.
 
 ## Architecture Overview
 
-bit loader is composed of a two stage system. The first stage is responsible for loading and processing files via puggable pipelines. And a second stage is for building (compiling and linking) modules.
+`bit-loader` is composed of a two stage system. The first stage is responsible for loading and processing files via puggable pipelines. And a second stage is responsible for building (compiling and linking) modules.
 
-#### The first stage - the module loading stage
+### The first stage - the module loading stage
 
-First, we need to convert module names to file paths in order to load modules from storage. The module name resolution is done in the `resolve` pipeline and files are loaded from storage in the `fetch` pipeline. The contents loaded from storage are then processed in the `transform` pipeline, which is where all transpilation/transformation is done. The result of the `transform` pipeline is passed on to the `dependency` pipeline, which pulls out dependencies and recursively pushes them through the loading workflow until no more modules are left to load in the module graph.
+This stage is responsible for loading files from storage and processing them in order to generate a graph, which we refer to as module graph. The module graph is basically a tree structure that outlines the dependency hierarchy of the modules.
 
-> This stage is entirely asynchronous.
+This stage is composed of several pluggable pipelines that cascade *information* from one pipeline to the next. This *information* is encapsulated in an object we refer to as *module meta*. More information on the module meta objects can be found [here](#module-meta). The flow that module meta objects go through is described below:
 
-This stage has 4 pipeline:
+First, we need to convert module names to file paths in order to load modules from storage. This conversion is called *module name resolution*, which is done in the `resolve` pipeline. The `path` generated in the `resolve` pipeline is then used by the `fetch` pipeline to load module files from storage. These files are subsequently processed by the `transform` pipeline, which is generally where all transpilation/transformation is done. The result of the `transform` pipeline is pushed through the `dependency` pipeline, which pulls out dependencies and recursively feeds them through the first stage (module loading stage) until no more modules are left to load into the module graph.
 
-- **resolve** - responsible for generating paths to read module files from storage.
-- **fetch** - responsible for loading files from storage.
-- **transform** - responsible for processing and transforming loaded files.  E.g. ES6 to ES5 via babeljs. Or CoffeeScript to JavaScript.
-- **dependency** - responsible for parsing out dependencies from the loaded files.
+> This stage is entirely asynchronous, and the output is a module graph.
+
+
+#### 4 pipelines:
+
+The module loading stage has 4 pipelines, which are described below.
+
+- **`resolve`** - responsible for generating paths to read module files from storage.
+- **`fetch`** - responsible for loading files from storage.
+- **`transform`** - responsible for processing and transforming loaded files.  E.g. ES2015 to ES5 via babeljs. Or CoffeeScript to JavaScript.
+- **`dependency`** - responsible for parsing out dependencies from the loaded files and recursively feeding them to the module loading stage.
 
 These four pipelines are pluggable, which means that you can register handler functions to process module data in each one of them. These pipelines are executed sequentially in the order listed above, with each pipeline cascading data from one to the next.
 
-More details on how to hook into the pipelines can be found in the [plugins](#plugins) section. More details on each pipeline can be found [here](#pipelines).
+More details on how to hook into these pipelines can be found in the [plugins](#plugins) section.
 
-#### The second stage - the module building stage
+### The second stage - the module building stage
 
 The build stage (compile + linking) is where the *transformed files* are converted to *evaluated code*, which is what host applications generally consume.
 
-> The build stage is synchronous.
+> The build stage is synchronous and it is *not* pluggable.
 
 The combination of the first (*asynchronous*) stage with the second (*synchronous*) build stage enables support for `CJS`,`AMD`, and `ES6 modules` simultaneously.
-
-
-## Pipelines
-
-> Each pipeline has a very speific reponsibility.
-
-#### Resolve
-
-First, we need to be able to convert module names (ids) to paths we can use to read module files from storage. The paths generated by this pipeline will be consumed by the fetch pipeline. Resolve is generally aware of the environment in which it executes in order to handle environemtn specific pathing; e.gg Windows vs MacOS file paths.
-
-#### Fetch
-
-Once we have a proper file path for the module, we read it from storage. Storage can be local file system, a remote server via XHR, a websocket, or anything that can give us text content. Your fetch provider or plugin defines that behavior.
-
-#### Transform
-
-Once module files are fetched (read from storage), we generally process their content in some way or another.
-
-For example, reading a Markdown file from storage is just text but to really make use of it when rendering to screen, you generally convert it to HTML. Or maybe you have JavaScript code written in ES2015 (or later) and want to transform it to good ole ES5 so that older browsers can run your code. You can setup a [babel](https://babeljs.io/) transform to handle this. And that's exactly what the transform pipeline is for -- for processing module files that is eventually used by the host application.
-
-Once all configured transforms get a chance to execute, the transform pipeline feeds the processed module files to the next pipeline called dependency.
-
-#### Dependency
-
-An important part of the lifecycle of a module is loading dependencies on other modules. And this is where we get a chance to tell `bit-loader` just that. For example, we can parse `require` statements in JavaScript files so that `bit-loader` can load and process those up automatically for us.
-
-The most important part of this particular pipeline is that all dependencies generated here will get recursively loaded before the current module is further processed. And by the time this pipeline is finished, modules have their entire dependency graph fully loaded.
 
 
 ---
@@ -86,65 +66,110 @@ The most important part of this particular pipeline is that all dependencies gen
 
 ## Plugins
 
-Plugins are the primary vehicle for registering handler functions into the different pipelines to load and process module files. Below is a sample plugin called `css` that registers a handler method for fetching module files from storage:
+A plugin is a container with handler (callback) functions that hook into each one of the pipelines to load and process module meta objects. A handler can be configured as a function, string, object, or an array of them.
+
+A handler function is called when a pipeline executes its plugins. Handler arguments and return values are:
+
+- *param* { object } **`meta`** - Object with information to be processed. See [module meta](#module-meta).
+- *param* { object } **`options`** - Configuration object for the particular handler.
+- *param* { function } **`cancel`** - Function to cancel the execution of the plugin handlers for the particular pipeline.
+- *returns* { object | Promise } Object with properties to be merged into the module meta object. Plugin handlers can alternatively return promises to control asynchronous work.
+
+The example below has a function handler that loads module files from storage and another that adds `'use strict;'` to modules.
 
 ``` javascript
-var bitloader = new Bitloader();
+function fetch(meta, options, cancel) {
+  return get(meta.path).then(function(result) {
+    source: result
+  });
+}
 
-bitloader.plugin("css", {
-  fetch: fetchCss
-});
-
-function fetchCss(meta) {
-  return get(meta.path);
+function addStrict(meta, options, cancel) {
+  var source = "'use strict;'\n" + meta.source;
+  return {
+    source: source
+  };
 }
 ```
 
-> Plugin handlers can return promises to control asynchronous work.
-
-You can also register handler functions for transforming module files. Building on the `css` plugin example, we can register two handler functions in the transformation pipeline as follows:
-
 ``` javascript
-var bitloader = new Bitloader();
-
-bitloader.plugin("css", {
-  transform: [cssTransform1, cssTransform2]
+bitloader.plugin({
+  fetch: fetch,
+  transform: addStrict
 });
 ```
 
-Plugins also provide a way to specify the shape of the modules your plugins can process. For example, you can specify properties like the module path, module name, or even match content in the module source. This is all done via matching rules. Below is an example configuring the `css` plugin to only process files with `.css` and `.less` extensions:
+All plugins can take a single or an array of handlers, and the handler can be a module name (a string). When the handler is a module name, `bit-loader` will load the plugin handler dynamically at runtime. E.g.
 
 ``` javascript
-var bitloader = new Bitloader();
+bitloader.plugin({
+  fetch: fetch,
+  transform: "add-strict"
+});
+```
 
-bitloader.plugin("css", {
-  match: {
-    path: /\.(css|less)$/
+When the handler is an object, a property `handler` is expected to be defined as either a string (module name) or a function. The primary reason to define a plugin handler as an object is when you need to pass configuration settings to the `handler` function and/or to configure matching rules. See [matching rules](#matching-rules).
+
+The example below configures a plugin handler as an object. Notice the `handler` is "add-strict", so the handler will be loaded at runtime. The configuration for the handler is also forwarded to the `handler` function when it is executed.
+
+``` javascript
+bitloader.plugin({
+  fetch: fetch,
+  transform: {
+    handler: "add-strict",
+    options: {
+      inlineMap: true
+    }
   }
 });
 ```
 
+Plugins also provide a way to define the shape of the modules your plugins can process. For example, you can specify properties like the module path, module name, or even match content in the module source. This is all done via matching rules. Below is an example configuring a plugin to only process files with `.js` and `.es6` extensions:
+
+``` javascript
+bitloader.plugin({
+  match: {
+    path: /\.(js|es6)$/
+  }
+});
+```
 
 We did all the previous steps separately for illustration purposes, but we can certainly do all that stuff in a single call.
 
 ``` javascript
 var bitloader = new Bitloader();
 
-bitloader.plugin("css", {
+bitloader.plugin({
   match: {
-    path: /\.(css|less)$/
+    path: /\.(js|es6)$/
   },
-  fetch: fetchCss,
-  transform: [cssTransform1, cssTransform2]
+  fetch: fetch,
+  transform: addStrict
 });
 ```
+
+Or alternatively, via `bit-loader`'s constructor
+
+``` javascript
+var bitloader = new Bitloader({
+  plugins: {
+    match: {
+      path: /\.(js|es6)$/
+    },
+    fetch: fetch,
+    transform: addStrict
+  }
+});
+```
+
+> `plugins` can be an array as well.
 
 
 ## Default providers
 
-All pluggable pipelines have a default provider, which is just a default handler that executes when plugins can't process a particular module. These are configured by providing the corresponding handlers in `bit-loader`'s constructor.
+All pluggable pipelines have an optional default provider, which is just a default handler that executes when plugins can't process a particular module. These are configured by providing the corresponding handlers in `bit-loader`'s constructor.
 
-> [bit imports](https://github.com/MiguelCastillo/bit-imports) and [bit-bundler](https://github.com/MiguelCastillo/bit-bundler) both implement defaul providers to give base functionality without requiring plugins.
+> [bit imports](https://github.com/MiguelCastillo/bit-imports) and [bit-bundler](https://github.com/MiguelCastillo/bit-bundler) both implement defaul providers to give base functionality without configuring plugins.
 
 #### Example
 ``` javascript
@@ -187,10 +212,10 @@ So what exactly are the different pipelines passing around, anyways? They are pa
 
 > Modifying module meta objects is the primary responsibility of the different pipelines.
 
+- **`deps`** { Array[ string ] } - Collection of module names a particular module depends on. Used by the `dependency` stage.
 - **`name`** { string } - Name of the module to load. Used by `resolve` to figure out the `path`.
 - **`path`** { string } - Path for the module file. Used by `fetch` to load the module file.
 - **`source`** { string } - File content of the module.  Use by `transform` to transpile the module content.
-- **`deps`** { Array[ string ] } - Collection of module names and paths a module depends on. Used by the `dependency` stage.
 - **`referrer`** { { string: path, string: name } } - Information about the module requesting to load the current module.
 
 #### Pipeline Flow of the first and second stage
