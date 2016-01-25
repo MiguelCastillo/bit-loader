@@ -74,7 +74,7 @@ function link(manager) {
  * @returns {string} The proper source url to be inserted in the module source
  */
 function getSourceUrl(moduleMeta) {
-  var url = canUseSourceURL(moduleMeta) ? moduleMeta.path : moduleMeta.id;
+  var url = canUseSourceURL(moduleMeta) ? moduleMeta.path : moduleMeta.name;
   return url ? "\n//# sourceURL=" + url : "";
 }
 
