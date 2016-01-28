@@ -76,7 +76,6 @@ function Bitloader(options) {
 
   this.fetch     = controllers.fetcher.fetch.bind(controllers.fetcher);
   this.important = controllers.importer.important.bind(controllers.importer);
-  this.register  = controllers.registry.register.bind(controllers.registry);
 
   // Register plugins
   for (var plugin in options.plugins) {
@@ -124,7 +123,21 @@ Bitloader.prototype.load = function(/*name, referrer*/) {};
  * @param {Function} factory - Function to be called in order to instantiate
  *  (realize) the module
  */
-Bitloader.prototype.register = function(/*name, deps, factory, referrer*/) {};
+//Bitloader.prototype.define = function(/*name, deps, factory, referrer*/) {};
+
+
+/**
+ * Method to register module exports
+ *
+ * @param {string} name - Name of the module to register exports for
+ * @param {any} exports - Module export
+ *
+ * @returns {Bitimports}
+ */
+Bitloader.prototype.register = function(name, exports) {
+  this.controllers.registry.register(name, exports);
+  return this;
+}
 
 
 /**
