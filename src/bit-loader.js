@@ -23,9 +23,12 @@ var pluginManagerCount = 0;
 
 
 /**
- * @class
+ * Facade for System module loader and some extras. This provisions you with functionality
+ * for loading modules and process them via plugins. Some relevant information is
+ * found [here](https://whatwg.github.io/loader/), but semantics are not quite the same.
+ * whatwg/loader was more of a model to stay somewhat on track with the spec's affordances.
  *
- * Facade for relevant interfaces to register and import modules
+ * @class
  */
 function Bitloader(options) {
   options = utils.merge({}, options);
@@ -85,43 +88,54 @@ function Bitloader(options) {
 
 
 /**
- * Method to asynchronously load modules
+ * Method for asynchronously loading modules. This method returns the module(s)
+ * exports.
  *
- * @param {string|Array.<string>} names - Module or list of modules names to
- *  load. These names map back to the paths settings Bitloader was created
- *  with.
+ * @param {string|Array.<string>} names - Names of modules to import.
  *
- * @returns {Promise} That when resolved, all the imported modules are passed
- *  back as arguments.
+ * @returns {Promise} That when resolved, all the imported modules' exports
+ *  are returned.
  */
-Bitloader.prototype.import = function(/*name, referrer*/) {};
+Bitloader.prototype.import = function(/*names*/) {};
 
 
 /**
- * Method that converts a module name to a module path that can be used for
- * loading a module from storage.
+ * Method that converts a module name to a module file path which can be used
+ * for loading a module from disk.
+ *
+ * @param {string} name - Name of the module to resolve.
+ * @param {{path: string, name: string}} referrer - Module requesting
+ *  the module. Essential for processing relative paths.
+ *
+ * @returns {Promise} When resolved it returns a module meta object with
+ *  the file path for the module.
  */
 Bitloader.prototype.resolve = function(/*name, referrer*/) {};
 
 
 /**
- * Method for asynchronously loading modules.
+ * Method for asynchronously loading modules. This method returns the module
+ * instance(s).
  *
- * @returns {Pormise} That when resolved, it returns the full instance of the
- *  module loaded
+ * @param {string|Array.<string>} names - Names of modules to load.
+ * @param {{path: string, name: string}} referrer - Module requesting
+ *  the module. Essential for processing relative paths.
+ *
+ * @returns {Pormise} When resolved it returns the full instance of the
+ *  module(s) loaded.
  */
-Bitloader.prototype.load = function(/*name, referrer*/) {};
+Bitloader.prototype.load = function(/*names, referrer*/) {};
 
 
-/**
+/*
  * Method to define a module to be asynchronously loaded via the
  * [import]{@link Bitloader#import} method
  *
- * @param {string} name - Name of the module to register
+ * @param {string} name - Name of the module to register.
  * @param {Array.<string>} deps - Collection of dependencies to be loaded and
  *  passed into the factory callback method.
  * @param {Function} factory - Function to be called in order to instantiate
- *  (realize) the module
+ *  (realize) the module.
  */
 //Bitloader.prototype.define = function(/*name, deps, factory, referrer*/) {};
 
@@ -129,10 +143,10 @@ Bitloader.prototype.load = function(/*name, referrer*/) {};
 /**
  * Method to register module exports
  *
- * @param {string} name - Name of the module to register exports for
- * @param {any} exports - Module export
+ * @param {string} name - Name of the module to register exports for.
+ * @param {any} exports - Module exports.
  *
- * @returns {Bitimports}
+ * @returns {Bitloader}
  */
 Bitloader.prototype.register = function(name, exports) {
   this.controllers.registry.register(name, exports);
@@ -141,13 +155,13 @@ Bitloader.prototype.register = function(name, exports) {
 
 
 /**
- * Method to get the source of a module.
+ * Method to get the source of modules.
  *
- * @param {string | Array.<string>} names - Name(s) of the modules to load.
- * @referrer {{path: string, name: string}} referrer - Module requesting
- *  the source.  Essential for processing relative paths.
+ * @param {string|Array.<string>} names - Names of modules to load.
+ * @param {{path: string, name: string}} referrer - Module requesting
+ *  the source. Essential for processing relative paths.
  *
- * @returns {Promise} When resolved, the source(s) are returned
+ * @returns {Promise} When resolved it returns the source(s)
  */
 Bitloader.prototype.getSource = function(names, referrer) {
   var loader = this;
@@ -169,7 +183,8 @@ Bitloader.prototype.getSource = function(names, referrer) {
  * Helper method to push source string through the transformation pipeline
  *
  * @param {string} source - Source code to transform.
- * @returns {Promise} When resolved, the transformed source is returned.
+ *
+ * @returns {Promise} When resolved it returns the transformed source code.
  */
 Bitloader.prototype.transform = function(source) {
   return this.services.transform.run(new Module.Meta({
@@ -185,6 +200,8 @@ Bitloader.prototype.transform = function(source) {
 /**
  * Clears the registry, which means that all cached modules and other pertinent
  * data will be deleted.
+ *
+ * @returns {Bitloader}
  */
 Bitloader.prototype.clear = function() {
   this.controllers.registry.clear();
@@ -194,6 +211,10 @@ Bitloader.prototype.clear = function() {
 
 /**
  * Checks if the module instance is in the module registry
+ *
+ * @param {string} id - Id of the module to check if it's cached
+ *
+ * @returns {boolean}
  */
 Bitloader.prototype.hasModule = function(id) {
   return this.controllers.registry.hasModule(id);
@@ -203,6 +224,10 @@ Bitloader.prototype.hasModule = function(id) {
 /**
  * Returns the module instance if one exists.  If the module instance isn't in the
  * module registry, then a TypeError exception is thrown
+ *
+ * @param {string} id - Id of the module to get from cache
+ *
+ * @return {Module} Module instance from cache
  */
 Bitloader.prototype.getModule = function(id) {
   return this.controllers.registry.getModule(id);
@@ -210,7 +235,7 @@ Bitloader.prototype.getModule = function(id) {
 
 
 /**
- * Interface to delete a module from the registry.
+ * Method to delete a module from the registry.
  *
  * @param {string} id - Id of the module to delete
  *
@@ -233,7 +258,8 @@ Bitloader.prototype.deleteModule = function(mod) {
  * Add ignore rules for configuring what the different pipelines shoud not process.
  *
  * @param {Object} rule - Rule configuration
- * @returns {Bitloader} Bitloader instance
+ *
+ * @returns {Bitloader}
  */
 Bitloader.prototype.ignore = function(rule) {
   if (!rule) {
@@ -276,18 +302,17 @@ Bitloader.prototype.ignore = function(rule) {
  *  register a `transform` and a `dependency` pipeline handler, then the
  *  plugin object will have entries with those names. E.g.
  *
- *  ``` javascript
- *  var pluginDefinition = {
+ * @returns {Bitloader}
+ *
+ *  @example
+ *  bitloader.plugin("js", {
  *    "transform": function(meta) {
  *      console.log(meta);
  *    },
  *    "dependency": function(meta) {
  *      console.log(meta);
  *    }
- *  };
- *
- *  bitlaoder.plugin(plugin);
- *  ```
+ *  });
  */
 Bitloader.prototype.plugin = function(name, settings) {
   if (!types.isString(name)) {
