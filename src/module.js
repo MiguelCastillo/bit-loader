@@ -2,6 +2,12 @@ var utils = require("belty");
 var types = require("dis-isa");
 
 
+/**
+ * Module types.
+ *
+ * @deprecated
+ * @ignore
+ */
 var Type = {
   "UNKNOWN" : "UNKNOWN",
   "AMD"     : "AMD",     //Asynchronous Module Definition
@@ -14,6 +20,7 @@ var Type = {
  * There are three states a module can be in, and each state can be in a different
  * stage. The different states are REGISTERED, LOADED, READY.
  *
+ * <pre>
  * REGISTERED has four stages before a module can be LOADED.
  *  1. RESOLVE.
  *  2. FETCH.
@@ -23,9 +30,13 @@ var Type = {
  * LOADED has two stages before a module can be READY.
  *  1. COMPILE.
  *  2. LINK.
+ * </pre>
  *
  * READY is the final state and has no stages. When a module is READY,
  * it can be consumed by the host application.
+ *
+ * @enum
+ * @memberof Module
  */
 var State = {
   REGISTERED: "registered",
@@ -40,6 +51,20 @@ var State = {
 };
 
 
+/**
+ * Module class definition. This contains all information used in the processed
+ * of creating the module as well as the data the host application consumes. Perhaps
+ * the single most important piece of information is `exports`, which is ultimately
+ * the piece of data that the host application consumes.
+ *
+ * @class
+ *
+ * @property {string} id - Module id
+ * @property {string} name - Module name
+ * @property {string[]} deps - Array of module dependencies
+ * @property {function} factory - Function that generates the data a particular module exports
+ * @property {any} exports - Data exported by a module
+ */
 function Module(options) {
   if (!options) {
     throw new TypeError("Must provide options to create the module");
@@ -54,14 +79,19 @@ function Module(options) {
   }
 
   this.type = options.type || Type.UNKNOWN;
-  this.id   = options.id || options.name;
+  this.id = options.id || options.name;
   this.name = options.name;
   this.deps = options.deps ? options.deps.slice(0) : [];
 }
 
 
 /**
- * Module meta object
+ * Module meta class definition. This is an intermediary representation of the processed
+ * module information before a proper Module instance is created. This is what all pipelines
+ * interact with before the build stage creates a Module instance.
+ *
+ * @class
+ * @memberof Module
  */
 function Meta(options) {
   options = options || {};
@@ -81,6 +111,14 @@ function Meta(options) {
 }
 
 
+/**
+ * Safely merges data into the instance of module meta. This returns a new instance
+ * to keep the module meta object as immutable as possible.
+ *
+ * @param {object} options - Options to merge into the module meta instance.
+ *
+ * @returns {Meta} New module meta instance with the aggregated options merged in.
+ */
 Meta.prototype.configure = function(options) {
   // Provide immutability to prevent side effects
   return mergeConfiguration(new Meta(this), options);
@@ -88,7 +126,9 @@ Meta.prototype.configure = function(options) {
 
 
 /**
- * Verifies that the module meta object is either already compiled or can be compiled.
+ * Verifies that a module meta object is either already compiled or can be compiled.
+ *
+ * @param {Meta} moduleMeta - Module meta instance.
  *
  * @returns {boolean}
  */
@@ -104,7 +144,9 @@ Meta.validate = function(moduleMeta) {
 
 
 /**
- * Verifies is the module meta object has dependencies.
+ * Verifies if a module meta object has dependencies.
+ *
+ * @param {Meta} moduleMeta - Module meta instance.
  *
  * @returns {boolean}
  */
@@ -118,6 +160,8 @@ Meta.hasDependencies = function(moduleMeta) {
  * That's because those are the two things that the compile step actually generates
  * before creating a Module instance.
  *
+ * @param {Meta} moduleMeta - Module meta instance.
+ *
  * @returns {boolean}
  */
 Meta.isCompiled = function(moduleMeta) {
@@ -129,6 +173,8 @@ Meta.isCompiled = function(moduleMeta) {
  * Checks if the module meta object can be compiled by verifying that it has NOT
  * already been compiled and that it has a `source` property that need to be compiled.
  *
+ * @param {Meta} moduleMeta - Module meta instance.
+ *
  * @returns {boolean}
  */
 Meta.canCompile = function(moduleMeta) {
@@ -137,7 +183,9 @@ Meta.canCompile = function(moduleMeta) {
 
 
 /**
- * Merges in options into the module meta object
+ * Merges in options into a module meta object
+ *
+ * @ignore
  */
 function mergeConfiguration(moduleMeta, options) {
   var result = utils.extend(moduleMeta, options);
