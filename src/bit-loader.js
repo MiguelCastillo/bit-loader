@@ -151,7 +151,7 @@ Bitloader.prototype.load = function(/*names, referrer*/) {};
 Bitloader.prototype.register = function(name, exports) {
   this.controllers.registry.register(name, exports);
   return this;
-}
+};
 
 
 /**
