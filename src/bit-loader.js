@@ -82,7 +82,12 @@ function Bitloader(options) {
 
   // Register plugins
   for (var plugin in options.plugins) {
-    this.plugin(options.plugins[plugin]);
+    if (types.isString(options.plugins[plugin].name)) {
+      this.plugin(options.plugins[plugin].name, options.plugins[plugin]);
+    }
+    else {
+      this.plugin(plugin, options.plugins[plugin]);
+    }
   }
 }
 

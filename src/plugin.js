@@ -232,7 +232,7 @@ Manager.prototype.configure = function(settings) {
 
 
 function isPlugabble(service) {
-  return service !== "match" && service !== "ignore";
+  return service !== "match" && service !== "ignore" && service !== "name";
 }
 
 
