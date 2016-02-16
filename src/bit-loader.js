@@ -80,6 +80,10 @@ function Bitloader(options) {
   this.fetch     = controllers.fetcher.fetch.bind(controllers.fetcher);
   this.important = controllers.importer.important.bind(controllers.importer);
 
+  if (options.ignore) {
+    this.ignore(options.ignore);
+  }
+
   // Register plugins
   for (var plugin in options.plugins) {
     if (types.isString(options.plugins[plugin].name)) {
@@ -266,36 +270,58 @@ Bitloader.prototype.deleteModule = function(mod) {
  *
  * @returns {Bitloader}
  */
-Bitloader.prototype.ignore = function(rule) {
-  if (!rule) {
+Bitloader.prototype.ignore = function(rules) {
+  if (!rules) {
     throw new TypeError("Must provide a rule configuration");
   }
 
-  var i, length, pipelines;
-
-  if (types.isArray(rule) || types.isString(rule)) {
-    rule = {
-      match: rule
-    };
+  if (!types.isArray(rules)) {
+    rules = [rules];
   }
 
-  if (!rule.pipelines) {
-    pipelines = ["transform", "dependency"];
-  }
-  else {
-    if (rule.pipelines === "*") {
-      pipelines = Object.keys(this.pipelines);
-    }
-    else {
-      pipelines = types.isArray(rule.pipelines) ? rule.pipelines : [rule.pipelines];
-    }
-  }
+  var services = this.services;
+  var serviceName = Object.keys(this.services);
 
-  for (i = 0, length = pipelines.length; i < length; i++) {
-    this.services[pipelines[i]].ignore("name", rule.match);
-  }
+  rules
+    .map(configureRule)
+    .map(configureServices)
+    .forEach(registerRule);
 
   return this;
+
+
+  function configureRule(rule) {
+    if (!types.isPlainObject(rule)) {
+      rule = { name: rule };
+    }
+
+    return rule;
+  }
+
+  function configureServices(rule) {
+    if (!rule.services) {
+      rule.services = ["transform", "dependency"];
+    }
+    else if (rule.services === "*") {
+      rule.services = serviceName;
+    }
+    else {
+      rule.services = types.isArray(rule.services) ? rule.services : [rule.services];
+    }
+
+    return rule;
+  }
+
+  function registerRule(rule) {
+    var i, length, serviceNames = rule.services;
+    for (var ruleMatchName in rule) {
+      if (ruleMatchName !== "services") {
+        for (i = 0, length = serviceNames.length; i < length; i++) {
+          services[serviceNames[i]].ignore(ruleMatchName, rule[ruleMatchName]);
+        }
+      }
+    }
+  }
 };
 
 
