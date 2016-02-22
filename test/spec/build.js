@@ -65,4 +65,64 @@ describe("Build Test Suite", function() {
       expect(result.exports.dep).to.equal(1);
     });
   });
+
+  describe("When building a module", function() {
+
+    describe("with no a sourceURL", function() {
+      var modulePath;
+
+      describe("with absolute path without protocol", function() {
+        beforeEach(function() {
+          modulePath = "some-real-path-url";
+
+          moduleMeta = new Module.Meta("test module");
+          moduleMeta = moduleMeta.configure({ source: "module.exports = {name: 'test', dep: 'a'};", path: modulePath });
+          moduleMeta = loader.controllers.registry.setModule(moduleMeta, "loaded");
+
+          result = loader.controllers.builder.build(moduleMeta.id);
+        });
+
+        it("then the sourceURL is created", function() {
+          expect(result.meta.source).to.contain("//# sourceURL=" + modulePath);
+        });
+      });
+
+      describe("with a path that has http protocol with a domain name", function() {
+        var domainName;
+
+        beforeEach(function() {
+          domainName = "http://domain:994";
+          modulePath = "/some-real-path-url";
+
+          moduleMeta = new Module.Meta("test module");
+          moduleMeta = moduleMeta.configure({ source: "module.exports = {name: 'test', dep: 'a'};", path: domainName + modulePath });
+          moduleMeta = loader.controllers.registry.setModule(moduleMeta, "loaded");
+
+          result = loader.controllers.builder.build(moduleMeta.id);
+        });
+
+        it("then the sourceURL is created without the domain only using the absoulte path of the resource", function() {
+          expect(result.meta.source).to.contain("//# sourceURL=" + modulePath);
+        });
+      });
+    });
+
+    describe("with a sourceURL already specified", function() {
+      var sourceURL;
+      beforeEach(function() {
+        sourceURL = "some-url";
+
+        moduleMeta = new Module.Meta("test module");
+        moduleMeta = moduleMeta.configure({ source: "module.exports = {name: 'test', dep: 'a'};\n//# sourceURL=" + sourceURL });
+        moduleMeta = loader.controllers.registry.setModule(moduleMeta, "loaded");
+
+        result = loader.controllers.builder.build(moduleMeta.id);
+      });
+
+      it("then the sourceURL is not overriden", function() {
+        expect(result.meta.source).to.contain("//# sourceURL=" + sourceURL);
+      });
+    });
+
+  });
 });
