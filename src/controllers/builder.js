@@ -74,28 +74,21 @@ function link(manager) {
  * @returns {string} The proper source url to be inserted in the module source
  */
 function getSourceUrl(moduleMeta) {
-  var url = canUseSourceURL(moduleMeta) ? moduleMeta.path : moduleMeta.name;
-  return url ? "\n//# sourceURL=" + url : "";
+  return hasSourceURL(moduleMeta) ?
+    "" :
+    "\n//# sourceURL=" + moduleMeta.path.replace(/^(https?):\/\/\/?[^\/]*/, "");
 }
 
 
 /**
- * Verifies if a sourceUrl should be the full url of the module or just
- * the module name. This is to avoid having source maps and the source
- * url being added be the same url because browsers don't handle that
- * very well.
- *
+ * Verifies if the module already has a `sourceURL` so that we don't override it.
  * @private
  *
  * @param {Module.Meta} moduleMeta - Module meta object this function is processing
  * @returns {boolean}
  */
-function canUseSourceURL(moduleMeta) {
-  if (!moduleMeta.source) {
-    return false;
-  }
-
-  return (moduleMeta.source.indexOf("//# sourceMappingURL=") === -1) && (moduleMeta.source.indexOf("//# sourceURL=") === -1);
+function hasSourceURL(moduleMeta) {
+  return moduleMeta.source && moduleMeta.source.indexOf("//# sourceURL=") !== -1;
 }
 
 
