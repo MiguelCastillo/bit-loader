@@ -241,11 +241,15 @@ So what exactly are the different pipelines passing around, anyways? They are pa
 
 ## Matching rules
 
-> `bit-loader` matching rules are simply an abstraction on top of [roolio](https://github.com/MiguelCastillo/roolio), so feel free to explore different matching rules, including custom ones. But generally, you will only specify strings and regex.
+> `bit-loader` matching rules are an abstraction on top of [roolio](https://github.com/MiguelCastillo/roolio), so feel free to explore different matching rules, including custom ones. But generally, you will only specify strings and regex.
 
 Matching rules allow you to define which modules are processed by `bit-loader`. This is accomplished by defining `match` and `ignore` rules. You can specify `match` and `ignore` rules in plugins and in plugin handlers. You can also specify `ignore` rules in `bit-loader` instances. This combination gives you lots of control over what part of your setup processes which modules.
 
 `match` and `ignore` rules are objects whose properties are matched against properties in module meta objects. For example, if your `match` rule defines `path`, then the path in module meta will be tested to determine if the particular module meta can be processed.  If your `match` rule defines `source`, then the source in module meta is tested.
+
+### match
+
+> match rules define which modules are *processed* by bit-loader.
 
 The following example sets a `match` rule in a plugin to only process modules that have `src/views` in the path.  Other modules are ignored by this plugin.
 
@@ -288,7 +292,11 @@ bitloader.plugin({
 });
 ```
 
-`ignore` rules are defined exactly the same way as`match` rules. You configure `ignore` rules if you want particular plugins and plugin handlers as well as `bit-loader` instances to ignore certain modules.
+### ignore
+
+> ignore rules define which modules are *ignored* by bit-loader.
+
+`ignore` rules are defined exactly the same way as `match` rules. You configure `ignore` rules if you want particular plugins and plugin handlers as well as `bit-loader` instances to ignore certain modules.
 
 The following example tells `bit-loader` to ignore modules with the name `react` and `jquery`.
 
@@ -301,7 +309,9 @@ var bitbundler = new Bitbundler({
 });
 ```
 
-> With this setup, "react" and "jquery" are not processed by the `transform` and `dependency` pipelines, which is the default behavior.
+> You can alternatively use the short form `ignore: ["react", "jquery"]` when configuring ignore rules for bit-loader instances.
+
+By default, ignore rules in bit-loader instances will prevent the `transform` and `dependency` pipelines from processing modules. You can further customize which pipelines ignore which modules by specifying a `services` array with the names of the pipelines that ought to skip module processing.
 
 The following example illustrates how to configure a plugin so that it ignores all modules in `src/views`
 
