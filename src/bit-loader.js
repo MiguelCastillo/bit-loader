@@ -85,13 +85,12 @@ function Bitloader(options) {
   }
 
   // Register plugins
-  for (var plugin in options.plugins) {
-    if (types.isString(options.plugins[plugin].name)) {
-      this.plugin(options.plugins[plugin].name, options.plugins[plugin]);
-    }
-    else {
-      this.plugin(plugin, options.plugins[plugin]);
-    }
+  if (options.plugins) {
+    var plugins = types.isArray(options.plugins) ? options.plugins : [options.plugins];
+
+    plugins.forEach(function(plugin) {
+      this.plugin(plugin);
+    }.bind(this));
   }
 }
 
@@ -346,9 +345,9 @@ Bitloader.prototype.ignore = function(rules) {
  *  });
  */
 Bitloader.prototype.plugin = function(name, settings) {
-  if (!types.isString(name)) {
+  if (types.isPlainObject(name)) {
     settings = name;
-    name = pluginManagerCount++;
+    name = settings.name || pluginManagerCount++;
   }
 
   if (!this.plugins[name]) {
