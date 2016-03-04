@@ -1,7 +1,7 @@
 //var logger = require("loggero").create("controllers/resolver");
 var inherit    = require("../inherit");
 var Module     = require("../module");
-var Controller = require("../Controller");
+var Controller = require("../controller");
 
 
 function Resolver(context) {
