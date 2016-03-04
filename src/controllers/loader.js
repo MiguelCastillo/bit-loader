@@ -1,5 +1,7 @@
 //var logger = require("loggero").create("controllers/loader");
 var types  = require("dis-isa");
+var inherit = require("../inherit");
+var Controller = require("../controller");
 
 
 /**
@@ -12,13 +14,12 @@ var types  = require("dis-isa");
  * 5. Compile - evaluates the source that was fetched and transformed.
  * 6. Link - processes the entire dependency graph in order to instantiate modules.
  */
-function Loader(manager) {
-  if (!manager) {
-    throw new TypeError("Must provide a manager");
-  }
-
-  this.manager = manager;
+function Loader(context) {
+  Controller.call(this, context);
 }
+
+
+inherit.base(Loader).extends(Controller);
 
 
 /**
@@ -53,13 +54,13 @@ function load(loader, referrer) {
 
 
 function fetch(loader, name, referrer) {
-  return loader.manager.controllers.fetcher.fetch(name, referrer);
+  return loader.context.controllers.fetcher.fetch(name, referrer);
 }
 
 
 function build(loader) {
   return function(moduleMeta) {
-    return loader.manager.controllers.builder.build(moduleMeta.id);
+    return loader.context.controllers.builder.build(moduleMeta.id);
   };
 }
 

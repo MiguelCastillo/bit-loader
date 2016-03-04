@@ -1,29 +1,30 @@
 //var logger   = require("loggero").create("controllers/builder");
-var helpers  = require("./helpers");
-var Module   = require("../module");
-var Pipeline = require("../pipeline");
+var helpers    = require("./helpers");
+var inherit    = require("../inherit");
+var Module     = require("../module");
+var Pipeline   = require("../pipeline");
+var Controller = require("../controller");
 
 
-function Builder(manager) {
-  if (!manager) {
-    throw new TypeError("Must provide a manager");
-  }
-
-  this.manager = manager;
+function Builder(context) {
+  Controller.call(this, context);
 
   this.pipeline = new Pipeline([
-    compile(manager),
-    link(manager)
+    compile(context),
+    link(context)
   ]);
 }
 
 
+inherit.base(Builder).extends(Controller);
+
+
 Builder.prototype.build = function(id) {
-  if (this.manager.controllers.registry.getModuleState(id) === Module.State.READY) {
-    return this.manager.controllers.registry.getModule(id);
+  if (this.context.controllers.registry.getModuleState(id) === Module.State.READY) {
+    return this.context.controllers.registry.getModule(id);
   }
 
-  return build(this, this.manager.controllers.registry.getModule(id));
+  return build(this, this.context.controllers.registry.getModule(id));
 };
 
 
@@ -55,13 +56,13 @@ function getDependencyExportsByName(builder, moduleMeta) {
 }
 
 
-function compile(manager) {
-  return helpers.serviceRunnerSync(manager, Module.State.LOADED, Module.State.COMPILE, manager.services.compile);
+function compile(context) {
+  return helpers.serviceRunnerSync(context, Module.State.LOADED, Module.State.COMPILE, context.services.compile);
 }
 
 
-function link(manager) {
-  return helpers.serviceRunnerSync(manager, Module.State.COMPILE, Module.State.READY, manager.services.link);
+function link(context) {
+  return helpers.serviceRunnerSync(context, Module.State.COMPILE, Module.State.READY, context.services.link);
 }
 
 

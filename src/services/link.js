@@ -1,16 +1,15 @@
 var logger  = require("loggero").create("service/linker");
+var inherit = require("../inherit");
 var Module  = require("../module");
 var Service = require("../service");
 
 
-function Link(manager) {
-  Service.call(this);
-  this._manager = manager;
+function Link(context) {
+  Service.call(this, context);
 }
 
 
-Link.prototype = Object.create(Service.prototype);
-Link.prototype.constructor = Link;
+inherit.base(Link).extends(Service);
 
 
 Link.prototype.canProcess = function(moduleMeta) {
@@ -33,18 +32,18 @@ Link.prototype.runSync = function(moduleMeta) {
     throw new TypeError("Module " + moduleMeta.name + " cannot be linked");
   }
 
-  var manager = this._manager;
+  var context = this.context;
 
   function traverseDependencies(mod) {
     logger.log(mod.name, mod);
 
     // Build all the dependecies in the dependency graph.
     var depsGraph = mod.deps.map(function resolveDependency(modDep) {
-      if (manager.controllers.registry.getModuleState(modDep.id) === Module.State.READY) {
-        return manager.controllers.registry.getModule(modDep.id).exports;
+      if (context.controllers.registry.getModuleState(modDep.id) === Module.State.READY) {
+        return context.controllers.registry.getModule(modDep.id).exports;
       }
 
-      return traverseDependencies(manager.controllers.builder.build(modDep.id)).exports;
+      return traverseDependencies(context.controllers.builder.build(modDep.id)).exports;
     });
 
     // If the module itself is not yet built, then build it if there is a factory

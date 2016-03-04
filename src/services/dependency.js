@@ -1,17 +1,17 @@
 var logger  = require("loggero").create("service/dependency");
+var inherit = require("../inherit");
 var types   = require("dis-isa");
 var Service = require("../service");
 
 
-function Dependency(manager) {
-  Service.call(this);
-  this._manager = manager;
+function Dependency(context) {
+  Service.call(this, context);
+
   this._logger = logger;
 }
 
 
-Dependency.prototype = Object.create(Service.prototype);
-Dependency.prototype.constructor = Dependency;
+inherit.base(Dependency).extends(Service);
 
 
 Dependency.prototype.canProcess = function(moduleMeta) {

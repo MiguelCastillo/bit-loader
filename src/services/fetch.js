@@ -1,16 +1,16 @@
 var logger  = require("loggero").create("service/fetch");
+var inherit = require("../inherit");
 var Service = require("../service");
 
 
-function Fetch(manager) {
-  Service.call(this);
-  this._manager = manager;
+function Fetch(context) {
+  Service.call(this, context);
+
   this._logger = logger;
 }
 
 
-Fetch.prototype = Object.create(Service.prototype);
-Fetch.prototype.constructor = Fetch;
+inherit.base(Fetch).extends(Service);
 
 
 Fetch.prototype.canProcess = function(moduleMeta) {
