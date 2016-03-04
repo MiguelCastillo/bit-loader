@@ -112,6 +112,31 @@ function Meta(options) {
 
 
 /**
+ * Returns the directory part of a file path.
+ */
+Meta.prototype.getDirectory = function() {
+  return this.getFilePath().replace(/([^/]+)$/gmi, "");
+};
+
+
+/**
+ * Returns the file name of the file path.
+ */
+Meta.prototype.getFileName = function() {
+  var name = /[^/]+$/gmi.exec(this.getFilePath());
+  return name ? name[0] : "";
+};
+
+
+/**
+ * Returns the file path, which is the full path for the file in storage.
+ */
+Meta.prototype.getFilePath = function() {
+  return this.path || "";
+};
+
+
+/**
  * Safely merges data into the instance of module meta. This returns a new instance
  * to keep the module meta object as immutable as possible.
  *
