@@ -115,7 +115,7 @@ function Meta(options) {
  * Returns the directory part of a file path.
  */
 Meta.prototype.getDirectory = function() {
-  return this.getFilePath().replace(/([^/]+)$/gmi, "");
+  return this.getFilePath().replace(/([^/\\]+)$/gmi, "");
 };
 
 
@@ -123,7 +123,7 @@ Meta.prototype.getDirectory = function() {
  * Returns the file name of the file path.
  */
 Meta.prototype.getFileName = function() {
-  var name = /[^/]+$/gmi.exec(this.getFilePath());
+  var name = /[^/\\]+$/gmi.exec(this.getFilePath());
   return name ? name[0] : "";
 };
 
