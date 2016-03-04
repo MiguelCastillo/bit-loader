@@ -1,4 +1,5 @@
-var Matches = require("./matches");
+var inherit  = require("./inherit");
+var Matches  = require("./matches");
 var Pipeline = require("./pipeline");
 
 
@@ -12,8 +13,7 @@ function Service(context) {
 }
 
 
-Service.prototype = Object.create(Matches.prototype);
-Service.prototype.constructor = Service;
+inherit.base(Service).extends(Matches);
 
 
 Service.prototype.provider = function(provider) {
