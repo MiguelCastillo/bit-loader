@@ -112,5 +112,40 @@ describe("Module Test Suite", function() {
         expect(meta.getFileName()).to.equal("");
       });
     });
+
+    describe("and a Windows file path is merged into the module meta instance", function() {
+      var path, directory, fileName, mergedMeta;
+
+      beforeEach(function() {
+        directory = "C:\\" + chance().string() + "\\\\";
+        fileName = "." + chance().string() + ".js"; // edge case with files with dots on them
+        path = directory + fileName;
+
+        act({
+          name: chance().string()
+        });
+
+        mergedMeta = meta.configure({
+          path: path
+        });
+      });
+
+      it("then a new module meta instance is created", function() {
+        expect(mergedMeta).to.not.equal(meta);
+      });
+
+      it("then the path is properly set", function() {
+        expect(mergedMeta.getFilePath()).to.equal(path);
+      });
+
+      it("then the directory is properly calculated from the the path", function() {
+        expect(mergedMeta.getDirectory()).to.equal(directory);
+      });
+
+      it("then the file name is properly calculated from the path", function() {
+        expect(mergedMeta.getFileName()).to.equal(fileName);
+      });
+    });
+
   });
 });
