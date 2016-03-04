@@ -5,10 +5,9 @@ var Service = require("../service");
 var Eval    = require("./eval");
 
 
-function Compile(manager) {
-  Service.call(this);
+function Compile(context) {
+  Service.call(this, context);
 
-  this._manager = manager;
   this._logger = logger;
 }
 
@@ -29,7 +28,7 @@ Compile.prototype.runSync = function(moduleMeta) {
   }
 
   var mod = { exports: {} };
-  Eval(this._manager.controllers.loader, mod, mod.exports, moduleMeta.getDependencyExportsByName, moduleMeta.getDirectory(), moduleMeta.getFilePath(), moduleMeta.source);
+  Eval(this.context.controllers.loader, mod, mod.exports, moduleMeta.getDependencyExportsByName, moduleMeta.getDirectory(), moduleMeta.getFilePath(), moduleMeta.source);
   return moduleMeta.configure(mod);
 };
 

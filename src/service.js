@@ -2,7 +2,12 @@ var Matches = require("./matches");
 var Pipeline = require("./pipeline");
 
 
-function Service() {
+function Service(context) {
+  if (!context) {
+    throw new Error("Service contructor requires a context");
+  }
+
+  this.context = context;
   this._pipeline = new Pipeline();
 }
 

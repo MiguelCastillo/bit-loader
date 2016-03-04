@@ -3,10 +3,9 @@ var inherit = require("../inherit");
 var Service = require("../service");
 
 
-function Resolve(manager) {
-  Service.call(this);
+function Resolve(context) {
+  Service.call(this, context);
 
-  this._manager = manager;
   this._logger = logger;
 }
 

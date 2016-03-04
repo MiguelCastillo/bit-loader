@@ -4,10 +4,9 @@ var types   = require("dis-isa");
 var Service = require("../service");
 
 
-function Dependency(manager) {
-  Service.call(this);
+function Dependency(context) {
+  Service.call(this, context);
 
-  this._manager = manager;
   this._logger = logger;
 }
 

@@ -4,10 +4,9 @@ var inherit = require("../inherit");
 var Service = require("../service");
 
 
-function Transform(manager) {
-  Service.call(this);
+function Transform(context) {
+  Service.call(this, context);
 
-  this._manager = manager;
   this._logger = logger;
 }
 

@@ -4,10 +4,9 @@ var Module  = require("../module");
 var Service = require("../service");
 
 
-function Load(manager) {
-  Service.call(this);
+function Load(context) {
+  Service.call(this, context);
 
-  this._manager = manager;
   this._logger = logger;
 }
 
