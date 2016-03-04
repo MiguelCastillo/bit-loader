@@ -1,16 +1,17 @@
 var logger  = require("loggero").create("service/resolve");
+var inherit = require("../inherit");
 var Service = require("../service");
 
 
 function Resolve(manager) {
   Service.call(this);
+
   this._manager = manager;
   this._logger = logger;
 }
 
 
-Resolve.prototype = Object.create(Service.prototype);
-Resolve.prototype.constructor = Resolve;
+inherit.base(Resolve).extends(Service);
 
 
 Resolve.prototype.canProcess = function(moduleMeta) {

@@ -1,19 +1,21 @@
-var logger = require("loggero").create("controllers/importer");
-var Module = require("../module");
+var logger     = require("loggero").create("controllers/importer");
+var inherit    = require("../inherit");
+var Module     = require("../module");
+var Controller = require("../controller");
 
 
 /**
  * Module importer. Primary function is to load Module instances and resolving
  * their dependencies in order to make the Module fully consumable.
  */
-function Import(manager) {
-  if (!manager) {
-    throw new TypeError("Must provide a manager");
-  }
+function Import(context) {
+  Controller.call(this, context);
 
   this._important = [];
-  this.manager = manager;
 }
+
+
+inherit.base(Import).extends(Controller);
 
 
 /**
@@ -50,8 +52,8 @@ Import.prototype.important = function(names, options) {
  */
 Import.prototype._getModule = function(name, options) {
   options = options || {};
-  var manager = this.manager;
-  var registry = manager.controllers.registry;
+  var context = this.context;
+  var registry = context.controllers.registry;
 
   if (registry.hasModule(name) && registry.getModuleState(name) === Module.State.READY) {
     return Promise.resolve(registry.getModule(name).exports);
@@ -66,10 +68,10 @@ Import.prototype._getModule = function(name, options) {
     }
 
     function getModuleExports(mod) {
-      resolve(manager.controllers.registry.getModule(mod.id).exports);
+      resolve(context.controllers.registry.getModule(mod.id).exports);
     }
 
-    manager.controllers.loader
+    context.controllers.loader
       .load(name)
       .then(getModuleExports, moduleError);
   });

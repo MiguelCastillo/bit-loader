@@ -1,6 +1,8 @@
 //var logger = require("loggero").create("controllers/registry");
+var inherit = require("../inherit");
 var Module = require("../module");
 var Repository = require("../repository");
+var Controller = require("../controller");
 
 
 //
@@ -9,14 +11,14 @@ var Repository = require("../repository");
 //
 
 
-function Registry(manager) {
-  if (!manager) {
-    throw new Error("Manager must be provided");
-  }
+function Registry(context) {
+  Controller.call(this, context);
 
-  this.manager = manager;
   this.repository = new Repository();
 }
+
+
+inherit.base(Registry).extends(Controller);
 
 
 Registry.prototype.register = function(name, exports) {

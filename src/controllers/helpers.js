@@ -1,13 +1,13 @@
-function ensureRegisteredState(manager, id, state) {
-  return manager.controllers.registry.hasModule(id) &&
-    manager.controllers.registry.getModuleState(id) === state;
+function ensureRegisteredState(context, id, state) {
+  return context.controllers.registry.hasModule(id) &&
+    context.controllers.registry.getModuleState(id) === state;
 }
 
 
-function setState(manager, state) {
+function setState(context, state) {
   return function setStateDelegate(moduleMeta) {
-    if (manager.controllers.registry.hasModule(moduleMeta.id)) {
-      manager.controllers.registry.setModule(moduleMeta, state);
+    if (context.controllers.registry.hasModule(moduleMeta.id)) {
+      context.controllers.registry.setModule(moduleMeta, state);
     }
 
     return moduleMeta;
@@ -15,34 +15,34 @@ function setState(manager, state) {
 }
 
 
-function runService(manager, currentState, nextState, service, moduleMeta) {
-  if (!moduleMeta || !ensureRegisteredState(manager, moduleMeta.id, currentState)) {
+function runService(context, currentState, nextState, service, moduleMeta) {
+  if (!moduleMeta || !ensureRegisteredState(context, moduleMeta.id, currentState)) {
     return Promise.resolve(moduleMeta);
   }
 
-  return service.run(setState(manager, nextState)(moduleMeta));
+  return service.run(setState(context, nextState)(moduleMeta));
 }
 
 
-function runServiceSync(manager, currentState, nextState, service, moduleMeta) {
-  if (!moduleMeta || !ensureRegisteredState(manager, moduleMeta.id, currentState)) {
+function runServiceSync(context, currentState, nextState, service, moduleMeta) {
+  if (!moduleMeta || !ensureRegisteredState(context, moduleMeta.id, currentState)) {
     return moduleMeta;
   }
 
-  return service.runSync(setState(manager, nextState)(moduleMeta));
+  return service.runSync(setState(context, nextState)(moduleMeta));
 }
 
 
-function serviceRunner(manager, currentState, nextState, service) {
+function serviceRunner(context, currentState, nextState, service) {
   return function serviceRunnerDelegate(moduleMeta) {
-    return runService(manager, currentState, nextState, service, moduleMeta);
+    return runService(context, currentState, nextState, service, moduleMeta);
   };
 }
 
 
-function serviceRunnerSync(manager, currentState, nextState, service) {
+function serviceRunnerSync(context, currentState, nextState, service) {
   return function serviceRunnerSyncDelegate(moduleMeta) {
-    return runServiceSync(manager, currentState, nextState, service, moduleMeta);
+    return runServiceSync(context, currentState, nextState, service, moduleMeta);
   };
 }
 

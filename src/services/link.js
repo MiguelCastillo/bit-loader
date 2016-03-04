@@ -1,16 +1,17 @@
 var logger  = require("loggero").create("service/linker");
+var inherit = require("../inherit");
 var Module  = require("../module");
 var Service = require("../service");
 
 
 function Link(manager) {
   Service.call(this);
+
   this._manager = manager;
 }
 
 
-Link.prototype = Object.create(Service.prototype);
-Link.prototype.constructor = Link;
+inherit.base(Link).extends(Service);
 
 
 Link.prototype.canProcess = function(moduleMeta) {

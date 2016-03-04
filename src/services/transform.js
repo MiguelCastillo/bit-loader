@@ -1,17 +1,18 @@
 var logger  = require("loggero").create("service/transform");
 var types   = require("dis-isa");
+var inherit = require("../inherit");
 var Service = require("../service");
 
 
 function Transform(manager) {
   Service.call(this);
+
   this._manager = manager;
   this._logger = logger;
 }
 
 
-Transform.prototype = Object.create(Service.prototype);
-Transform.prototype.constructor = Transform;
+inherit.base(Transform).extends(Service);
 
 
 Transform.prototype.canProcess = function(moduleMeta) {

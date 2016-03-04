@@ -1,4 +1,5 @@
 var logger  = require("loggero").create("service/compile");
+var inherit = require("../inherit");
 var Module  = require("../module");
 var Service = require("../service");
 var Eval    = require("./eval");
@@ -6,13 +7,13 @@ var Eval    = require("./eval");
 
 function Compile(manager) {
   Service.call(this);
+
   this._manager = manager;
   this._logger = logger;
 }
 
 
-Compile.prototype = Object.create(Service.prototype);
-Compile.prototype.constructor = Compile;
+inherit.base(Compile).extends(Service);
 
 
 Compile.prototype.canProcess = function(moduleMeta) {

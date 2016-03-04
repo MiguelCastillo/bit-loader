@@ -1,14 +1,15 @@
 //var logger = require("loggero").create("controllers/resolver");
-var Module = require("../module");
+var inherit    = require("../inherit");
+var Module     = require("../module");
+var Controller = require("../Controller");
 
 
-function Resolver(manager) {
-  if (!manager) {
-    throw new TypeError("Must provide a manager");
-  }
-
-  this.manager = manager;
+function Resolver(context) {
+  Controller.call(this, context);
 }
+
+
+inherit.base(Resolver).extends(Controller);
 
 
 Resolver.prototype.resolve = function(name, referrer) {
@@ -17,7 +18,7 @@ Resolver.prototype.resolve = function(name, referrer) {
     referrer: referrer
   });
 
-  return this.manager.services.resolve.run(moduleMeta).then(configureId);
+  return this.context.services.resolve.run(moduleMeta).then(configureId);
 };
 
 
