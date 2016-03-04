@@ -1,6 +1,7 @@
 //var logger  = require("loggero").create("plugin");
 var types   = require("dis-isa");
 var utils   = require("belty");
+var inherit = require("./inherit");
 var Matches = require("./matches");
 
 
@@ -18,8 +19,8 @@ function Handler(handler) {
 }
 
 
-Handler.prototype = Object.create(Matches.prototype);
-Handler.prototype.constructor = Handler;
+inherit.base(Handler).extends(Matches);
+
 
 
 /**
@@ -206,8 +207,7 @@ function Manager(loader, services) {
 }
 
 
-Manager.prototype = Object.create(Matches.prototype);
-Manager.prototype.constructor = Manager;
+inherit.base(Manager).extends(Matches);
 
 
 /**
