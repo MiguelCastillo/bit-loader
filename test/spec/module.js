@@ -27,8 +27,16 @@ describe("Module Test Suite", function() {
         });
       });
 
-      it("then the module meta object is created with the specified name", function() {
+      it("then the module meta instance is created with the specified name", function() {
         expect(name).to.equal(meta.name);
+      });
+
+      it("then the module meta has deps array", function() {
+        expect(meta.deps).to.be.instanceof(Array);
+      });
+
+      it("then the module meta has an empty deps array", function() {
+        expect(meta.deps.length).to.equal(0);
       });
     });
 
@@ -76,7 +84,7 @@ describe("Module Test Suite", function() {
         });
       });
 
-      it("then a new meta data object is created", function() {
+      it("then a new module meta instance is created", function() {
         expect(mergedMeta).to.not.equal(meta);
       });
 
