@@ -13,7 +13,7 @@ Matches.prototype.configure = function(options) {
 
   if (options.extensions) {
     var extensions = types.isArray(options.extensions) ? options.extensions : [options.extensions];
-    this.match("path", new RegExp("[\\w]+\\.(" + extensions.join("|") + ")$", "gmi"));
+    this.match("path", new RegExp("[\\w]+\\.(" + extensions.join("|") + ")$", "mi"));
   }
 
   for (prop in options.match) {
