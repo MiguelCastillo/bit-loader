@@ -74,7 +74,7 @@ Matches.prototype.ignore = function(prop, matches) {
 
 
 Matches.prototype.runIgnore = function(data) {
-  return !!this._ignore && runMatches(this._ignore, data);
+  return !!(this._ignore && runMatches(this._ignore, data));
 };
 
 
