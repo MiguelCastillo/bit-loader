@@ -39,6 +39,18 @@ Fetcher.prototype.fetch = function(names, referrer) {
 
 
 function _fetch(fetcher, name, referrer) {
+  if (fetcher.context._exclude.indexOf(name) !== -1) {
+    var moduleMeta = new Module.Meta({
+      id: name,
+      name: name,
+      path: null,
+      source: ""
+    });
+
+    fetcher.context.controllers.registry.setModule(moduleMeta, Module.State.LOADED);
+    return Promise.resolve(moduleMeta);
+  }
+
   return fetcher.context.controllers.resolver.resolve(name, {
     name: referrer.name,
     path: referrer.path,
