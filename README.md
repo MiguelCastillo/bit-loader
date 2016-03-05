@@ -169,9 +169,9 @@ var bitloader = new Bitloader({
 
 ## Default providers
 
-All pluggable pipelines have an optional default provider, which is just a default handler that executes when plugins can't process a particular module. These are configured by providing the corresponding handlers in `bit-loader`'s constructor.
+All pluggable pipelines have an optional default provider, which is just a default handler that is executed when plugins can't process a particular module. These are configured by providing the corresponding handlers in `bit-loader`'s constructor.
 
-> [bit imports](https://github.com/MiguelCastillo/bit-imports) and [bit-bundler](https://github.com/MiguelCastillo/bit-bundler) both implement defaul providers to give base functionality without configuring plugins.
+> [bit imports](https://github.com/MiguelCastillo/bit-imports) and [bit-bundler](https://github.com/MiguelCastillo/bit-bundler) both implement default providers to give base functionality without configuring plugins.
 
 #### Example
 ``` javascript
@@ -243,9 +243,11 @@ So what exactly are the different pipelines passing around, anyways? They are pa
 
 > `bit-loader` matching rules are an abstraction on top of [roolio](https://github.com/MiguelCastillo/roolio), so feel free to explore different matching rules, including custom ones. But generally, you will only specify strings and regex.
 
-Matching rules allow you to define which modules are processed by `bit-loader`. This is accomplished by defining `match` and `ignore` rules. You can specify `match` and `ignore` rules in plugins and in plugin handlers. You can also specify `ignore` rules in `bit-loader` instances. This combination gives you lots of control over what part of your setup processes which modules.
+Matching rules allow you to define which modules are processed by `bit-loader`. This is accomplished by defining `match`, `ignore`, and `extensions` rules. You can specify `match`, `ignore`, and `extensions` rules in plugins and in plugin handlers. You can also specify `ignore` rules in `bit-loader` instances. This combination gives you lots of control over what part of your setup processes which modules.
 
-`match` and `ignore` rules are objects whose properties are matched against properties in module meta objects. For example, if your `match` rule defines `path`, then the path in module meta will be tested to determine if the particular module meta can be processed.  If your `match` rule defines `source`, then the source in module meta is tested.
+`match` and `ignore` rules are objects whose properties are matched against properties in module meta objects. For example, if your `match` rule defines `path`, then the path in module meta will be tested to determine if the particular module meta can be processed by `bit-loader`.
+
+`extensions` rules is a string or array of string to match the file extension of the module being loaded.
 
 ### match
 
@@ -326,6 +328,28 @@ bitloader.plugin({
   transform: [
     function(meta) {
       console.log(meta.name);
+    }
+  ]
+});
+```
+
+### extensions
+
+> extensions rules defines which module file extensions can be processed by *bit-loader*
+
+`extensions` rules are a shortcut for defining matching rules for module meta paths with regular expressions to test for file extensions.  E.g. ```match: { path: /\.(js|jsx)$/gmi }```.  But extension matching is such a common use case that we required us to make it simpler.
+
+> `extensions` rules are case insensitive.
+
+``` javascript
+var Bitloader = require("bit-loader");
+var bitloader = new Bitloader();
+
+bitloader.plugin({
+  extensions: ["js", "jsx"],
+  transform: [
+    function(meta) {
+      console.log(meta.path);
     }
   ]
 });
