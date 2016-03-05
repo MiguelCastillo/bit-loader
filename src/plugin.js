@@ -231,8 +231,9 @@ Manager.prototype.configure = function(settings) {
 };
 
 
+var _pluginExceptionNames = ["match", "ignore", "extensions", "name"];
 function isPlugabble(service) {
-  return service !== "match" && service !== "ignore" && service !== "name";
+  return _pluginExceptionNames.indexOf(service) === -1;
 }
 
 
