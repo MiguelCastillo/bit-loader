@@ -35,6 +35,11 @@ function Bitloader(options) {
 
   this.settings = options;
   this.plugins  = {};
+  this._exclude = [];
+
+  if (options.exclude) {
+    this.exclude(options.exclude);
+  }
 
   // Services! Components that process modules.
   var services = {
@@ -55,7 +60,6 @@ function Bitloader(options) {
       this.services[provider].provider(options[provider]);
     }
   }
-
 
   // Controllers!  These guys make use of the services to build pipelines
   // that build modules. Controllers use services, but services only use
@@ -259,6 +263,30 @@ Bitloader.prototype.deleteModule = function(mod) {
   }
 
   return this.controllers.registry.deleteModule(mod.id);
+};
+
+
+/**
+ * Method to add module names to exclude. Modules in this list will
+ * basically add modules with source of empty string. Generally used
+ * to exclude external dependencies where module names are not paths
+ * that require name resolution. e.g. jquery, react, path...
+ *
+ * @param {string|Array.<string>} name - Module name (or list of names)
+ *  to exclude from loading and processing. This will add a module entry
+ *  with the source  of empty string and the ID is the same as the name.
+ *
+ * @returns {Bitloader}
+ */
+Bitloader.prototype.exclude = function(name) {
+  if (types.isArray(name)) {
+    this._exclude = this._exclude.concat(name);
+  }
+  else {
+    this._exclude.push(name);
+  }
+
+  return this;
 };
 
 
