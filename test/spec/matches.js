@@ -33,20 +33,22 @@ describe("Matches Test Suite", function() {
     });
 
     describe("and configuring a matching rule", function() {
-      var ruleConfig;
+      var ruleValue;
 
       beforeEach(function() {
         act();
 
-        ruleConfig = { name: chance().string() };
+        ruleValue = chance().string();
 
         matches.configure({
-          match: ruleConfig
+          match: {
+            name: ruleValue
+          }
         });
       });
 
       it("then running matches against the configured value passes validation", function() {
-        expect(matches.runMatch(ruleConfig)).to.equal(true);
+        expect(matches.runMatch( { name: ruleValue } )).to.equal(true);
       });
 
       it("then running matches against a non-matching value fails validation", function() {
@@ -59,20 +61,22 @@ describe("Matches Test Suite", function() {
     });
 
     describe("and configuring ignore rules", function() {
-      var ruleConfig;
+      var ruleValue;
 
       beforeEach(function() {
         act();
 
-        ruleConfig = { name: chance().string() };
+        ruleValue = chance().string();
 
         matches.configure({
-          ignore: ruleConfig
+          ignore: {
+             name: ruleValue
+          }
         });
       });
 
       it("then running ignore against the configured value passes validation", function() {
-        expect(matches.runIgnore(ruleConfig)).to.equal(true);
+        expect(matches.runIgnore({ name: ruleValue })).to.equal(true);
       });
 
       it("then running ignore against a random value fails validation", function() {
@@ -81,15 +85,15 @@ describe("Matches Test Suite", function() {
     });
 
     describe("and configuring a file extension rule", function() {
-      var ruleConfig;
+      var ruleValue;
 
       beforeEach(function() {
         act();
 
-        ruleConfig = "js";
+        ruleValue = "js";
 
         matches.configure({
-          extensions: ruleConfig
+          extensions: ruleValue
         });
       });
 
@@ -111,15 +115,15 @@ describe("Matches Test Suite", function() {
     });
 
     describe("and configuring multiple file extension rules", function() {
-      var ruleConfig;
+      var ruleValue;
 
       beforeEach(function() {
         act();
 
-        ruleConfig = ["js", "json"];
+        ruleValue = ["js", "json"];
 
         matches.configure({
-          extensions: ruleConfig
+          extensions: ruleValue
         });
       });
 
