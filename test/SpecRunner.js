@@ -6,3 +6,4 @@ require("test/spec/load");
 require("test/spec/plugin");
 require("test/spec/transform");
 require("test/spec/module");
+require("test/spec/matches");

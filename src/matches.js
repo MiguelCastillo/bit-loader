@@ -1,3 +1,4 @@
+var types = require("dis-isa");
 var Rule = require("roolio");
 
 
@@ -9,6 +10,11 @@ function Matches() {
 
 Matches.prototype.configure = function(options) {
   var prop;
+
+  if (options.extensions) {
+    var extensions = types.isArray(options.extensions) ? options.extensions : [options.extensions];
+    this.match("path", new RegExp("[\\w]+\\.(" + extensions.join("|") + ")$", "gmi"));
+  }
 
   for (prop in options.match) {
     if (options.match.hasOwnProperty(prop)) {
@@ -68,12 +74,12 @@ Matches.prototype.ignore = function(prop, matches) {
 
 
 Matches.prototype.runIgnore = function(data) {
-  return this._ignore && runMatches(this._ignore, data);
+  return !!(this._ignore && runMatches(this._ignore, data));
 };
 
 
 Matches.prototype.runMatch = function(data) {
-  return runMatches(this._matches, data);
+  return !!runMatches(this._matches, data);
 };
 
 
