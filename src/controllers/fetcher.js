@@ -1,4 +1,4 @@
-//var logger   = require("loggero").create("controllers/fetch");
+//var logger   = require("loggero").create("controllers/fetcher");
 var types      = require("dis-isa");
 var inherit    = require("../inherit");
 var helpers    = require("./helpers");
@@ -10,6 +10,7 @@ function Fetcher(context) {
   Controller.call(this, context);
 
   this.inProgress = {};
+
   this.pipeline = new Pipeline([
     fetch(context),
     transform(context),
@@ -24,7 +25,6 @@ inherit.base(Fetcher).extends(Controller);
 
 
 Fetcher.prototype.fetch = function(names, referrer) {
-  referrer = referrer || {};
   var fetcher = this;
 
   if (types.isString(names)) {
@@ -39,10 +39,20 @@ Fetcher.prototype.fetch = function(names, referrer) {
 
 
 function _fetch(fetcher, name, referrer) {
-  if (fetcher.context._exclude.indexOf(name) !== -1) {
-    var moduleMeta = new Module.Meta({
+  referrer = referrer || {};
+
+  var moduleMeta = new Module.Meta({
+    name: name,
+    referrer: {
+      name: referrer.name,
+      path: referrer.path,
+      id: referrer.id
+    }
+  });
+
+  if (fetcher.context.isExcluded(name)) {
+    moduleMeta = moduleMeta.configure({
       id: name,
-      name: name,
       path: null,
       source: ""
     });
@@ -51,11 +61,11 @@ function _fetch(fetcher, name, referrer) {
     return Promise.resolve(moduleMeta);
   }
 
-  return fetcher.context.controllers.resolver.resolve(name, {
-    name: referrer.name,
-    path: referrer.path,
-    id: referrer.id
-  }).then(tryRunPipeline(fetcher));
+  return fetcher.context.services.resolve
+    .runAsync(moduleMeta)
+    .then(function(result) {
+      return fromCache(fetcher, result) || tryRunPipeline(fetcher, result);
+    });
 }
 
 
@@ -86,18 +96,19 @@ function fetchDependencies(fetcher) {
 }
 
 
-function tryRunPipeline(fetcher) {
-  return function tryRunPipelineDelegate(moduleMeta) {
-    if (fetcher.inProgress.hasOwnProperty(moduleMeta.id)) {
-      return fetcher.inProgress[moduleMeta.id].then(function() { return moduleMeta; });
-    }
-    else if (fetcher.context.controllers.registry.hasModule(moduleMeta.id)) {
-      return Promise.resolve(moduleMeta);
-    }
+function fromCache(fetcher, moduleMeta) {
+  if (fetcher.inProgress.hasOwnProperty(moduleMeta.id)) {
+    return fetcher.inProgress[moduleMeta.id].then(function() { return moduleMeta; });
+  }
+  else if (fetcher.context.controllers.registry.hasModule(moduleMeta.id)) {
+    return Promise.resolve(moduleMeta);
+  }
+}
 
-    fetcher.context.controllers.registry.setModule(moduleMeta, Module.State.RESOLVE);
-    return runPipeline(fetcher, moduleMeta).then(function() { return moduleMeta; });
-  };
+
+function tryRunPipeline(fetcher, moduleMeta) {
+  fetcher.context.controllers.registry.setModule(moduleMeta, Module.State.RESOLVE);
+  return runPipeline(fetcher, moduleMeta).then(function() { return moduleMeta; });
 }
 
 
