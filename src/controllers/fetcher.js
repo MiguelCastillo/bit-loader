@@ -43,7 +43,7 @@ function _fetch(fetcher, name, referrer) {
     var moduleMeta = new Module.Meta({
       id: name,
       name: name,
-      path: "",
+      path: null,
       source: ""
     });
 
