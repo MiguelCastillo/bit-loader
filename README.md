@@ -126,13 +126,11 @@ bitloader.plugin({
 });
 ```
 
-Plugins also provide a way to define the shape of the modules your plugins can process. For example, you can specify properties like the module path, module name, or even match content in the module source. This is all done via matching rules. Below is an example configuring a plugin to only process files with `.js` and `.es6` extensions:
+Plugins also provide a way to define the shape of the modules your plugins can process. For example, you can specify properties like the module path, module name, or even match content in the module source. This is all done via matching rules. Below is an example configuring a plugin to only process files with `js` and `es6` extensions:
 
 ``` javascript
 bitloader.plugin({
-  match: {
-    path: /\.(js|es6)$/
-  }
+  extensions: ["js", "es6"]
 });
 ```
 
@@ -142,9 +140,7 @@ We did all the previous steps separately for illustration purposes, but we can c
 var bitloader = new Bitloader();
 
 bitloader.plugin({
-  match: {
-    path: /\.(js|es6)$/
-  },
+  extensions: ["js", "es6"],
   fetch: fetch,
   transform: addStrict
 });
@@ -155,9 +151,7 @@ Or alternatively, via `bit-loader`'s constructor
 ``` javascript
 var bitloader = new Bitloader({
   plugins: {
-    match: {
-      path: /\.(js|es6)$/
-    },
+    extensions: ["js", "es6"],
     fetch: fetch,
     transform: addStrict
   }
