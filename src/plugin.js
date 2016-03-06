@@ -1,4 +1,4 @@
-//var logger  = require("loggero").create("plugin");
+var logger  = require("loggero").create("plugin");
 var types   = require("dis-isa");
 var utils   = require("belty");
 var inherit = require("./inherit");
@@ -132,7 +132,15 @@ Plugin.prototype.run = function(data) {
 
 function canExecuteHandler(data) {
   return function(handler) {
-    return handler.canExecute(data);
+    if (handler.loading) {
+      logger.info({
+        module: data.name,
+        loading: handler.loading,
+        handler: handler.name
+      });
+    }
+
+    return handler.canExecute(data) && !handler.loading;
   };
 }
 
@@ -146,8 +154,10 @@ function loadHandler(loader) {
       return Promise.resolve(handler);
     }
 
+    handler.loading = true;
+
     return loader
-      .import(handler.handler)
+      .important(handler.handler)
       .then(function(settings) {
         if (types.isFunction(settings)) {
           settings = {
@@ -155,6 +165,7 @@ function loadHandler(loader) {
           };
         }
 
+        handler.loading = false;
         return handler.configure(settings);
       });
   };
