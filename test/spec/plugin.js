@@ -105,18 +105,18 @@ describe("Plugin Test Suite", () => {
           handlerResult = { "source": chance().string() };
           handler = sinon.stub().returns(handlerResult);
 
-          loader = { import: sinon.stub().returns(Promise.resolve(handler)) };
+          loader = { important: sinon.stub().returns(Promise.resolve(handler)) };
           createPlugin();
           plugin.configure(name);
           return act();
         });
 
         it("then module is imported via the module loader", () => {
-          sinon.assert.calledOnce(loader.import);
+          sinon.assert.calledOnce(loader.important);
         });
 
         it("then module loader is called with the plugin name", () => {
-          sinon.assert.calledWith(loader.import, name);
+          sinon.assert.calledWith(loader.important, name);
         });
 
         it("then handler is called once", () => {
@@ -147,14 +147,14 @@ describe("Plugin Test Suite", () => {
           handler2 = sinon.stub().returns(handlerResult2);
           name = chance().string();
 
-          loader = { import: sinon.stub().returns(Promise.resolve(handler1)) };
+          loader = { important: sinon.stub().returns(Promise.resolve(handler1)) };
           createPlugin();
           plugin.configure([name, handler2]);
           return act();
         });
 
         it("then first handler is imported", () => {
-          sinon.assert.calledWith(loader.import, name);
+          sinon.assert.calledWith(loader.important, name);
         });
 
         it("then first handler is called once", () => {
@@ -190,7 +190,7 @@ describe("Plugin Test Suite", () => {
           handler2 = sinon.stub().returns(handlerResult2);
           name = chance().string();
 
-          loader = { import: sinon.stub().returns(Promise.resolve(handler1)) };
+          loader = { important: sinon.stub().returns(Promise.resolve(handler1)) };
           createPlugin();
 
           plugin.configure([{
@@ -208,7 +208,7 @@ describe("Plugin Test Suite", () => {
         });
 
         it("then then first handler is never loaded by the module loader", () => {
-          sinon.assert.notCalled(loader.import);
+          sinon.assert.notCalled(loader.important);
         });
 
         it("then second handler is called once", () => {
