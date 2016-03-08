@@ -78,10 +78,10 @@ describe("Plugin Test Suite", () => {
   });
 
   describe("When creating a plugin with a module loader", () => {
-    var createPlugin, plugin, loader;
+    var createPlugin, plugin;
 
     beforeEach(() => {
-      createPlugin = () => plugin = new Plugin(null, loader);
+      createPlugin = (loader) => plugin = new Plugin(null, loader);
     });
 
     describe("and running the plugin", () => {
@@ -97,17 +97,19 @@ describe("Plugin Test Suite", () => {
       });
 
       describe("with one registered handler string", () => {
-        var handler, handlerResult, name;
+        var handler, handlerResult, handlerName, importStub, loader;
 
         beforeEach(() => {
-          name = chance().string();
+          handlerName = chance().string();
           data = new Module.Meta("modulename").configure({ "source": chance().string() });
           handlerResult = { "source": chance().string() };
           handler = sinon.stub().returns(handlerResult);
+          importStub = sinon.stub();
+          importStub.withArgs(handlerName).returns(Promise.resolve(handler));
 
-          loader = { important: sinon.stub().returns(Promise.resolve(handler)) };
-          createPlugin();
-          plugin.configure(name);
+          loader = { important: importStub };
+          createPlugin(loader);
+          plugin.configure(handlerName);
           return act();
         });
 
@@ -116,7 +118,7 @@ describe("Plugin Test Suite", () => {
         });
 
         it("then module loader is called with the plugin name", () => {
-          sinon.assert.calledWith(loader.important, name);
+          sinon.assert.calledWithExactly(loader.important, handlerName);
         });
 
         it("then handler is called once", () => {
@@ -137,7 +139,7 @@ describe("Plugin Test Suite", () => {
       });
 
       describe("with two registered handlers and the first handler is a string", () => {
-        var handler1, handler2, handlerResult1, handlerResult2, name;
+        var handler1, handler2, handlerResult1, handlerResult2, handlerName, importStub, loader;
 
         beforeEach(() => {
           data = new Module.Meta("modulename").configure({ "source": chance().string() });
@@ -145,16 +147,22 @@ describe("Plugin Test Suite", () => {
           handlerResult2 = { "source": chance().string() };
           handler1 = sinon.stub().returns(handlerResult1);
           handler2 = sinon.stub().returns(handlerResult2);
-          name = chance().string();
+          handlerName = chance().string();
+          importStub = sinon.stub();
+          importStub.withArgs(handlerName).returns(Promise.resolve(handler1));
 
-          loader = { important: sinon.stub().returns(Promise.resolve(handler1)) };
-          createPlugin();
-          plugin.configure([name, handler2]);
+          loader = { important: importStub };
+          createPlugin(loader);
+          plugin.configure([handlerName, handler2]);
           return act();
         });
 
+        it("then module is imported via the module loader", () => {
+          sinon.assert.calledOnce(loader.important);
+        });
+
         it("then first handler is imported", () => {
-          sinon.assert.calledWith(loader.important, name);
+          sinon.assert.calledWithExactly(loader.important, handlerName);
         });
 
         it("then first handler is called once", () => {
@@ -178,8 +186,8 @@ describe("Plugin Test Suite", () => {
         });
       });
 
-      describe("with two registered handlers and the first handler has an ignore matching rule and is a string name", () => {
-        var handler1, handler2, handlerResult1, handlerResult2, name, moduleName;
+      describe("with two registered handlers and the first handler has an ignore matching rule for the dynamic plugin handler name", () => {
+        var handler1, handler2, handlerResult1, handlerResult2, handlerName, moduleName, importStub, loader;
 
         beforeEach(() => {
           moduleName = chance().string();
@@ -188,13 +196,14 @@ describe("Plugin Test Suite", () => {
           handlerResult2 = { "source": chance().string() };
           handler1 = sinon.stub().returns(handlerResult1);
           handler2 = sinon.stub().returns(handlerResult2);
-          name = chance().string();
+          handlerName = chance().string();
+          importStub = sinon.stub();
 
-          loader = { important: sinon.stub().returns(Promise.resolve(handler1)) };
-          createPlugin();
+          loader = { important: importStub.returns(Promise.resolve(handler1)) };
+          createPlugin(loader);
 
           plugin.configure([{
-            handler: name,
+            handler: handlerName,
             ignore: {
               name: moduleName
             }
@@ -220,6 +229,57 @@ describe("Plugin Test Suite", () => {
         });
 
         it("then the final result is the output from the second handler", () => {
+          expect(result).to.include(handlerResult2);
+        });
+      });
+
+      describe("with two registered dynamically loading plugin handlers", () => {
+        var handler1, handler2, handlerResult1, handlerResult2, handler1Name, handler2Name, moduleName, importStub, loader;
+
+        beforeEach(() => {
+          moduleName = chance().string();
+          data = new Module.Meta(moduleName).configure({ "source": chance().string() });
+          handlerResult1 = { "source": chance().string() };
+          handlerResult2 = { "source": chance().string() };
+          handler1 = sinon.stub().returns(handlerResult1);
+          handler2 = sinon.stub().returns(handlerResult2);
+          handler1Name = chance().string();
+          handler2Name = chance().string();
+          importStub = sinon.stub();
+          importStub.withArgs(handler1Name).returns(Promise.resolve(handler1));
+          importStub.withArgs(handler2Name).returns(Promise.resolve(handler2));
+
+          loader = { important: importStub };
+          createPlugin(loader);
+          plugin.configure([handler1Name, handler2Name]);
+          return act();
+        });
+
+        it("then then first handler is loaded by the module loader", () => {
+          sinon.assert.calledWith(loader.important, handler1Name);
+        });
+
+        it("then then second handler is loaded by the module loader", () => {
+          sinon.assert.calledWith(loader.important, handler2Name);
+        });
+
+        it("then the first handler is called once", () => {
+          sinon.assert.calledOnce(handler1);
+        });
+
+        it("then the first handler is called", () => {
+          sinon.assert.calledWith(handler1, sinon.match(data));
+        });
+
+        it("then second handler is called once", () => {
+          sinon.assert.calledOnce(handler2);
+        });
+
+        it("then second handler is called with output from the previous handler", () => {
+          sinon.assert.calledWith(handler2, sinon.match(handlerResult1));
+        });
+
+        it("then the final result is the output from the last handler", () => {
           expect(result).to.include(handlerResult2);
         });
       });

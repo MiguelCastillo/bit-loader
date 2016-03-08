@@ -26,6 +26,8 @@ inherit.base(Import).extends(Controller);
  * @returns {Promise}
  */
 Import.prototype.import = function(names, options) {
+  logger.info("import", names, options);
+
   return Promise.resolve(this._important)
     .then(clearImportant(this))
     .then(importModules(this, names, options));
@@ -37,6 +39,8 @@ Import.prototype.import = function(names, options) {
  * will wait for all `important` imports to finish first.
  */
 Import.prototype.important = function(names, options) {
+  logger.info("import IMPORTANT", names, options);
+
   var pending = importModules(this, names, options)();
   this._important.push(pending);
   return pending;

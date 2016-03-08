@@ -214,7 +214,7 @@ Bitloader.prototype.getSource = function(names, referrer) {
  * @returns {Promise} When resolved it returns the transformed source code.
  */
 Bitloader.prototype.transform = function(source) {
-  return this.services.transform.run(new Module.Meta({
+  return this.services.transform.runAsync(new Module.Meta({
     name: "@transform",
     source: source
   }))

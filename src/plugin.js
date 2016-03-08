@@ -140,7 +140,7 @@ function canExecuteHandler(data) {
       });
     }
 
-    return handler.canExecute(data) && !handler.loading;
+    return handler.canExecute(data);
   };
 }
 
@@ -154,9 +154,15 @@ function loadHandler(loader) {
       return Promise.resolve(handler);
     }
 
-    handler.loading = true;
+    if (!loader) {
+      throw new TypeError("Must provide a loader for dynamically loading plugin handlers.");
+    }
 
-    return loader
+    if (handler.loading) {
+      return;
+    }
+
+    handler.loading = loader
       .important(handler.handler)
       .then(function(settings) {
         if (types.isFunction(settings)) {
@@ -165,9 +171,11 @@ function loadHandler(loader) {
           };
         }
 
-        handler.loading = false;
+        handler.loading = null;
         return handler.configure(settings);
       });
+
+    return handler.loading;
   };
 }
 

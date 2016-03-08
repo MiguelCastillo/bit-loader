@@ -1,4 +1,4 @@
-//var logger   = require("loggero").create("controllers/fetcher");
+var logger     = require("loggero").create("controllers/fetcher");
 var types      = require("dis-isa");
 var inherit    = require("../inherit");
 var helpers    = require("./helpers");
@@ -27,18 +27,20 @@ inherit.base(Fetcher).extends(Controller);
 Fetcher.prototype.fetch = function(names, referrer) {
   var fetcher = this;
 
-  if (types.isString(names)) {
-    return _fetch(fetcher, names, referrer);
-  }
-  else {
+  if (types.isArray(names)) {
     return Promise.all(names.map(function(name) {
       return _fetch(fetcher, name, referrer);
     }));
+  }
+  else {
+    return _fetch(fetcher, names, referrer);
   }
 };
 
 
 function _fetch(fetcher, name, referrer) {
+  logger.info("fetch", name, referrer);
+
   referrer = referrer || {};
 
   var moduleMeta = new Module.Meta({
@@ -87,7 +89,7 @@ function dependency(context) {
 function fetchDependencies(fetcher) {
   return function fetchDependenciesDelegate(moduleMeta) {
     return Promise.all(moduleMeta.deps.map(function(name) {
-        return fetcher.fetch(name, moduleMeta);
+        return _fetch(fetcher, name, moduleMeta);
       }))
       .then(function(deps) {
         return moduleMeta.configure({ deps: deps });
@@ -117,7 +119,7 @@ function runPipeline(fetcher, moduleMeta) {
     delete fetcher.inProgress[moduleMeta.id];
   };
 
-  var inProgress = fetcher.pipeline.run(moduleMeta);
+  var inProgress = fetcher.pipeline.runAsync(moduleMeta);
   fetcher.inProgress[moduleMeta.id] = inProgress;
   inProgress.then(deleteInProgress, deleteInProgress);
   return inProgress;
