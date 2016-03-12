@@ -1,27 +1,24 @@
 import { expect } from "chai";
 import chance from "chance";
-import Plugin from "src/plugin";
+import Plugin from "src/plugin/plugin";
+import Registrar from "src/plugin/registrar";
 import Module from "src/module";
 
 describe("Plugin Test Suite", () => {
+  var plugin, createPlugin, registrarMock;
 
-  describe("When creating a plugin with no options", () => {
-    var plugin;
+  beforeEach(() => {
+    createPlugin = () => plugin = new Plugin(registrarMock);
+  });
 
+  describe("When creating a plugin", () => {
     beforeEach(() => {
-      plugin = new Plugin();
+      registrarMock = null;
+      createPlugin();
     });
 
     it("then `plugin` is an instance of `Plugin`", () => {
       expect(plugin).to.be.an.instanceof(Plugin);
-    });
-
-    it("then `plugin` has no name", () => {
-      expect(plugin.name).to.be.undefined;
-    });
-
-    it("then `plugin` has no loader", () => {
-      expect(plugin.loader).to.be.undefined;
     });
 
     describe("and running the plugin", () => {
@@ -36,10 +33,24 @@ describe("Plugin Test Suite", () => {
         };
       });
 
+      it("then the correct result is generated", () => {
+         expect(result).to.be.undefined;
+      });
+
       describe("with a random string as data with no registered handlers", () => {
         beforeEach(() => {
           data = chance().string();
+
+          registrarMock = {
+            loadHandlers: sinon.stub().returns(Promise.resolve())
+          };
+
+          createPlugin();
           return act();
+        });
+
+        it("then plugin will attempt to load all dynamic plugins", () => {
+          sinon.assert.calledOnce(registrarMock.loadHandlers);
         });
 
         it("then final result is equal to the input - input does not change", () => {
@@ -54,6 +65,9 @@ describe("Plugin Test Suite", () => {
           data = new Module.Meta("modulename").configure({ "source": chance().string() });
           handlerResult = { "source": chance().string() };
           handler = sinon.stub().returns(handlerResult);
+          registrarMock = new Registrar();
+
+          createPlugin();
           plugin.configure(handler);
           return act();
         });
@@ -78,12 +92,6 @@ describe("Plugin Test Suite", () => {
   });
 
   describe("When creating a plugin with a module loader", () => {
-    var createPlugin, plugin;
-
-    beforeEach(() => {
-      createPlugin = (loader) => plugin = new Plugin(null, loader);
-    });
-
     describe("and running the plugin", () => {
       var act, result, data;
 
@@ -105,20 +113,23 @@ describe("Plugin Test Suite", () => {
           handlerResult = { "source": chance().string() };
           handler = sinon.stub().returns(handlerResult);
           importStub = sinon.stub();
-          importStub.withArgs(handlerName).returns(Promise.resolve(handler));
+          importStub.withArgs([handlerName]).returns(Promise.all([handler]));
 
-          loader = { important: importStub };
-          createPlugin(loader);
+          loader = {};
+          loader.import = importStub;
+          loader.config = sinon.stub().returns(loader);
+          registrarMock = new Registrar(loader);
+          createPlugin();
           plugin.configure(handlerName);
           return act();
         });
 
         it("then module is imported via the module loader", () => {
-          sinon.assert.calledOnce(loader.important);
+          sinon.assert.calledOnce(loader.import);
         });
 
         it("then module loader is called with the plugin name", () => {
-          sinon.assert.calledWithExactly(loader.important, handlerName);
+          sinon.assert.calledWithExactly(loader.import, [handlerName]);
         });
 
         it("then handler is called once", () => {
@@ -138,7 +149,7 @@ describe("Plugin Test Suite", () => {
         });
       });
 
-      describe("with two registered handlers and the first handler is a string", () => {
+      describe("with two registered handlers and the first handler is a dynamically loaded", () => {
         var handler1, handler2, handlerResult1, handlerResult2, handlerName, importStub, loader;
 
         beforeEach(() => {
@@ -149,20 +160,23 @@ describe("Plugin Test Suite", () => {
           handler2 = sinon.stub().returns(handlerResult2);
           handlerName = chance().string();
           importStub = sinon.stub();
-          importStub.withArgs(handlerName).returns(Promise.resolve(handler1));
+          importStub.withArgs([handlerName]).returns(Promise.all([handler1]));
 
-          loader = { important: importStub };
-          createPlugin(loader);
+          loader = {};
+          loader.import = importStub;
+          loader.config = sinon.stub().returns(loader);
+          registrarMock = new Registrar(loader);
+          createPlugin();
           plugin.configure([handlerName, handler2]);
           return act();
         });
 
-        it("then module is imported via the module loader", () => {
-          sinon.assert.calledOnce(loader.important);
+        it("then module loader is only called once", () => {
+          sinon.assert.calledOnce(loader.import);
         });
 
         it("then first handler is imported", () => {
-          sinon.assert.calledWithExactly(loader.important, handlerName);
+          sinon.assert.calledWithExactly(loader.import, [handlerName]);
         });
 
         it("then first handler is called once", () => {
@@ -186,7 +200,7 @@ describe("Plugin Test Suite", () => {
         });
       });
 
-      describe("with two registered handlers and the first handler has an ignore matching rule for the dynamic plugin handler name", () => {
+      describe("with two registered handlers and the first handler with dynamically loaded and has an ignore rule", () => {
         var handler1, handler2, handlerResult1, handlerResult2, handlerName, moduleName, importStub, loader;
 
         beforeEach(() => {
@@ -198,9 +212,13 @@ describe("Plugin Test Suite", () => {
           handler2 = sinon.stub().returns(handlerResult2);
           handlerName = chance().string();
           importStub = sinon.stub();
+          importStub.withArgs([handlerName]).returns(Promise.all([handler1]));
 
-          loader = { important: importStub.returns(Promise.resolve(handler1)) };
-          createPlugin(loader);
+          loader = {};
+          loader.import = importStub;
+          loader.config = sinon.stub().returns(loader);
+          registrarMock = new Registrar(loader);
+          createPlugin();
 
           plugin.configure([{
             handler: handlerName,
@@ -216,8 +234,8 @@ describe("Plugin Test Suite", () => {
           sinon.assert.notCalled(handler1);
         });
 
-        it("then then first handler is never loaded by the module loader", () => {
-          sinon.assert.notCalled(loader.important);
+        it("then then first handler is loaded", () => {
+          sinon.assert.calledWithExactly(loader.import, [handlerName]);
         });
 
         it("then second handler is called once", () => {
@@ -246,21 +264,19 @@ describe("Plugin Test Suite", () => {
           handler1Name = chance().string();
           handler2Name = chance().string();
           importStub = sinon.stub();
-          importStub.withArgs(handler1Name).returns(Promise.resolve(handler1));
-          importStub.withArgs(handler2Name).returns(Promise.resolve(handler2));
+          importStub.withArgs([handler1Name, handler2Name]).returns(Promise.all([handler1, handler2]));
 
-          loader = { important: importStub };
-          createPlugin(loader);
+          loader = {};
+          loader.import = importStub;
+          loader.config = sinon.stub().returns(loader);
+          registrarMock = new Registrar(loader);
+          createPlugin();
           plugin.configure([handler1Name, handler2Name]);
           return act();
         });
 
-        it("then then first handler is loaded by the module loader", () => {
-          sinon.assert.calledWith(loader.important, handler1Name);
-        });
-
-        it("then then second handler is loaded by the module loader", () => {
-          sinon.assert.calledWith(loader.important, handler2Name);
+        it("then then first and second handlers are loaded", () => {
+          sinon.assert.calledWithExactly(loader.import, [handler1Name, handler2Name]);
         });
 
         it("then the first handler is called once", () => {
@@ -286,11 +302,9 @@ describe("Plugin Test Suite", () => {
     });
   });
 
-  describe("When creating a Manager with no options", () => {
-    var manager;
-
+  describe("When creating a Plugin Registrar with no options", () => {
     beforeEach(() => {
-      manager = new Plugin.Manager();
+      registrarMock = new Registrar();
     });
 
     describe("and configuring a `transform` plugin", () => {
@@ -298,7 +312,7 @@ describe("Plugin Test Suite", () => {
 
       beforeEach(() => {
         act = () => {
-          manager.configure({
+          registrarMock.configure(chance().string(), {
             transform: () => {}
           });
         };
@@ -310,13 +324,13 @@ describe("Plugin Test Suite", () => {
     });
   });
 
-  describe("When creating a manager with transform services", () => {
-    var manager, transformService, transformPlugin;
+  describe("When creating a Plugin Registrar with transform services", () => {
+    var transformService, transformPlugin;
 
     beforeEach(() => {
       transformService = sinon.stub();
       transformPlugin = sinon.stub();
-      manager = new Plugin.Manager(null, {
+      registrarMock = new Registrar(null, {
         transform: {
           use: transformService
         }
@@ -325,7 +339,7 @@ describe("Plugin Test Suite", () => {
 
     describe("and registering a transform plugin", () => {
       beforeEach(() => {
-        manager.configure({
+        registrarMock.configure(chance().string(), {
           transform: transformPlugin
         });
       });
@@ -346,7 +360,7 @@ describe("Plugin Test Suite", () => {
         serviceName = chance().string();
 
         act = () => {
-          manager.configure({
+          registrarMock.configure(chance().string(), {
             [serviceName]: () => {}
           });
         };
@@ -357,5 +371,4 @@ describe("Plugin Test Suite", () => {
       });
     });
   });
-
 });

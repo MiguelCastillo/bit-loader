@@ -74,7 +74,6 @@ Registrar.prototype.loadHandlers = function() {
 
   var registrar = this;
   var handlers  = registrar.getAllHandlers();
-
   var dynamicHandlers = Object
     .keys(handlers)
     .filter(function(key) {
@@ -116,16 +115,16 @@ Registrar.prototype.loadHandlers = function() {
 };
 
 
-Registrar.prototype.registerPluginWithService = function(serviceName, plugin) {
+Registrar.prototype.registerPluginWithService = function(serviceName, pluginDelegate) {
   if (!this.services) {
     throw TypeError("Unable to register plugin. Services have not been configured");
   }
 
   if (!this.services.hasOwnProperty(serviceName)) {
-    throw TypeError("Unable to register plugin. '" + plugin.name + "' service does not exist");
+    throw TypeError("Unable to register plugin. '" + serviceName + "' service does not exist");
   }
 
-  this.services[serviceName].use(plugin);
+  this.services[serviceName].use(pluginDelegate);
   return this;
 };
 
