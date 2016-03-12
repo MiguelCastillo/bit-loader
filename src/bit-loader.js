@@ -16,9 +16,7 @@ var Loader     = require("./controllers/loader");
 var Registry   = require("./controllers/registry");
 var Builder    = require("./controllers/builder");
 var Module     = require("./module");
-var Plugin     = require("./plugin");
-
-var pluginManagerCount = 0;
+var PluginRegistar = require("./plugin/registrar");
 
 
 /**
@@ -33,7 +31,6 @@ function Bitloader(options) {
   options = utils.merge({}, options);
 
   this.settings = options;
-  this.plugins  = {};
   this._exclude = [];
 
   if (options.exclude) {
@@ -77,13 +74,13 @@ function Bitloader(options) {
   // https://whatwg.github.io/loader/#sec-properties-of-the-loader-prototype-object
   this.import = controllers.importer.import.bind(controllers.importer);
   this.load   = controllers.loader.load.bind(controllers.loader);
-
-  this.fetch     = controllers.fetcher.fetch.bind(controllers.fetcher);
-  this.important = controllers.importer.important.bind(controllers.importer);
+  this.fetch  = controllers.fetcher.fetch.bind(controllers.fetcher);
 
   if (options.ignore) {
     this.ignore(options.ignore);
   }
+
+  this.pluginRegistrar = new PluginRegistar(this, this.services);
 
   // Register plugins
   if (options.plugins) {
@@ -94,6 +91,15 @@ function Bitloader(options) {
     }.bind(this));
   }
 }
+
+
+/**
+ * Method the configures a new instance of bit-loader using the settings
+ * from the instance calling this method.
+ */
+Bitloader.prototype.config = function(options) {
+  return new Bitloader(utils.merge({}, this.settings, options));
+};
 
 
 /**
@@ -390,14 +396,10 @@ Bitloader.prototype.ignore = function(rules) {
 Bitloader.prototype.plugin = function(name, settings) {
   if (types.isPlainObject(name)) {
     settings = name;
-    name = settings.name || pluginManagerCount++;
+    name = settings.name;
   }
 
-  if (!this.plugins[name]) {
-    this.plugins[name] = new Plugin.Manager(this, this.services);
-  }
-
-  this.plugins[name].configure(settings);
+  this.pluginRegistrar.configure(name, settings);
   return this;
 };
 
