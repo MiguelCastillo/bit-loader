@@ -1,6 +1,3 @@
-//var logger = require("loggero").create("pipeline");
-
-
 function Pipeline(handlers) {
   this._handlers = handlers || [];
 }
@@ -17,7 +14,7 @@ Pipeline.prototype.use = function(handler) {
 };
 
 
-Pipeline.prototype.run = Pipeline.prototype.runAsync = function(data) {
+Pipeline.prototype.runAsync = function(data) {
     return this.getRunnables().reduce(function runPipelineAsync(promise, runnable) {
       return promise.then(runnable);
     }, Promise.resolve(data));
@@ -44,9 +41,7 @@ Pipeline.prototype.getRunnables = function() {
           return result;
         }
 
-        return handler.run ?
-          handler.run.call(handler, result, cancel) :
-          handler.call((void 0), result, cancel);
+        return handler(result, cancel);
       };
     });
 };

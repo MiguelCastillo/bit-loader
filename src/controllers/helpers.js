@@ -20,7 +20,7 @@ function runService(context, currentState, nextState, service, moduleMeta) {
     return Promise.resolve(moduleMeta);
   }
 
-  return service.run(setState(context, nextState)(moduleMeta));
+  return service.runAsync(setState(context, nextState)(moduleMeta));
 }
 
 

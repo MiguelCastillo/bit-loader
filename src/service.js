@@ -33,7 +33,7 @@ Service.prototype.canProcess = function(moduleMeta) {
 };
 
 
-Service.prototype.run = Service.prototype.runAsync = function(moduleMeta) {
+Service.prototype.runAsync = function(moduleMeta) {
   this._logger && this._logger.log(moduleMeta.name, moduleMeta);
 
   if (!this.canProcess(moduleMeta)) {

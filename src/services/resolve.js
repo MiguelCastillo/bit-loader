@@ -13,7 +13,7 @@ function Resolve(context) {
 inherit.base(Resolve).extends(Service);
 
 
-Resolve.prototype.run = Resolve.prototype.runAsync = function() {
+Resolve.prototype.runAsync = function() {
   return Service.prototype.runAsync.apply(this, arguments).then(configureId);
 };
 
