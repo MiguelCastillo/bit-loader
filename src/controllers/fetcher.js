@@ -28,46 +28,59 @@ Fetcher.prototype.fetch = function(names, referrer) {
   var fetcher = this;
 
   if (types.isArray(names)) {
-    return Promise.all(names.map(function(name) {
-      return _fetch(fetcher, name, referrer);
-    }));
+    return Promise.all(
+      names
+        .map(createModuleMeta(referrer))
+        .map(resolveMetaModule(this.context))
+        .map(function(d) { return d.then(_fetch(fetcher)); })
+    );
   }
   else {
-    return _fetch(fetcher, names, referrer);
+    return resolveMetaModule(this.context)(createModuleMeta(referrer)(names)).then(_fetch(fetcher));
   }
 };
 
 
-function _fetch(fetcher, name, referrer) {
-  logger.info("fetch", name, referrer);
+function _fetch(fetcher) {
+  return function(moduleMeta) {
+    logger.info("fetch", moduleMeta.name, moduleMeta.referrer);
+    return fromCache(fetcher, moduleMeta) || tryRunPipeline(fetcher, moduleMeta);
+  };
+}
 
+
+function createModuleMeta(referrer) {
   referrer = referrer || {};
 
-  var moduleMeta = new Module.Meta({
-    name: name,
-    referrer: {
-      name: referrer.name,
-      path: referrer.path,
-      id: referrer.id
+  return function(name) {
+    return new Module.Meta({
+      name: name,
+      referrer: {
+        name: referrer.name,
+        path: referrer.path,
+        id: referrer.id
+      }
+    });
+  };
+}
+
+
+function resolveMetaModule(context) {
+  return function(moduleMeta) {
+    if (context.isExcluded(moduleMeta.name)) {
+      moduleMeta = moduleMeta.configure({
+        id: moduleMeta.name,
+        path: null,
+        source: ""
+      });
+
+      context.controllers.registry.setModule(moduleMeta, Module.State.LOADED);
+      return Promise.resolve(moduleMeta);
     }
-  });
-
-  if (fetcher.context.isExcluded(name)) {
-    moduleMeta = moduleMeta.configure({
-      id: name,
-      path: null,
-      source: ""
-    });
-
-    fetcher.context.controllers.registry.setModule(moduleMeta, Module.State.LOADED);
-    return Promise.resolve(moduleMeta);
-  }
-
-  return fetcher.context.services.resolve
-    .runAsync(moduleMeta)
-    .then(function(result) {
-      return fromCache(fetcher, result) || tryRunPipeline(fetcher, result);
-    });
+    else {
+      return context.services.resolve.runAsync(moduleMeta);
+    }
+  };
 }
 
 
@@ -88,9 +101,8 @@ function dependency(context) {
 
 function fetchDependencies(fetcher) {
   return function fetchDependenciesDelegate(moduleMeta) {
-    return Promise.all(moduleMeta.deps.map(function(name) {
-        return _fetch(fetcher, name, moduleMeta);
-      }))
+    return fetcher
+      .fetch(moduleMeta.deps, moduleMeta)
       .then(function(deps) {
         return moduleMeta.configure({ deps: deps });
       });
