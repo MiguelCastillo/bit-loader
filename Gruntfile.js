@@ -21,10 +21,12 @@ module.exports = function(grunt) {
       },
       keepalive: {
         options: {
+          protocol: "http2", // or "https"
+
           port: 8050,
           host: "localhost",
           keepalive: true,
-          open: "http://localhost:8050/test/SpecRunner.html"
+          open: "https://localhost:8050/test/SpecRunner.html"
         }
       }
     },
