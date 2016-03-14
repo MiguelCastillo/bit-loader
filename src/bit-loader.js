@@ -103,6 +103,14 @@ Bitloader.prototype.config = function(options) {
 
 
 /**
+ * Method that only loads source from storage.  It does not process the result.
+ */
+Bitloader.prototype.fetchOnly = function(names, referrer) {
+  return this.controllers.fetcher.fetchOnly(names, referrer);
+};
+
+
+/**
  * Method for asynchronously loading modules. This method returns the module(s)
  * exports.
  *
