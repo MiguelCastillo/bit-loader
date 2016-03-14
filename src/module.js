@@ -39,15 +39,15 @@ var Type = {
  * @memberof Module
  */
 var State = {
-  REGISTERED: "registered",
-    RESOLVE: "resolve",
-    FETCH:  "fetch",
-    TRANSFORM: "transform",
-    DEPENDENCY: "dependency",
-  LOADED: "loaded",
-    COMPILE: "compile",
-    LINK: "link",
-  READY: "ready"
+  REGISTERED: 0,
+    RESOLVE: 1,
+    FETCH:  2,
+    TRANSFORM: 3,
+    DEPENDENCY: 4,
+  LOADED: 5,
+    COMPILE: 6,
+    LINK: 7,
+  READY: 8
 };
 
 
