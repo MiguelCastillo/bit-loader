@@ -53,8 +53,7 @@ Plugin.prototype.run = function(data) {
         .reduce(function(current, handler) {
           return current
             .then(canRun)
-            .then(runHandler(handler, cancel))
-            .then(mergeResult);
+            .then(runHandler(handler, cancel));
         }, Promise.resolve(data));
     });
 };
@@ -114,22 +113,9 @@ function runHandler(handler, cancel) {
         return handler.run(data, cancel);
       })
       .then(function(result) {
-        return {
-          data: data,
-          result: result
-        };
+        return data.configure(result);
       });
   };
-}
-
-
-/**
- * Method the returns a function to process the result from a plugin
- */
-function mergeResult(resultContext) {
-  if (resultContext) {
-    return resultContext.data.configure(resultContext.result);
-  }
 }
 
 
