@@ -57,7 +57,7 @@ function fetchPipeline(fetcher) {
       return fetcher.inProgress[moduleMeta.id].then(function() { return moduleMeta; });
     }
     else if (fetcher.context.controllers.registry.hasModule(moduleMeta.id)) {
-      if (fetcher.context.controllers.registry.getModuleState(moduleMeta.id) === Module.State.RESOLVE) {
+      if (fetcher.context.controllers.registry.getModuleState(moduleMeta.id) < Module.State.LOADED) {
         return runPipeline(fetcher, moduleMeta).then(function() { return moduleMeta; });
       }
     }
