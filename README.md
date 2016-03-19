@@ -34,7 +34,7 @@ This stage is responsible for loading files from storage and processing them in 
 
 This stage is composed of several pluggable pipelines that cascade *information* from one pipeline to the next. This *information* is encapsulated in an object we refer to as *module meta*. More information on the module meta objects can be found [here](#module-meta). The flow that module meta objects go through is described below:
 
-First, we need to convert module names to file paths in order to load modules from storage. This conversion is called *module name resolution*, which is done in the `resolve` pipeline. The `path` generated in the `resolve` pipeline is then used by the `fetch` pipeline to load module files from storage. These files are subsequently processed by the `transform` pipeline, which is generally where all transpilation/transformation is done. The result of the `transform` pipeline is pushed through the `dependency` pipeline, which pulls out dependencies and recursively feeds them through the first stage (module loading stage) until no more modules are left to load into the module graph.
+First, we need to convert module names to file paths in order to load modules from storage. This conversion is called *module name resolution*, which is done in the `resolve` pipeline. The `path` generated in the `resolve` pipeline is then used by the `fetch` pipeline to load module files from storage. These files are subsequently processed by the `transform` pipeline, which is generally where all transpilation/transformation is done. The result of the `transform` pipeline is pushed through the `dependency` pipeline, which pulls out dependencies and recursively feeds them through the first stage (module loading stage) until no more modules are left to load into the module graph. And finally, a helper pipeline called `precompile` that allows you to preemptively set the module `exports`, which effectively prevents modules from being processed in the build stage.
 
 > This stage is entirely asynchronous, and the output is a module graph.
 
@@ -47,8 +47,9 @@ The module loading stage has 4 pipelines, which are described below.
 - **`fetch`** - responsible for loading files from storage.
 - **`transform`** - responsible for processing and transforming loaded files.  E.g. ES2015 to ES5 via babeljs. Or CoffeeScript to JavaScript.
 - **`dependency`** - responsible for parsing out dependencies from the loaded files and recursively feeding them to the module loading stage.
+- **`precompile`** - provides you with a hook for preemptively building modules in the fetch stage, which effectively prevents module processing in the build stage.
 
-These four pipelines are pluggable, which means that you can register handler functions to process module data in each one of them. These pipelines are executed sequentially in the order listed above, with each pipeline cascading data from one to the next.
+These five pipelines are pluggable, which means that you can register handler functions to process module data in each one of them. These pipelines are executed sequentially in the order listed above, with each pipeline cascading data from one to the next. Furthermore, all these pipelines and their handlers use Promises to control the asynchronous workflow, so feel free to return promises to manage your asynchronous operations.
 
 More details on how to hook into these pipelines can be found in the [plugins](#plugins) section.
 
@@ -78,25 +79,26 @@ A handler function is called when a pipeline executes its plugins. Handler argum
 The example below has a function handler that loads module files from storage and another that adds `'use strict;'` to modules.
 
 ``` javascript
-function fetch(meta, options, cancel) {
-  return get(meta.path).then(function(result) {
-    return {
-      source: result
-    };
-  });
+function loadFile(meta, options, cancel) {
+  return window
+    .fetch(meta.path)
+    .then(function(response) {
+      return {
+        source: response.text();
+      };
+    });
 }
 
 function addStrict(meta, options, cancel) {
-  var source = "'use strict;'\n" + meta.source;
   return {
-    source: source
+    source: "'use strict;'\n" + meta.source
   };
 }
 ```
 
 ``` javascript
 bitloader.plugin({
-  fetch: fetch,
+  fetch: loadFile,
   transform: addStrict
 });
 ```
@@ -105,7 +107,7 @@ All plugins can take a single or an array of handlers, and the handler can be a 
 
 ``` javascript
 bitloader.plugin({
-  fetch: fetch,
+  fetch: loadFile,
   transform: "add-strict"
 });
 ```
@@ -116,7 +118,7 @@ The example below configures a plugin handler as an object. Notice the `handler`
 
 ``` javascript
 bitloader.plugin({
-  fetch: fetch,
+  fetch: loadFile,
   transform: {
     handler: "add-strict",
     options: {
@@ -141,7 +143,7 @@ var bitloader = new Bitloader();
 
 bitloader.plugin({
   extensions: ["js", "es6"],
-  fetch: fetch,
+  fetch: loadFile,
   transform: addStrict
 });
 ```
@@ -152,7 +154,7 @@ Or alternatively, via `bit-loader`'s constructor
 var bitloader = new Bitloader({
   plugins: {
     extensions: ["js", "es6"],
-    fetch: fetch,
+    fetch: loadFile,
     transform: addStrict
   }
 });
@@ -176,11 +178,13 @@ function resolvePath(meta) {
 }
 
 function loadFile(meta) {
-  return get(meta.path).then(function(text) {
-    return {
-      source: text
-    };
-  });
+  return window
+    .fetch(meta.path)
+    .then(function(response) {
+      return {
+        source: response.text();
+      };
+    });
 }
 
 // The compilation is not pluggable. However, you can always set `exports` in
@@ -196,9 +200,9 @@ function compileModule(meta) {
 // Instantiate bitloader with default providers.
 //
 var bitloader = new Bitloader({
-  resolve   : resolvePath,
-  fetch     : loadFile,
-  transform : compileModule
+  resolve    : resolvePath,
+  fetch      : loadFile,
+  precompile : compileModule
 });
 ```
 
@@ -216,7 +220,7 @@ So what exactly are the different pipelines passing around, anyways? They are pa
 
 #### Pipeline Flow of the first and second stage
 
-* first stage
+* first stage (fetch stage) *async*
   * create moduleMeta
   * resolve (moduleMeta)
     * create module path from moduleMeta.name and set moduleMeta.path
@@ -227,8 +231,10 @@ So what exactly are the different pipelines passing around, anyways? They are pa
   * dependency (moduleMeta)
     * parse out dependencies from moduleMeta.source and set moduleMeta.deps
     * recursively feed each item in moduleMeta.deps through the first stage
+  * precompile (moduleMeta)
+    * optionally builds and sets moduleMeta.exports, which prevents the build stage from executing
 
-* second stage
+* second stage (build stage) *sync*
   * compile - evalutes moduleMeta.source
   * link - calls factory, creates module instance, and sets module.exports
 
