@@ -8,6 +8,7 @@ var Resolve    = require("./services/resolve");
 var Fetch      = require("./services/fetch");
 var Transform  = require("./services/transform");
 var Dependency = require("./services/dependency");
+var PreCompile = require("./services/precompile");
 var Compile    = require("./services/compile");
 
 var Fetcher    = require("./controllers/fetcher");
@@ -16,7 +17,7 @@ var Loader     = require("./controllers/loader");
 var Registry   = require("./controllers/registry");
 var Builder    = require("./controllers/builder");
 var Module     = require("./module");
-var PluginRegistar = require("./plugin/registrar");
+var PluginRegistrar = require("./plugin/registrar");
 
 
 /**
@@ -33,16 +34,13 @@ function Bitloader(options) {
   this.settings = options;
   this._exclude = [];
 
-  if (options.exclude) {
-    this.exclude(options.exclude);
-  }
-
   // Services! Components that process modules.
   var services = {
     resolve    : new Resolve(this),
     fetch      : new Fetch(this),
     transform  : new Transform(this),
     dependency : new Dependency(this),
+    precompile : new PreCompile(this),
     compile    : new Compile(this),
     link       : new Link(this)
   };
@@ -76,11 +74,7 @@ function Bitloader(options) {
   this.load   = controllers.loader.load.bind(controllers.loader);
   this.fetch  = controllers.fetcher.fetch.bind(controllers.fetcher);
 
-  if (options.ignore) {
-    this.ignore(options.ignore);
-  }
-
-  this.pluginRegistrar = new PluginRegistar(this, this.services);
+  this.pluginRegistrar = new PluginRegistrar(this, this.services);
 
   // Register plugins
   if (options.plugins) {
@@ -89,6 +83,14 @@ function Bitloader(options) {
     plugins.forEach(function(plugin) {
       this.plugin(plugin);
     }.bind(this));
+  }
+
+  if (options.exclude) {
+    this.exclude(options.exclude);
+  }
+
+  if (options.ignore) {
+    this.ignore(options.ignore);
   }
 }
 

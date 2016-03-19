@@ -3,7 +3,7 @@ import { expect } from "chai";
 import Bitloader from "src/bit-loader";
 
 describe("Fetch Test Suite", function() {
-  var loader, fetchStub, resolveStub, transformStub, dependencyStub, resolveData, fetchData, transformData;
+  var loader, fetchStub, resolveStub, transformStub, dependencyStub, precompileStub, resolveData, fetchData, transformData;
 
   beforeEach(function() {
     resolveData = {path: "this is the real path"};
@@ -14,12 +14,14 @@ describe("Fetch Test Suite", function() {
     fetchStub = sinon.stub().returns(fetchData);
     transformStub = sinon.stub().returns(transformData);
     dependencyStub = sinon.stub();
+    precompileStub = sinon.stub();
 
     loader = new Bitloader({
       resolve: resolveStub,
       fetch: fetchStub,
       transform: transformStub,
-      dependency: dependencyStub
+      dependency: dependencyStub,
+      precompile: precompileStub
     });
   });
 
@@ -43,6 +45,10 @@ describe("Fetch Test Suite", function() {
 
     it("then `dependency` is called with source `transformed content`", function() {
       sinon.assert.calledWith(dependencyStub, sinon.match(transformData));
+    });
+
+    it("then `precompile` is called with source `transformed content`", function() {
+      sinon.assert.calledWith(precompileStub, sinon.match(transformData));
     });
   });
 

@@ -16,7 +16,7 @@ function Fetcher(context) {
     transform(context),
     dependency(context),
     fetchDependencies(this),
-    helpers.setState(context, Module.State.LOADED)
+    precompile(context)
   ]);
 }
 
@@ -125,6 +125,11 @@ function transform(context) {
 
 function dependency(context) {
   return helpers.serviceRunner(context, Module.State.TRANSFORM, Module.State.DEPENDENCY, context.services.dependency);
+}
+
+
+function precompile(context) {
+  return helpers.serviceRunner(context, Module.State.DEPENDENCY, Module.State.LOADED, context.services.precompile);
 }
 
 
