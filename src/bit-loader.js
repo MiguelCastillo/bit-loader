@@ -26,6 +26,9 @@ var PluginRegistrar = require("./plugin/registrar");
  * found [here](https://whatwg.github.io/loader/), but semantics are not quite the same.
  * whatwg/loader was more of a model to stay somewhat on track with the spec's affordances.
  *
+ * References:
+ * https://whatwg.github.io/loader/#sec-properties-of-the-loader-prototype-object
+ *
  * @class
  */
 function Bitloader(options) {
@@ -47,14 +50,6 @@ function Bitloader(options) {
 
   this.services = services;
 
-  // Register any default user provided providers that the services use.
-  // These guys run after plugins run.
-  for (var provider in options) {
-    if (this.services.hasOwnProperty(provider)) {
-      this.services[provider].provider(options[provider]);
-    }
-  }
-
   // Controllers!  These guys make use of the services to build pipelines
   // that build modules. Controllers use services, but services only use
   // services, not controllers.
@@ -68,13 +63,15 @@ function Bitloader(options) {
 
   this.controllers = controllers;
 
-  // Three methods as defined by:
-  // https://whatwg.github.io/loader/#sec-properties-of-the-loader-prototype-object
-  this.import = controllers.importer.import.bind(controllers.importer);
-  this.load   = controllers.loader.load.bind(controllers.loader);
-  this.fetch  = controllers.fetcher.fetch.bind(controllers.fetcher);
-
   this.pluginRegistrar = new PluginRegistrar(this, this.services);
+
+  // Register any default user provided providers that the services use.
+  // These guys run after plugins run.
+  for (var provider in options) {
+    if (this.services.hasOwnProperty(provider)) {
+      this.services[provider].provider(options[provider]);
+    }
+  }
 
   // Register plugins
   if (options.plugins) {
@@ -105,7 +102,29 @@ Bitloader.prototype.config = function(options) {
 
 
 /**
- * Method that only loads source from storage.  It does not process the result.
+ * Method that loads source from storage and pushes the loader source
+ * through the processing pipelines of the fetch stage
+ *
+ * @param {string|Array.<string>} names - Names of modules to import.
+ * @param {{path: string, name: string}} referrer - Module requesting
+ *  the module. Essential for processing relative paths.
+ *
+ * @returns {Promise} That when resolved, all loaded module sources are returned
+ */
+Bitloader.prototype.fetch = function(names, referrer) {
+  return this.controllers.fetcher.fetch(names, referrer);
+};
+
+/**
+ * Method that only loads source from storage.  It does not push the loaded
+ * source through the processing pipelines.
+ *
+ * @param {string|Array.<string>} names - Names of modules to import.
+ * @param {{path: string, name: string}} referrer - Module requesting
+ *  the module. Essential for processing relative paths.
+ *
+ * @returns {Promise} That when resolved, the loaded module meta objects
+ *  are returned.
  */
 Bitloader.prototype.fetchOnly = function(names, referrer) {
   return this.controllers.fetcher.fetchOnly(names, referrer);
@@ -117,11 +136,15 @@ Bitloader.prototype.fetchOnly = function(names, referrer) {
  * exports.
  *
  * @param {string|Array.<string>} names - Names of modules to import.
+ * @param {{path: string, name: string}} referrer - Module requesting
+ *  the module. Essential for processing relative paths.
  *
  * @returns {Promise} That when resolved, all the imported modules' exports
  *  are returned.
  */
-Bitloader.prototype.import = function(/*names*/) {};
+Bitloader.prototype.import = function(names, referrer) {
+  return this.controllers.importer.import(names, referrer);
+};
 
 
 /**
@@ -155,7 +178,9 @@ Bitloader.prototype.resolve = function(name, referrer) {
  * @returns {Pormise} When resolved it returns the full instance of the
  *  module(s) loaded.
  */
-Bitloader.prototype.load = function(/*names, referrer*/) {};
+Bitloader.prototype.load = function(names, referrer) {
+  return this.controllers.loader.load(names, referrer);
+};
 
 
 /*
