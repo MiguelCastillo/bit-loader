@@ -115,7 +115,7 @@ function Meta(options) {
  * Returns the directory part of a file path.
  */
 Meta.prototype.getDirectory = function() {
-  return this.getFilePath().replace(/([^/\\]+)$/gmi, "");
+  return this.directory || "";
 };
 
 
@@ -123,8 +123,7 @@ Meta.prototype.getDirectory = function() {
  * Returns the file name of the file path.
  */
 Meta.prototype.getFileName = function() {
-  var name = /[^/\\]+$/gmi.exec(this.getFilePath());
-  return name ? name[0] : "";
+  return this.fileName || "";
 };
 
 
@@ -213,13 +212,30 @@ Meta.canCompile = function(moduleMeta) {
  * @ignore
  */
 function mergeConfiguration(moduleMeta, options) {
+  options = options || {};
   var result = utils.extend(moduleMeta, options);
 
-  if (options && options.deps) {
+  if (options.deps) {
     result.deps = options.deps.slice(0);
   }
 
+  if (options.path) {
+    result.directory = parseDirectoryFromPath(options.path);
+    result.fileName = parseFileNameFromPath(options.path);
+  }
+
   return result;
+}
+
+
+function parseDirectoryFromPath(path) {
+  return (path || "").replace(/([^/\\]+)$/gmi, "");
+}
+
+
+function parseFileNameFromPath(path) {
+  var fileName = /[^/\\]+$/gmi.exec(path || "");
+  return fileName ? fileName[0] : "";
 }
 
 

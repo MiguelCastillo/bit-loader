@@ -62,8 +62,16 @@ describe("Module Test Suite", function() {
         expect(meta.getDirectory()).to.equal(directory);
       });
 
+      it("then the directory property is properly set", function() {
+        expect(meta.directory).to.equal(directory);
+      });
+
       it("then the file name is properly calculated from the path", function() {
         expect(meta.getFileName()).to.equal(fileName);
+      });
+
+      it("then the file name property is properly set", function() {
+        expect(meta.fileName).to.equal(fileName);
       });
     });
 
