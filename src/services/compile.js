@@ -28,7 +28,7 @@ Compile.prototype.runSync = function(moduleMeta) {
   }
 
   var mod = { exports: {} };
-  Eval(this.context.controllers.loader, mod, mod.exports, moduleMeta.getDependencyExportsByName, moduleMeta.getDirectory(), moduleMeta.getFilePath(), moduleMeta.source);
+  Eval(this.context.controllers.loader, mod, mod.exports, moduleMeta.getDependencyExportsByName, moduleMeta.directory, moduleMeta.path, moduleMeta.source);
   return moduleMeta.configure(mod);
 };
 
