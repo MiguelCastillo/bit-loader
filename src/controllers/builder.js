@@ -2,8 +2,8 @@
 var helpers    = require("./helpers");
 var inherit    = require("../inherit");
 var Module     = require("../module");
-var Pipeline   = require("../pipeline");
 var Controller = require("../controller");
+var Pipeline   = require("then-pipeline");
 
 
 function Builder(context) {

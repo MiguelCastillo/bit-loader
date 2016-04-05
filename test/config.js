@@ -7,6 +7,7 @@ var System = (function() {
       "dis-isa": "node_modules/dis-isa/dist/index",
       "roolio": "node_modules/roolio/dist/index",
       "belty": "node_modules/belty/dist/index",
+      "then-pipeline": "node_modules/then-pipeline/dist/index",
       "chai": "node_modules/chai/chai",
       "chance": "node_modules/chance/chance"
     },

@@ -28,21 +28,21 @@
   "homepage": "https://github.com/MiguelCastillo/bit-loader",
   "devDependencies": {
     "babel-bits": "^1.0.1",
-    "bit-imports": "~1.0.5",
+    "bit-imports": "^2.0.1",
     "browserify": "~13.0.0",
     "chai": "~3.5.0",
     "chance": "^1.0.1",
     "eslint-tap": "^1.1.0",
     "grunt": "~0.4.5",
     "grunt-browserify": "~5.0.0",
-    "grunt-cli": "^0.1.13",
+    "grunt-cli": "^1.1.0",
     "grunt-concurrent": "~2.2.1",
     "grunt-contrib-connect": "~1.0.0",
     "grunt-contrib-jshint": "~1.0.0",
     "grunt-contrib-uglify": "~1.0.0",
-    "grunt-contrib-watch": "~0.6.1",
+    "grunt-contrib-watch": "^1.0.0",
     "grunt-eslint": "^18.0.0",
-    "grunt-mocha": "~0.4.15",
+    "grunt-mocha": "^1.0.0",
     "grunt-release": "~0.13.0",
     "jshint-stylish": "~2.1.0",
     "load-grunt-tasks": "^3.4.1",
@@ -50,10 +50,11 @@
     "sinon": "~1.17.3"
   },
   "dependencies": {
-    "belty": "^0.3.0",
+    "belty": "^1.0.1",
     "dis-isa": "^1.2.2",
     "loggero": "~2.0.1",
     "roolio": "~0.1.1",
-    "spromise": "~1.0.0"
+    "spromise": "~1.0.0",
+    "then-pipeline": "^1.0.0"
   }
 }
