@@ -67,9 +67,13 @@ The combination of the first (*asynchronous*) stage with the second (*synchronou
 
 ## Plugins
 
-A plugin is a container with handler (callback) functions that hook into each one of the pipelines to load and process module meta objects. A handler can be configured as a function, string, object, or an array of them.
+A plugin is a container with handlers that hook into the pipelines in order to load and process module meta objects.
 
-A handler function is called when a pipeline executes its plugins. Handler arguments and return values are:
+A handler can be initially configured as a function, string, object, or an array of them. Ultimately, a handler ought to be a function before it is invoked by the containing plugin. So, when a handler is configured as a string it is processed as a module and loaded dynamically during runtime. When a handler is dynamically loaded, its final result should be a function that plugins invoke.
+
+> A handler is essentially a transform that processes module meta objects.
+
+Handler arguments and return values are:
 
 - *param* { object } **`meta`** - Object with information to be processed. See [module meta](#module-meta).
 - *param* { object } **`options`** - Configuration object for the particular handler.
@@ -103,7 +107,7 @@ bitloader.plugin({
 });
 ```
 
-All plugins can take a single or an array of handlers, and the handler can be a module name (a string). When the handler is a module name, `bit-loader` will load the plugin handler dynamically at runtime. E.g.
+All plugins can take a single or an array of handlers, and a handler can be a module name (a string). When the handler is a module name, `bit-loader` will load the plugin handler dynamically at runtime. E.g.
 
 ``` javascript
 bitloader.plugin({
@@ -112,9 +116,9 @@ bitloader.plugin({
 });
 ```
 
-When the handler is an object, a property `handler` is expected to be defined as either a string (module name) or a function. The primary reason to define a plugin handler as an object is when you need to pass configuration settings to the `handler` function and/or to configure matching rules. See [matching rules](#matching-rules).
+When the handler is an object, a property `handler` is expected to be defined as either a string (module name) or a function. The primary reason to define a plugin handler as an object is when you need to pass configuration settings to the `handler` function and/or to configure pattern matching. See [pattern matching](#pattern-matching).
 
-The example below configures a plugin handler as an object. Notice the `handler` is "add-strict", so the handler will be loaded at runtime. The configuration for the handler is also forwarded to the `handler` function when it is executed.
+The example below configures a plugin handler as an object. Notice the `handler` is "add-strict" (which is a string), so it will be loaded at runtime. The configuration for the handler is also forwarded to the `handler` function when it is invoked.
 
 ``` javascript
 bitloader.plugin({
@@ -128,7 +132,7 @@ bitloader.plugin({
 });
 ```
 
-Plugins also provide a way to define the shape of the modules your plugins can process. For example, you can specify properties like the module path, module name, or even match content in the module source. This is all done via matching rules. Below is an example configuring a plugin to only process files with `js` and `es6` extensions:
+Plugins also provide a way to define the shape of the modules your plugins can process. For example, you can specify properties like the module path, module name, or even match content in the module source. This is all done via pattern matching rules. Below is an example configuring a plugin to only process files with `js` and `es6` extensions:
 
 ``` javascript
 bitloader.plugin({
@@ -152,15 +156,13 @@ Or alternatively, via `bit-loader`'s constructor
 
 ``` javascript
 var bitloader = new Bitloader({
-  plugins: {
+  plugins: [{
     extensions: ["js", "es6"],
     fetch: loadFile,
     transform: addStrict
-  }
+  }]
 });
 ```
-
-> `plugins` can be an array as well.
 
 
 ## Default providers
@@ -212,6 +214,8 @@ So what exactly are the different pipelines passing around, anyways? They are pa
 
 > Modifying module meta objects is the primary responsibility of the different pipelines.
 
+The basic shape looks like this, but plugin handlers are free to add more data to it.
+
 - **`deps`** { Array[ string ] } - Collection of module names a particular module depends on. Used by the `dependency` stage.
 - **`name`** { string } - Name of the module to load. Used by `resolve` to figure out the `path`.
 - **`path`** { string } - Path for the module file. Used by `fetch` to load the module file.
@@ -239,15 +243,15 @@ So what exactly are the different pipelines passing around, anyways? They are pa
   * link - calls factory, creates module instance, and sets module.exports
 
 
-## Matching rules
+## Pattern Matching
 
-> `bit-loader` matching rules are an abstraction on top of [roolio](https://github.com/MiguelCastillo/roolio), so feel free to explore different matching rules, including custom ones. But generally, you will only specify strings and regex.
+Pattern matching rules allow you to define which modules are processed by `bit-loader`. This is accomplished by defining `match`, `ignore`, and `extensions` rules, which can be defined in plugins and in plugin handlers. You can also specify `ignore` rules in `bit-loader` instances. This combination gives you lots of control over what parts of your setup can process particular modules.
 
-Matching rules allow you to define which modules are processed by `bit-loader`. This is accomplished by defining `match`, `ignore`, and `extensions` rules. You can specify `match`, `ignore`, and `extensions` rules in plugins and in plugin handlers. You can also specify `ignore` rules in `bit-loader` instances. This combination gives you lots of control over what part of your setup processes which modules.
+- `match` and `ignore` rules are objects whose properties are matched against properties in module meta objects. For example, if you have a `match` rule object with a property called `path`, then the `path` in module meta will be tested to determine if the particular module meta can be processed.
 
-`match` and `ignore` rules are objects whose properties are matched against properties in module meta objects. For example, if your `match` rule defines `path`, then the path in module meta will be tested to determine if the particular module meta can be processed by `bit-loader`.
+- `extensions` rules are a string or array of strings to match the file extension of the module being loaded.
 
-`extensions` rules is a string or array of string to match the file extension of the module being loaded.
+> `bit-loader` pattern matching rules are an abstraction on top of [roolio](https://github.com/MiguelCastillo/roolio), so feel free to explore different matching rules, including custom ones. But generally, you will only specify strings and regex.
 
 ### match
 
@@ -337,7 +341,7 @@ bitloader.plugin({
 
 > extensions rules defines which module file extensions can be processed by *bit-loader*
 
-`extensions` rules are a shortcut for defining matching rules for module meta paths with regular expressions to test for file extensions.  E.g. ```match: { path: /\.(js|jsx)$/gmi }```.  But extension matching is such a common use case that we required us to make it simpler.
+`extensions` rules are a shortcut for defining pattern matching rules for module meta paths with regular expressions to test for file extensions.  E.g. ```match: { path: /\.(js|jsx)$/gmi }```.  But extension matching is such a common use case that required me to add some abstractions to make it simple to configure.
 
 > `extensions` rules are case insensitive.
 
