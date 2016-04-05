@@ -1,6 +1,6 @@
 var inherit  = require("./inherit");
 var Matches  = require("./matches");
-var Pipeline = require("./pipeline");
+var Pipeline = require("then-pipeline");
 
 
 function Service(context) {

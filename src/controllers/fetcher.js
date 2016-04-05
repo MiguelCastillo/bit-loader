@@ -3,8 +3,8 @@ var types      = require("dis-isa");
 var inherit    = require("../inherit");
 var helpers    = require("./helpers");
 var Module     = require("../module");
-var Pipeline   = require("../pipeline");
 var Controller = require("../controller");
+var Pipeline   = require("then-pipeline");
 
 function Fetcher(context) {
   Controller.call(this, context);
