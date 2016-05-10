@@ -97,7 +97,7 @@ function Bitloader(options) {
  * from the instance calling this method.
  */
 Bitloader.prototype.config = function(options) {
-  return new Bitloader(utils.merge({}, [this.settings, options]));
+  return new Bitloader(utils.merge({}, this.settings, options));
 };
 
 
