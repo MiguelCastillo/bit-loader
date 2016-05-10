@@ -53,7 +53,7 @@ Handler.prototype.isDynamic = function() {
 Handler.prototype.configure = function(options) {
   Matches.prototype.configure.call(this, options);
 
-  this.options = utils.merge({}, [this.options, options]);
+  this.options = utils.merge({}, this.options, options);
   return utils.merge(this, utils.pick(options, ["handler", "name", "id"]));
 };
 
