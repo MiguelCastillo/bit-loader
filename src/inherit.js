@@ -3,7 +3,15 @@ function Context(Base) {
 }
 
 Context.prototype.extends = function(Extension) {
-  this.Base.prototype = Object.create(Extension.prototype);
+  Extension = Extension && Extension.prototype ? Extension.prototype : Extension;
+  this.Base.prototype = Object.create(Extension);
+  this.Base.prototype.constructor = this.Base;
+  return this;
+};
+
+Context.prototype.mixin = function(Extension) {
+  Extension = Extension && Extension.prototype ? Extension.prototype : Extension;
+  Object.assign(this.Base.prototype, Extension);
   this.Base.prototype.constructor = this.Base;
   return this;
 };

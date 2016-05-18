@@ -3,9 +3,9 @@ var keepalivePortNumber = generatePortNumber();
 var testPortNumber = generatePortNumber();
 
 module.exports = {
-  "livereloadPortNumber": livereloadPortNumber,
-  "keepalivePortNumber": keepalivePortNumber,
-  "testPortNumber": testPortNumber
+  "livereloadPortNumber": 12423, //livereloadPortNumber,
+  "keepalivePortNumber": 12323, //keepalivePortNumber,
+  "testPortNumber": 54232 //testPortNumber
 };
 
 function generatePortNumber() {

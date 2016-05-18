@@ -1,34 +1,27 @@
 var types = require("dis-isa");
 var Rule = require("roolio");
+var utils = require("belty");
+var blueprint = require("./blueprint");
+var inherit = require("./inherit");
 
 
-function Matches() {
-  this._matches = null;
-  this._ignore = null;
+var MatchesBlueprint = blueprint({
+  matches: null,
+  ignores: null
+});
+
+
+function Matches(options) {
+  MatchesBlueprint.call(this);
+  return this.merge(Matches.configure({}, options));
 }
 
 
+inherit.base(Matches).extends(MatchesBlueprint);
+
+
 Matches.prototype.configure = function(options) {
-  var prop;
-
-  if (options.extensions) {
-    var extensions = types.isArray(options.extensions) ? options.extensions : [options.extensions];
-    this.match("path", new RegExp("[\\w]+\\.(" + extensions.join("|") + ")$", "mi"));
-  }
-
-  for (prop in options.match) {
-    if (options.match.hasOwnProperty(prop)) {
-      this.match(prop, options.match[prop]);
-    }
-  }
-
-  for (prop in options.ignore) {
-    if (options.ignore.hasOwnProperty(prop)) {
-      this.ignore(prop, options.ignore[prop]);
-    }
-  }
-
-  return this;
+  return this.merge(Matches.configure(this, options));
 };
 
 
@@ -42,16 +35,12 @@ Matches.prototype.configure = function(options) {
  * @returns {Plugin}
  */
 Matches.prototype.match = function(prop, matches) {
-  if (!this._matches) {
-    this._matches = {};
-  }
+  var options = {};
+  options[prop] = matches;
 
-  if (!this._matches[prop]) {
-    this._matches[prop] = new Rule();
-  }
-
-  this._matches[prop].addMatcher(matches);
-  return this;
+  return this.merge({
+    matches: Matches.mergeMatcher(this.matches, options)
+  });
 };
 
 
@@ -59,27 +48,23 @@ Matches.prototype.match = function(prop, matches) {
  * Add ignore rules to prevent certain data from being processed
  * by the handler.
  */
-Matches.prototype.ignore = function(prop, matches) {
-  if (!this._ignore) {
-    this._ignore = {};
-  }
+Matches.prototype.ignore = function(prop, ignores) {
+  var options = {};
+  options[prop] = ignores;
 
-  if (!this._ignore[prop]) {
-    this._ignore[prop] = new Rule();
-  }
-
-  this._ignore[prop].addMatcher(matches);
-  return this;
-};
-
-
-Matches.prototype.runIgnore = function(data) {
-  return !!(this._ignore && runMatches(this._ignore, data));
+  return this.merge({
+    ignores: Matches.mergeMatcher(this.ignores, options)
+  });
 };
 
 
 Matches.prototype.runMatch = function(data) {
-  return !!runMatches(this._matches, data);
+  return !!Matches.runMatchers(this.matches, data);
+};
+
+
+Matches.prototype.runIgnore = function(data) {
+  return !!(this.ignores && Matches.runMatchers(this.ignores, data));
 };
 
 
@@ -92,16 +77,94 @@ Matches.prototype.canExecute = function(data) {
 };
 
 
+Matches.configure = function(target, options) {
+  options = options || {};
+  var extensions = Matches.mergeExtensions(target.matches, options.extensions);
+
+  return {
+    matches: Matches.mergeMatcher(extensions, options.matches),
+    ignores: Matches.mergeMatcher(target.ignores, options.ignores)
+  };
+};
+
+
+/**
+ * Method to merge extensions into the container of pattern matching
+ * rules.
+ */
+Matches.mergeExtensions = function(target, extensions) {
+  if (!extensions) {
+    return target;
+  }
+
+  if (types.isArray(extensions)) {
+    extensions = extensions.join("|");
+  }
+
+  return Matches.mergeMatcher(target, {
+    "path": new RegExp("[\\w]+\\.(" + extensions + ")$", "mi")
+  });
+};
+
+
+/**
+ * Method that merges matches into an object. This also concatinates
+ * all the matcher arrays. Matchers are object with properties for
+ * pattern matching against input objects.
+ */
+Matches.mergeMatcher = function(target, matchers) {
+  if (!matchers) {
+    return target;
+  }
+
+  return Object
+    .keys(matchers)
+    .reduce(function(target, matcher) {
+      if (!target[matcher]) {
+        target[matcher] = [];
+      }
+
+      if (types.isArray(matchers[matcher])) {
+        matchers[matcher] = target[matcher].concat(matchers[matcher]);
+      }
+      else {
+        target[matcher].push(matchers[matcher]);
+      }
+
+      return target;
+    }, utils.merge({}, target));
+};
+
+
+Matches.buildMatchers = function(matchers) {
+  return Object
+    .keys(matchers)
+    .reduce(function(target, matcher) {
+      if (!target[matcher]) {
+        target[matcher] = new Rule();
+      }
+
+      target[matcher] = target[matcher].addMatcher(matchers[matcher]);
+      return target;
+    }, {});
+};
+
+
 /**
  * Checks if the handler can process the input data based on whether
  * or not there are matches to be processed and if any of the matches
  * do match.
  */
-function runMatches(matches, data) {
-  return !matches || Object.keys(matches).some(function(match) {
-    return matches[match].match(data[match]);
+Matches.runMatchers = function(configuration, data) {
+  if (!configuration) {
+    return true;
+  }
+
+  var matchers = Matches.buildMatchers(configuration);
+  return Object.keys(matchers).some(function(prop) {
+    return matchers[prop].match(data[prop]);
   });
-}
+};
 
 
 module.exports = Matches;

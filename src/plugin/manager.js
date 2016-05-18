@@ -1,23 +1,35 @@
-var Plugin  = require("./plugin");
+var utils = require("belty");
 var inherit = require("../inherit");
 var Matches = require("../matches");
+var blueprint = require("../blueprint");
 
 
-var id = 0;
+var ManagerBlueprint = blueprint({
+  id: null,
+  context: null,
+  plugins: {},
+  matchers: new Matches()
+});
 
 
 /**
  * Plugin Manager is a plugin container that facilitates the execution of
  * plugins.
  */
-function Manager(context) {
-  this.id = "manager-" + id++;
-  this.context = context;
-  this.plugins = [];
+function Manager(options) {
+  ManagerBlueprint.call(this);
+
+  options = options || {};
+
+  return this.merge({
+    id: options.id || createId(),
+    context: options.context
+  })
+  .configure(options);
 }
 
 
-inherit.base(Manager).extends(Matches);
+inherit.base(Manager).extends(ManagerBlueprint);
 
 
 /**
@@ -26,79 +38,93 @@ inherit.base(Manager).extends(Matches);
  *
  * @returns {Plugin}
  */
-Manager.prototype.configure = function(settings) {
-  // Process match/ignore options.
-  Matches.prototype.configure.call(this, settings);
+Manager.prototype.configure = function(options) {
+  var pluginKeys = Object.keys(utils.omit(options, ["matchers", "matches", "ignores", "extensions", "id", "context", "name"]));
 
-  Object
-    .keys(settings)
-    .filter(isPlugabble)
-    .map(createPlugin(this))
-    .map(configurePlugin(this, settings))
+  var plugins = pluginKeys
+    .map(configurePlugin(this, options))
     .filter(canRegisterPlugin(this))
-    .map(registerPlugin(this));
+    .map(registerPlugin(this))
+    .reduce(function(plugins, pluginConfig) {
+      plugins[pluginConfig.plugin.id] = true;
+      return plugins;
+    }, {});
 
-  return this;
+  return this.merge({
+    plugins: plugins,
+    matchers: this.matchers.configure(options.matchers || options)
+  });
 };
 
 
-Manager.prototype.getPluginIdFor = function(targetName) {
-  return this.id + "-plugin-" + targetName;
+Manager.prototype.getPluginIdFor = function(serviceName) {
+  return this.id + "-plugin-" + serviceName;
 };
 
 
-var _pluginExceptionNames = ["match", "ignore", "extensions", "name"];
-function isPlugabble(target) {
-  return _pluginExceptionNames.indexOf(target) === -1;
-}
+Manager.prototype.canExecute = function(data) {
+  return this.matchers.canExecute(data);
+};
 
 
-function createPlugin(manager) {
-  return function createPluginDelegate(target) {
-    var id = manager.getPluginIdFor(target);
-    if (!manager.context.hasPlugin(id)) {
-      manager.context.registerPlugin(id, new Plugin(manager.context));
-    }
-    return target;
-  };
-}
+Manager.prototype.serialize = function() {
+  var manager = this;
+
+  return utils.merge({
+    plugins: Object.keys(this.plugins).map(function(item) {
+      return manager.context.getPlugin(item).serialize();
+    })
+  }, utils.pick(this, ["id"]));
+};
 
 
 function configurePlugin(manager, settings) {
-  return function configurePluginDelegate(target) {
-    var id = manager.getPluginIdFor(target);
-    var plugin = manager.context.getPlugin(id).configure(settings[target]);
-    manager.context.registerPlugin(id, plugin);
-    return target;
+  return function configurePluginDelegate(serviceName) {
+    var pluginId = settings[serviceName].id || manager.getPluginIdFor(serviceName);
+    manager.context.configurePlugin(pluginId, settings[serviceName]);
+
+    return {
+      serviceName: serviceName,
+      plugin: manager.context.getPlugin(pluginId)
+    };
   };
 }
 
 
 function canRegisterPlugin(manager) {
-  return function canRegisterDelegate(target) {
-    var id = manager.getPluginIdFor(target);
-    return manager.plugins.indexOf(id) === -1;
+  return function canRegisterDelegate(pluginConfig) {
+    return manager.plugins[pluginConfig.plugin.id] !== true;
   };
 }
 
 
 function registerPlugin(manager) {
-  return function pluginRunnerDelegate(target) {
-    var id = manager.getPluginIdFor(target);
-
-    function pluginRunner(data) {
-      if (!manager.canExecute(data)) {
-        return data;
-      }
-
-      return manager.context.getPlugin(id).run(data);
-    };
-
-    manager.context.registerPluginWithService(target, pluginRunner);
-    manager.plugins.push(id);
-    return target;
+  return function registerPluginDelegate(pluginConfig) {
+    manager.context.registerPluginWithService(pluginConfig.serviceName, pluginRunner(manager, pluginConfig.plugin.id));
+    return pluginConfig;
   };
 }
 
 
+function pluginRunner(manager, pluginId) {
+  var managerId = manager.id;
+  var context = manager.context;
+
+  return function pluginRunnerDelegate(data) {
+    if (!context.getManager(managerId).canExecute(data)) {
+      return data;
+    }
+
+    return context.getPlugin(pluginId).run(data);
+  };
+}
+
+
+var id = 0;
+function createId() {
+  return "manager-" + id++;
+}
+
+
+Manager.pluginRunner = pluginRunner;
 module.exports = Manager;

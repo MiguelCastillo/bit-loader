@@ -1,9 +1,9 @@
-var logger    = require("loggero").create("plugin/registrar");
-var Manager   = require("./manager");
-var utils     = require("belty");
-var _plugins  = {};
-var _handlers = {};
-var managerId = 1;
+var logger = require("loggero").create("plugin/registrar");
+var Manager = require("./manager");
+var Plugin = require("./plugin");
+var Handler = require("./handler");
+var utils = require("belty");
+var _managerId = 1;
 
 
 /**
@@ -11,69 +11,108 @@ var managerId = 1;
  * of plugins.
  */
 function Registrar(context, services) {
-  this.context   = context;
-  this.services  = services;
-  this._managers = {};
+  this.context = context;
+  this.services = services;
+  this.managers = {};
+  this.plugins = {};
+  this.handlers = {};
 }
 
 
-Registrar.prototype.configure = function(name, settings) {
-  this
-    .getManager(name)
-    .configure(settings);
+Registrar.prototype.configure = function(options) {
+  return utils.merge(this, utils.pick(options, ["managers", "plugins", "handlers"]));
+};
 
+
+Registrar.prototype.configureManager = function(id, options) {
+  if (!id) {
+    id = _managerId++;
+  }
+
+  var manager = this.managers[id] || new Manager({ context: this, id: id });
+  this.managers[id] = manager.configure(options);
   return this;
 };
 
 
-Registrar.prototype.registerHandler = function(id, handler) {
-  _handlers[id] = handler;
+Registrar.prototype.hasManager = function(id) {
+  return this.managers.hasOwnProperty(id);
+};
+
+
+Registrar.prototype.getManager = function(id) {
+  return this.managers[id];
+};
+
+
+Registrar.prototype.getManagers = function(ids) {
+  var registrar = this;
+
+  return (ids || Object.keys(registrar.managers)).map(function(id) {
+    return registrar.managers[id];
+  });
+};
+
+
+Registrar.prototype.configurePlugin = function(id, options) {
+  var plugin = this.plugins[id] || new Plugin({ context: this, id: id });
+  this.plugins[id] = plugin.configure(options);
+  return this;
+};
+
+
+Registrar.prototype.hasPlugin = function(id) {
+  return this.plugins.hasOwnProperty(id);
+};
+
+
+Registrar.prototype.getPlugin = function(id) {
+  return this.plugins[id];
+};
+
+
+Registrar.prototype.getPlugins = function(ids) {
+  var registrar = this;
+
+  return (ids || Object.keys(registrar.plugins)).map(function(id) {
+    return registrar.plugins[id];
+  });
+};
+
+
+Registrar.prototype.configureHandler = function(id, options) {
+  var handler = this.handlers[id] || new Handler({ context: this, id: id });
+  this.handlers[id] = handler.configure(options);
   return this;
 };
 
 
 Registrar.prototype.hasHandler = function(id) {
-  return _handlers.hasOwnProperty(id);
+  return this.handlers.hasOwnProperty(id);
 };
 
 
 Registrar.prototype.getHandler = function(id) {
-  return _handlers[id];
+  return this.handlers[id];
 };
 
 
-Registrar.prototype.getAllHandlers = function() {
-  return _handlers;
+Registrar.prototype.getHandlers = function(ids) {
+  var registrar = this;
+
+  return (ids || Object.keys(registrar.handlers)).map(function(id) {
+    return registrar.handlers[id];
+  });
 };
 
 
-Registrar.prototype.registerPlugin = function(id, plugin) {
-  _plugins[id] = plugin;
-};
-
-
-Registrar.prototype.hasPlugin = function(id) {
-  return _plugins.hasOwnProperty(id);
-};
-
-
-Registrar.prototype.getPlugin = function(id) {
-  return _plugins[id];
-};
-
-
-Registrar.prototype.getAllPlugins = function() {
-  return _plugins;
-};
-
-
-Registrar.prototype.loadHandlers = function() {
+Registrar.prototype.loadHandlers = function(ids) {
   if (this.pending) {
     return this.pending;
   }
 
   var registrar = this;
-  var handlers  = registrar.getAllHandlers();
+  var handlers  = registrar.getHandlers(ids);
   var dynamicHandlers = Object
     .keys(handlers)
     .filter(function(key) {
@@ -96,11 +135,10 @@ Registrar.prototype.loadHandlers = function() {
       // default any calls to it to pass thru. This is in a separate context
       // than application modules, so the only modules that are pass thru
       // are module dependencies for the plugin themselves.
-      registrar.registerHandler(handler.id, handler.configure({ handler: utils.noop }));
+      registrar.configureHandler(handler.id, { handler: utils.noop });
     });
 
     registrar.pending = registrar.context
-      .config()
       .import(dynamicHandlerNames)
       .then(updateLoadedHandlers(this, dynamicHandlers))
       .then(function() {
@@ -129,24 +167,17 @@ Registrar.prototype.registerPluginWithService = function(serviceName, pluginDele
 };
 
 
-Registrar.prototype.getManager = function(name) {
-  if (!name) {
-    name = managerId++;
-  }
-
-  if (!this._managers.hasOwnProperty(name)) {
-    this._managers[name] = new Manager(this);
-  }
-
-  return this._managers[name];
+Registrar.prototype.serialize = function() {
+  return this.getManagers().map(function(manager) {
+    return manager.serialize();
+  });
 };
 
 
 function updateLoadedHandlers(registrar, handlers) {
   return function(result) {
     handlers.forEach(function(handler, i) {
-      handler = registrar.getHandler(handler.id).configure({ handler: result[i] });
-      registrar.registerHandler(handler.id, handler);
+      registrar.configureHandler(handler.id, { handler: result[i] });
     });
   };
 }

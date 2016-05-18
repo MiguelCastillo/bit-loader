@@ -4,8 +4,8 @@
   },
   "rules": {
     "curly": 2,
-    "no-console": 2,
-    "no-debugger": 2,
+    "no-console": 1,
+    "no-debugger": 1,
     "no-alert": 2,
     "no-use-before-define": 0,
     "no-underscore-dangle": 0,

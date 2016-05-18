@@ -1,12 +1,24 @@
-//var logger  = require("loggero").create("plugin");
-var types   = require("dis-isa");
-var Handler = require("./handler");
+//var logger = require("loggero").create("plugin");
+var utils = require("belty");
+var types = require("dis-isa");
+var inherit = require("../inherit");
+var blueprint = require("../blueprint");
 
 
-function Plugin(context) {
-  this.context  = context;
-  this.handlers = [];
+var PluginBlueprint = blueprint({
+  context: null,
+  handlers: {},
+  id: null
+});
+
+
+function Plugin(options) {
+  PluginBlueprint.call(this);
+  return this.merge(utils.pick(options, ["id", "context"]));
 }
+
+
+inherit.base(Plugin).extends(PluginBlueprint);
 
 
 Plugin.prototype.configure = function(options) {
@@ -14,16 +26,17 @@ Plugin.prototype.configure = function(options) {
     options = [options];
   }
 
-  options
+  var handlers = options
     .filter(Boolean)
-    .map(mapHandlerSettings(this))
-    .map(createHandler(this))
-    .reduce(function(plugin, handler) {
-      plugin.handlers.push(handler.id);
-      return plugin;
-    }, this);
+    .map(configureHandler(this))
+    .reduce(function(handlers, handler) {
+      handlers[handler.id] = true;
+      return handlers;
+    }, {});
 
-  return this;
+  return this.merge({
+    handlers: handlers
+  });
 };
 
 
@@ -31,8 +44,8 @@ Plugin.prototype.configure = function(options) {
  * Runs all plugin handlers to process the data.
  */
 Plugin.prototype.run = function(data) {
-  var plugin    = this;
-  var handlers  = this.handlers;
+  var plugin = this;
+  var handlers = this.handlers;
   var cancelled = false;
 
   function cancel() {
@@ -45,17 +58,33 @@ Plugin.prototype.run = function(data) {
     }
   }
 
-  return this.context.loadHandlers()
-    .then(function() {
-      return handlers
-        .map(getHandler(plugin))
-        .filter(canExecuteHandler(data))
-        .reduce(function(current, handler) {
-          return current
-            .then(canRun)
-            .then(runHandler(handler, cancel));
-        }, Promise.resolve(data));
-    });
+  return loadDynamicHandlers(plugin).then(function() {
+    return Object.keys(handlers)
+      .map(getHandler(plugin))
+      .filter(canExecuteHandler(data))
+      .reduce(function(current, handler) {
+        return current
+          .then(canRun)
+          .then(runHandler(handler, cancel));
+      }, Promise.resolve(data));
+  });
+};
+
+
+Plugin.prototype.serialize = function() {
+  var plugin = this;
+
+  return utils.merge({
+    handlers: Object.keys(this.handlers).map(function(handlerId) {
+      return plugin.context.getHandler(handlerId).serialize();
+    })
+  }, utils.pick(this, ["id"]));
+};
+
+
+var _handlerId = 1;
+Plugin.prototype.getHandlerId = function() {
+  return this.id + "-handler-" + _handlerId++;
 };
 
 
@@ -66,27 +95,21 @@ function getHandler(plugin) {
 }
 
 
-function mapHandlerSettings() {
-  return function(option) {
-    if (types.isFunction(option) || types.isString(option)) {
-      option = {
-        handler: option
+function configureHandler(plugin) {
+  return function createHandlerDelegate(options) {
+    if (types.isFunction(options) || types.isString(options)) {
+      options = {
+        handler: options
       };
     }
 
-    return option;
-  };
-}
+    var handlerId = options.id || plugin.getHandlerId();
 
-
-function createHandler(plugin) {
-  return function(option) {
-    var handler = Handler.create(option.handler, option);
-    if (!plugin.context.hasHandler(handler.id)) {
-      plugin.context.registerHandler(handler.id, handler);
+    if (!plugin.context.hasHandler(handlerId)) {
+      plugin.context.configureHandler(handlerId, options);
     }
 
-    return plugin.context.getHandler(handler.id);
+    return plugin.context.getHandler(handlerId);
   };
 }
 
@@ -116,6 +139,21 @@ function runHandler(handler, cancel) {
         return data.configure(result);
       });
   };
+}
+
+
+/**
+ * Load dynamic handlers if there are any that need to be loaded for
+ * the current plugin
+ */
+function loadDynamicHandlers(plugin) {
+  var dynamicHandlers = Object.keys(plugin.handlers).filter(function(id) {
+    return plugin.context.getHandler(id).isDynamic();
+  });
+
+  return dynamicHandlers.length ?
+    plugin.context.loadHandlers() :
+    Promise.resolve();
 }
 
 

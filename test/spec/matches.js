@@ -1,6 +1,7 @@
 import { expect } from "chai";
 import chance from "chance";
-import Matches from "src/matches";
+import Matches from "../../src/matches";
+
 
 describe("Matches Test Suite", function() {
   var matches;
@@ -16,11 +17,11 @@ describe("Matches Test Suite", function() {
       });
 
       it("then matching rules are null", function() {
-        expect(matches._matches).to.equal(null);
+        expect(matches.matches).to.be.undefined;
       });
 
       it("then ignore rules are null", function() {
-        expect(matches._ignore).to.equal(null);
+        expect(matches.ignores).to.be.undefined;
       });
 
       it("then run ignore rules is false", function() {
@@ -40,11 +41,15 @@ describe("Matches Test Suite", function() {
 
         ruleValue = chance().string();
 
-        matches.configure({
-          match: {
+        matches = matches.configure({
+          matches: {
             name: ruleValue
           }
         });
+      });
+
+      it("then matches contain the new rule added", function() {
+        expect(matches.matches).to.deep.equal({name: [ruleValue]});
       });
 
       it("then running matches against the configured value passes validation", function() {
@@ -68,11 +73,13 @@ describe("Matches Test Suite", function() {
 
         ruleValue = chance().string();
 
-        matches.configure({
-          ignore: {
+        var matches1 = matches.configure({
+          ignores: {
              name: ruleValue
           }
         });
+
+        matches = matches1;
       });
 
       it("then running ignore against the configured value passes validation", function() {
@@ -92,7 +99,7 @@ describe("Matches Test Suite", function() {
 
         ruleValue = "js";
 
-        matches.configure({
+        matches = matches.configure({
           extensions: ruleValue
         });
       });
@@ -122,7 +129,7 @@ describe("Matches Test Suite", function() {
 
         ruleValue = ["js", "json"];
 
-        matches.configure({
+        matches = matches.configure({
           extensions: ruleValue
         });
       });

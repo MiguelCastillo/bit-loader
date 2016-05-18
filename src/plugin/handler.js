@@ -1,45 +1,36 @@
-var types   = require("dis-isa");
-var utils   = require("belty");
+var types = require("dis-isa");
+var utils = require("belty");
 var inherit = require("../inherit");
 var Matches = require("../matches");
+var blueprint = require("../blueprint");
 
 
-var id = 0;
+var HandlerBlueprint = blueprint({
+  context: null,
+  handler: null,
+  options: null,
+  id: null,
+  matchers: new Matches()
+});
 
 
 /**
- * Plugin class definition
+ * Plugin Handler. This is an abstraction for functions that are executed by
+ * plugins. It provides a way to also encapsulate information about dynamic
+ * handlers that need to be loaded during runtime.
  */
-function Handler(handler) {
-  Matches.call(this);
+function Handler(options) {
+  HandlerBlueprint.call(this);
 
-  this.handler = handler;
+  options = options || {};
 
-  if (types.isString(handler)) {
-    this.id = handler;
-  }
-  else {
-    this.id = "handler-" + id++;
-  }
+  return this
+    .merge(utils.pick(options, ["id", "context"]))
+    .configure(options);
 }
 
 
-inherit.base(Handler).extends(Matches);
-
-
-/**
- * Factory method to create Plugins
- *
- * @handler {string|function} - Plugin handler. Can be a module name to be lodaded,
- *  or a function.
- * @options {object} - Options.
- *
- * @returns {Handler} New Handler instance
- */
-Handler.create = function(handler, options) {
-  handler = new Handler(handler);
-  return options ? handler.configure(options) : handler;
-};
+inherit.base(Handler).extends(HandlerBlueprint);
 
 
 Handler.prototype.isDynamic = function() {
@@ -51,10 +42,20 @@ Handler.prototype.isDynamic = function() {
  * Configures handler with the provided options.
  */
 Handler.prototype.configure = function(options) {
-  Matches.prototype.configure.call(this, options);
+  if (types.isFunction(options) || types.isString(options)) {
+    options = {
+      handler: options
+    };
+  }
 
-  this.options = utils.merge({}, this.options, options);
-  return utils.merge(this, utils.pick(options, ["handler", "name", "id"]));
+  return this
+    .merge(utils.pick(options, ["handler", "options"]))
+    .merge({ matchers: this.matchers.configure(options.matchers || options) });
+};
+
+
+Handler.prototype.canExecute = function(data) {
+  return this.matchers.canExecute(data);
 };
 
 
@@ -63,7 +64,12 @@ Handler.prototype.run = function(data, cancel) {
     return Promise.resolve(data);
   }
 
-  return Promise.resolve(this.handler(data, this.options, cancel));
+  return Promise.resolve(this.handler(data, this, cancel));
+};
+
+
+Handler.prototype.serialize = function() {
+  return utils.merge({}, utils.pick(this, ["handler", "id", "matchers", "options"]));
 };
 
 

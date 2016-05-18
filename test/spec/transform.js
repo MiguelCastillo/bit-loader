@@ -10,7 +10,7 @@ describe("Transform Test Suite", function() {
     });
 
 
-    describe("and transforming an anonymous function", function() {
+    describe("and transforming without any plugins registered", function() {
       var source, transformStub;
 
       beforeEach(function() {
@@ -20,11 +20,11 @@ describe("Transform Test Suite", function() {
       });
 
 
-      it("then the transform callback is called once", function() {
+      it("then the transform is executed", function() {
         sinon.assert.calledOnce(transformStub);
       });
 
-      it("then the transform callback is called with the input string", function() {
+      it("then the transform runs and the registered called back receives the result", function() {
         sinon.assert.calledWith(transformStub, source);
       });
     });
