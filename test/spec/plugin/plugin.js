@@ -1,102 +1,220 @@
 import { expect } from "chai";
-import chance from "chance";
+import chanceFactory from "chance";
 import Plugin from "src/plugin/plugin";
 import Registrar from "src/plugin/registrar";
 import Module from "src/module";
 
-describe("Plugin Test Suite", () => {
-  var plugin, createPlugin, registrarMock;
+var chance = chanceFactory();
+
+describe("Plugin Test Suite", function() {
+  var plugin, createPlugin, pluginSettings, registrarMock;
 
   beforeEach(() => {
-    createPlugin = () => plugin = new Plugin(registrarMock);
+    createPlugin = () => {
+      pluginSettings = {
+        context: registrarMock
+      };
+
+      plugin = new Plugin(pluginSettings);
+    };
   });
 
-  describe("When creating a plugin", () => {
+  describe("When creating a plugin with no registrar", () => {
     beforeEach(() => {
       registrarMock = null;
       createPlugin();
     });
 
-    it("then `plugin` is an instance of `Plugin`", () => {
+    it("then plugin is an instance of Plugin", () => {
       expect(plugin).to.be.an.instanceof(Plugin);
     });
 
-    describe("and running the plugin", () => {
-      var act, result, data;
+    describe("and serializing the plugin", () => {
+      var result;
 
       beforeEach(() => {
-        act = () => {
-          return plugin.run(data).then((r) => {
-            result = r;
-            return result;
-          });
+        result = plugin.serialize();
+      });
+
+      it("then plugin.serialize generate default values", () => {
+        expect(result).to.deep.equal({
+          "handlers": [],
+          "id": null
+        });
+      });
+    });
+  });
+
+  describe("When creating a plugin with an empty registrar", () => {
+    var configurePlugin, pluginHandler;
+
+    beforeEach(() => {
+      configurePlugin = () => plugin = plugin.configure(pluginHandler);
+      registrarMock = new Registrar();
+      createPlugin();
+    });
+
+    describe("and configuring it with one string handler", () => {
+      beforeEach(() => {
+        pluginHandler = {
+          handler: chance.string(),
+          id: chance.string()
         };
+
+        configurePlugin();
       });
 
-      it("then the correct result is generated", () => {
-         expect(result).to.be.undefined;
-      });
-
-      describe("with a random string as data with no registered handlers", () => {
-        beforeEach(() => {
-          data = chance().string();
-
-          registrarMock = {
-            loadHandlers: sinon.stub().returns(Promise.resolve())
-          };
-
-          createPlugin();
-          return act();
-        });
-
-        it("then plugin will attempt to load all dynamic plugins", () => {
-          sinon.assert.calledOnce(registrarMock.loadHandlers);
-        });
-
-        it("then final result is equal to the input - input does not change", () => {
-          expect(result).to.equal(data);
-        });
-      });
-
-      describe("with one registered handler function", () => {
-        var handler, handlerResult;
+      describe("and serializing the plugin", () => {
+        var result;
 
         beforeEach(() => {
-          data = new Module.Meta("modulename").configure({ "source": chance().string() });
-          handlerResult = { "source": chance().string() };
-          handler = sinon.stub().returns(handlerResult);
-          registrarMock = new Registrar();
-
-          createPlugin();
-          plugin.configure(handler);
-          return act();
+          result = plugin.serialize();
         });
 
-        it("then handler is called once", () => {
-          sinon.assert.calledOnce(handler);
+        it("then result contains the string handler", () => {
+          expect(result).to.deep.equal({
+            handlers: [{
+              handler: pluginHandler.handler,
+              id: pluginHandler.id,
+              options: null,
+              matchers: {
+                ignores: undefined,
+                matches: undefined
+              }
+            }],
+            id: null
+          });
+        });
+      });
+    });
+
+    describe("and configuring it with one function handler, ignore, match rules, and options", () => {
+      var handlerOption;
+
+      beforeEach(() => {
+        handlerOption = chance.string();
+
+        pluginHandler = {
+          handler: () => {},
+          options: {
+            rounders: handlerOption
+          },
+          id: chance.string(),
+          matchers: {
+            ignores: {
+              corner: chance.string()
+            },
+            matches: {
+              round: chance.string()
+            }
+          }
+        };
+
+        configurePlugin();
+      });
+
+      describe("and serializing the plugin", () => {
+        var result;
+
+        beforeEach(() => {
+          result = plugin.serialize();
         });
 
-        it("then handler is called with the input data", () => {
-          sinon.assert.calledWith(handler, data);
+        it("then the result contains the proper data structure", () => {
+          expect(result).to.deep.equal({
+            handlers: [{
+              handler: pluginHandler.handler,
+              id: pluginHandler.id,
+              options: {
+                rounders: handlerOption
+              },
+              matchers: {
+                ignores: {
+                  corner: [pluginHandler.matchers.ignores.corner]
+                },
+                matches: {
+                  round: [pluginHandler.matchers.matches.round]
+                }
+              }
+            }],
+            id: null
+          });
         });
+      });
+    });
+  });
 
-        it("then result is not the same reference as the input", () => {
-          expect(result).to.not.equal(handlerResult);
-        });
+  describe("and running the plugin", () => {
+    var runPlugin, result, data;
 
-        it("then result is returned from the handler", () => {
-          expect(result).to.include(handlerResult);
+    beforeEach(() => {
+      runPlugin = () => {
+        return plugin.run(data).then((r) => {
+          result = r;
+          return result;
         });
+      };
+    });
+
+    describe("with a random string as data with no registered handlers", () => {
+      beforeEach(() => {
+        data = chance.string();
+
+        registrarMock = {
+          loadHandlers: sinon.stub().returns(Promise.resolve())
+        };
+
+        createPlugin();
+        return runPlugin();
+      });
+
+      it("then plugin will attempt to load all dynamic plugins", () => {
+        sinon.assert.notCalled(registrarMock.loadHandlers);
+      });
+
+      it("then final result is equal to the input - input does not change", () => {
+        expect(result).to.equal(data);
+      });
+    });
+
+    describe("with one registered handler function", () => {
+      var handler, handlerResult;
+
+      beforeEach(() => {
+        data = new Module.Meta("modulename").configure({ "source": chance.string() });
+        handlerResult = { "source": chance.string() };
+        handler = sinon.stub().returns(handlerResult);
+        registrarMock = new Registrar();
+
+        createPlugin();
+        plugin = plugin.configure(handler);
+        return runPlugin();
+      });
+
+      it("then handler is called once", () => {
+        sinon.assert.calledOnce(handler);
+      });
+
+      it("then handler is called with the input data", () => {
+        sinon.assert.calledWith(handler, data);
+      });
+
+      it("then result is not the same reference as the input", () => {
+        expect(result).to.not.equal(handlerResult);
+      });
+
+      it("then result is returned from the handler", () => {
+        expect(result).to.include(handlerResult);
       });
     });
   });
 
   describe("When creating a plugin with a module loader", () => {
     describe("and running the plugin", () => {
-      var act, result, data;
+      var runPlugin, result, data;
 
       beforeEach(() => {
-        act = () => {
+        runPlugin = () => {
           return plugin.run(data).then((r) => {
             result = r;
             return result;
@@ -108,9 +226,9 @@ describe("Plugin Test Suite", () => {
         var handler, handlerResult, handlerName, importStub, loader;
 
         beforeEach(() => {
-          handlerName = chance().string();
-          data = new Module.Meta("modulename").configure({ "source": chance().string() });
-          handlerResult = { "source": chance().string() };
+          handlerName = chance.string();
+          data = new Module.Meta("modulename").configure({ "source": chance.string() });
+          handlerResult = { "source": chance.string() };
           handler = sinon.stub().returns(handlerResult);
           importStub = sinon.stub();
           importStub.withArgs([handlerName]).returns(Promise.all([handler]));
@@ -120,8 +238,8 @@ describe("Plugin Test Suite", () => {
           loader.config = sinon.stub().returns(loader);
           registrarMock = new Registrar(loader);
           createPlugin();
-          plugin.configure(handlerName);
-          return act();
+          plugin = plugin.configure(handlerName);
+          return runPlugin();
         });
 
         it("then module is imported via the module loader", () => {
@@ -153,12 +271,12 @@ describe("Plugin Test Suite", () => {
         var handler1, handler2, handlerResult1, handlerResult2, handlerName, importStub, loader;
 
         beforeEach(() => {
-          data = new Module.Meta("modulename").configure({ "source": chance().string() });
-          handlerResult1 = { "source": chance().string() };
-          handlerResult2 = { "source": chance().string() };
+          data = new Module.Meta("modulename").configure({ "source": chance.string() });
+          handlerResult1 = { "source": chance.string() };
+          handlerResult2 = { "source": chance.string() };
           handler1 = sinon.stub().returns(handlerResult1);
           handler2 = sinon.stub().returns(handlerResult2);
-          handlerName = chance().string();
+          handlerName = chance.string();
           importStub = sinon.stub();
           importStub.withArgs([handlerName]).returns(Promise.all([handler1]));
 
@@ -167,8 +285,8 @@ describe("Plugin Test Suite", () => {
           loader.config = sinon.stub().returns(loader);
           registrarMock = new Registrar(loader);
           createPlugin();
-          plugin.configure([handlerName, handler2]);
-          return act();
+          plugin = plugin.configure([handlerName, handler2]);
+          return runPlugin();
         });
 
         it("then module loader is only called once", () => {
@@ -204,13 +322,13 @@ describe("Plugin Test Suite", () => {
         var handler1, handler2, handlerResult1, handlerResult2, handlerName, moduleName, importStub, loader;
 
         beforeEach(() => {
-          moduleName = chance().string();
-          data = new Module.Meta(moduleName).configure({ "source": chance().string() });
-          handlerResult1 = { "source": chance().string() };
-          handlerResult2 = { "source": chance().string() };
+          moduleName = chance.string();
+          data = new Module.Meta(moduleName).configure({ "source": chance.string() });
+          handlerResult1 = { "source": chance.string() };
+          handlerResult2 = { "source": chance.string() };
           handler1 = sinon.stub().returns(handlerResult1);
           handler2 = sinon.stub().returns(handlerResult2);
-          handlerName = chance().string();
+          handlerName = chance.string();
           importStub = sinon.stub();
           importStub.withArgs([handlerName]).returns(Promise.all([handler1]));
 
@@ -220,14 +338,14 @@ describe("Plugin Test Suite", () => {
           registrarMock = new Registrar(loader);
           createPlugin();
 
-          plugin.configure([{
+          plugin = plugin.configure([{
             handler: handlerName,
-            ignore: {
+            ignores: {
               name: moduleName
             }
           }, handler2]);
 
-          return act();
+          return runPlugin();
         });
 
         it("then the first handler is never called", () => {
@@ -255,14 +373,14 @@ describe("Plugin Test Suite", () => {
         var handler1, handler2, handlerResult1, handlerResult2, handler1Name, handler2Name, moduleName, importStub, loader;
 
         beforeEach(() => {
-          moduleName = chance().string();
-          data = new Module.Meta(moduleName).configure({ "source": chance().string() });
-          handlerResult1 = { "source": chance().string() };
-          handlerResult2 = { "source": chance().string() };
+          moduleName = chance.string();
+          data = new Module.Meta(moduleName).configure({ "source": chance.string() });
+          handlerResult1 = { "source": chance.string() };
+          handlerResult2 = { "source": chance.string() };
           handler1 = sinon.stub().returns(handlerResult1);
           handler2 = sinon.stub().returns(handlerResult2);
-          handler1Name = chance().string();
-          handler2Name = chance().string();
+          handler1Name = chance.string();
+          handler2Name = chance.string();
           importStub = sinon.stub();
           importStub.withArgs([handler1Name, handler2Name]).returns(Promise.all([handler1, handler2]));
 
@@ -271,8 +389,8 @@ describe("Plugin Test Suite", () => {
           loader.config = sinon.stub().returns(loader);
           registrarMock = new Registrar(loader);
           createPlugin();
-          plugin.configure([handler1Name, handler2Name]);
-          return act();
+          plugin = plugin.configure([handler1Name, handler2Name]);
+          return runPlugin();
         });
 
         it("then then first and second handlers are loaded", () => {
@@ -298,76 +416,6 @@ describe("Plugin Test Suite", () => {
         it("then the final result is the output from the last handler", () => {
           expect(result).to.include(handlerResult2);
         });
-      });
-    });
-  });
-
-  describe("When creating a Plugin Registrar with no options", () => {
-    beforeEach(() => {
-      registrarMock = new Registrar();
-    });
-
-    describe("and configuring a `transform` plugin", () => {
-      var act;
-
-      beforeEach(() => {
-        act = () => {
-          registrarMock.configure(chance().string(), {
-            transform: () => {}
-          });
-        };
-      });
-
-      it("then an exception is thrown because services to register plugins with are not configured", () => {
-        expect(act).to.throw(TypeError, "Unable to register plugin. Services have not been configured");
-      });
-    });
-  });
-
-  describe("When creating a Plugin Registrar with transform services", () => {
-    var transformService, transformPlugin;
-
-    beforeEach(() => {
-      transformService = sinon.stub();
-      transformPlugin = sinon.stub();
-      registrarMock = new Registrar(null, {
-        transform: {
-          use: transformService
-        }
-      });
-    });
-
-    describe("and registering a transform plugin", () => {
-      beforeEach(() => {
-        registrarMock.configure(chance().string(), {
-          transform: transformPlugin
-        });
-      });
-
-      it("then the transform service is called to register the plugin", () => {
-        sinon.assert.calledOnce(transformService);
-      });
-
-      it("then the trasform service is called to register a function", () => {
-        sinon.assert.calledWith(transformService, sinon.match.func);
-      });
-    });
-
-    describe("and registering a plugin with a service that does not exist", () => {
-      var act, serviceName;
-
-      beforeEach(() => {
-        serviceName = chance().string();
-
-        act = () => {
-          registrarMock.configure(chance().string(), {
-            [serviceName]: () => {}
-          });
-        };
-      });
-
-      it("then the plugin registration throw an error", () => {
-        expect(act).to.throw(TypeError, "Unable to register plugin. '" + serviceName + "' service does not exist");
       });
     });
   });

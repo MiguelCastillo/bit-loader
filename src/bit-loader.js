@@ -17,7 +17,7 @@ var Loader     = require("./controllers/loader");
 var Registry   = require("./controllers/registry");
 var Builder    = require("./controllers/builder");
 var Module     = require("./module");
-var PluginRegistrar = require("./plugin/registrar");
+var Plugins    = require("./plugin/registrar");
 
 
 /**
@@ -33,12 +33,13 @@ var PluginRegistrar = require("./plugin/registrar");
  */
 function Bitloader(options) {
   options = utils.merge({}, options);
-
   this.settings = options;
-  this._exclude = [];
+  this.excludes = [];
+  this.ignores = [];
+  this.providers = {};
 
   // Services! Components that process modules.
-  var services = {
+  this.services = {
     resolve    : new Resolve(this),
     fetch      : new Fetch(this),
     transform  : new Transform(this),
@@ -48,12 +49,10 @@ function Bitloader(options) {
     link       : new Link(this)
   };
 
-  this.services = services;
-
   // Controllers!  These guys make use of the services to build pipelines
   // that build modules. Controllers use services, but services only use
   // services, not controllers.
-  var controllers = {
+  this.controllers = {
     fetcher  : new Fetcher(this),
     loader   : new Loader(this),
     importer : new Importer(this),
@@ -61,16 +60,41 @@ function Bitloader(options) {
     builder  : new Builder(this)
   };
 
-  this.controllers = controllers;
+  this.plugins = new Plugins(this, this.services);
+  this.merge(options);
+}
 
-  this.pluginRegistrar = new PluginRegistrar(this, this.services);
+
+/**
+ * Method the configures a new instance of bit-loader using the settings
+ * from the instance calling this method.
+ */
+Bitloader.prototype.configure = Bitloader.prototype.config = function(options) {
+  //
+  // TODO: Clone services.
+  //
+
+  var bitloader = new Bitloader()
+    .merge(utils.pick(this, ["ignores", "excludes"]))
+    .merge(this.providers)
+    .merge(this.plugins.serialize())
+    .merge(options);
+
+  return bitloader;
+};
+
+
+Bitloader.prototype.merge = function(options) {
+  if (!options) {
+    return this;
+  }
 
   // Register any default user provided providers that the services use.
   // These guys run after plugins run.
-  for (var provider in options) {
-    if (this.services.hasOwnProperty(provider)) {
-      this.services[provider].provider(options[provider]);
-    }
+  var providers = utils.pick(options, Object.keys(this.services));
+  for (var provider in providers) {
+    this.services[provider].provider(providers[provider]);
+    this.providers[provider] = providers[provider];
   }
 
   // Register plugins
@@ -82,22 +106,15 @@ function Bitloader(options) {
     }.bind(this));
   }
 
-  if (options.exclude) {
-    this.exclude(options.exclude);
+  if (options.excludes) {
+    this.exclude(options.excludes);
   }
 
-  if (options.ignore) {
-    this.ignore(options.ignore);
+  if (options.ignores || options.ignore) {
+    this.ignore(options.ignores || options.ignore);
   }
-}
 
-
-/**
- * Method the configures a new instance of bit-loader using the settings
- * from the instance calling this method.
- */
-Bitloader.prototype.config = function(options) {
-  return new Bitloader(utils.merge({}, this.settings, options));
+  return this;
 };
 
 
@@ -218,7 +235,7 @@ Bitloader.prototype.register = function(name, exports) {
  * @returns {boolean}
  */
 Bitloader.prototype.isExcluded = function(name) {
-  return this._exclude.indexOf(name) !== -1;
+  return this.excludes.indexOf(name) !== -1;
 };
 
 
@@ -336,10 +353,10 @@ Bitloader.prototype.deleteModule = function(mod) {
  */
 Bitloader.prototype.exclude = function(name) {
   if (types.isArray(name)) {
-    this._exclude = this._exclude.concat(name);
+    this.excludes = this.excludes.concat(name);
   }
   else {
-    this._exclude.push(name);
+    this.excludes.push(name);
   }
 
   return this;
@@ -370,6 +387,7 @@ Bitloader.prototype.ignore = function(rules) {
     .map(configureServices)
     .forEach(registerRule);
 
+  this.ignores = this.ignores.concat(rules);
   return this;
 
 
@@ -434,7 +452,7 @@ Bitloader.prototype.plugin = function(name, settings) {
     name = settings.name;
   }
 
-  this.pluginRegistrar.configure(name, settings);
+  this.plugins.configureManager(name, settings);
   return this;
 };
 

@@ -1,4 +1,3 @@
-var inherit  = require("./inherit");
 var Matches  = require("./matches");
 var Pipeline = require("then-pipeline");
 
@@ -9,11 +8,9 @@ function Service(context) {
   }
 
   this.context = context;
-  this._pipeline = new Pipeline();
+  this.transforms = [];
+  this.matchers = new Matches();
 }
-
-
-inherit.base(Service).extends(Matches);
 
 
 Service.prototype.provider = function(provider) {
@@ -23,8 +20,25 @@ Service.prototype.provider = function(provider) {
 
 
 Service.prototype.use = function(handler) {
-  this._pipeline.use(handler);
+  this.transforms.push(handler);
   return this;
+};
+
+
+Service.prototype.ignore = function(prop, ignores) {
+  this.matchers = this.matchers.ignore(prop, ignores);
+  return this;
+};
+
+
+Service.prototype.match = function(prop, matches) {
+  this.matchers = this.matchers.match(prop, matches);
+  return this;
+};
+
+
+Service.prototype.canExecute = function(moduleMeta) {
+  return this.matchers.canExecute(moduleMeta);
 };
 
 
@@ -80,14 +94,14 @@ function runProvider(service) {
 
 function runPipelineAsync(service) {
   return function runPipelineDelegate(moduleMeta) {
-    return service._pipeline.runAsync(moduleMeta);
+    return Pipeline.runAsync(moduleMeta, service.transforms);
   };
 }
 
 
 function runPipelineSync(service) {
   return function runPipelineDelegate(moduleMeta) {
-    return service._pipeline.runSync(moduleMeta);
+    return Pipeline.runSync(moduleMeta, service.transforms);
   };
 }
 
