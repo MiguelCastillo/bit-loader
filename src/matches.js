@@ -82,8 +82,8 @@ Matches.configure = function(target, options) {
   var extensions = Matches.mergeExtensions(target.matches, options.extensions);
 
   return {
-    matches: Matches.mergeMatcher(extensions, options.matches),
-    ignores: Matches.mergeMatcher(target.ignores, options.ignores)
+    matches: Matches.mergeMatcher(extensions, options.matches || options.match),
+    ignores: Matches.mergeMatcher(target.ignores, options.ignores || options.ignore)
   };
 };
 

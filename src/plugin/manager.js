@@ -39,7 +39,7 @@ inherit.base(Manager).extends(ManagerBlueprint);
  * @returns {Plugin}
  */
 Manager.prototype.configure = function(options) {
-  var pluginKeys = Object.keys(utils.omit(options, ["matchers", "matches", "ignores", "extensions", "id", "context", "name"]));
+  var pluginKeys = Object.keys(utils.omit(options, ["matchers", "matches",  "match", "ignores", "ignore", "extensions", "id", "context", "name"]));
 
   var plugins = pluginKeys
     .map(configurePlugin(this, options))

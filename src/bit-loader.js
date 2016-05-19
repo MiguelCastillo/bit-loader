@@ -110,8 +110,8 @@ Bitloader.prototype.merge = function(options) {
     this.exclude(options.excludes);
   }
 
-  if (options.ignores) {
-    this.ignore(options.ignores);
+  if (options.ignores || options.ignore) {
+    this.ignore(options.ignores || options.ignore);
   }
 
   return this;
