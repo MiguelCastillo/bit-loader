@@ -3,15 +3,18 @@ import Bitloader from "src/bit-loader";
 
 describe("Bitloader Test Suite", function() {
   var bitloader;
-  beforeEach(function() {
-    bitloader = new Bitloader();
+
+  describe("When creating an empty instance of Bitloader", function() {
+    beforeEach(function() {
+      bitloader = new Bitloader();
+    });
+
+    it("then bitloader is an instance of `Bitloader`", function() {
+      expect(bitloader instanceof(Bitloader)).to.equal(true);
+    });
   });
 
-  it("then bitloader is an instance of `Bitloader`", function() {
-    expect(bitloader instanceof(Bitloader)).to.equal(true);
-  });
-
-  describe("and registering a plugin with handlers for `fetch`, `transform`, `dependency`, and `compile`", function() {
+  describe("When creating a new instance of Bitloader with a plugin with handlers for `fetch`, `transform`, `dependency`, and `compile`", function() {
     var defaultResolveStub, defaultFetchStub, defaultCompileStub, resolveStub, fetchStub, transformStub, dependencyStub, compileStub;
 
     beforeEach(function() {
@@ -37,7 +40,6 @@ describe("Bitloader Test Suite", function() {
           compile    : compileStub
         });
     });
-
 
     describe("and importing a module called `js`", function() {
       beforeEach(function() {
@@ -90,12 +92,17 @@ describe("Bitloader Test Suite", function() {
 
       beforeEach(function() {
         rule = "lagunita";
-        bitloader.services.transform.ignore = sinon.stub();
+        sinon.stub(bitloader.services.transform, "ignore");
+        sinon.stub(bitloader.services.dependency, "ignore");
         bitloader.ignore(rule);
       });
 
       it("then `transform` service is called with `name` `laguna`", function() {
         sinon.assert.calledWithExactly(bitloader.services.transform.ignore, "name", "lagunita");
+      });
+
+      it("then `dependency` service is called with `name` `laguna`", function() {
+        sinon.assert.calledWithExactly(bitloader.services.dependency.ignore, "name", "lagunita");
       });
     });
 
@@ -105,6 +112,7 @@ describe("Bitloader Test Suite", function() {
       beforeEach(function() {
         rule = ["lagunita", "robot", "chicken"];
         sinon.stub(bitloader.services.transform, "ignore");
+        sinon.stub(bitloader.services.dependency, "ignore");
         bitloader.ignore(rule);
       });
 
@@ -118,6 +126,18 @@ describe("Bitloader Test Suite", function() {
 
       it("then `transform` service is called with `name` `chicken`", function() {
         sinon.assert.calledWithExactly(bitloader.services.transform.ignore, "name", "chicken");
+      });
+
+      it("then `dependency` service is called with `name` `laguna`", function() {
+        sinon.assert.calledWithExactly(bitloader.services.dependency.ignore, "name", "lagunita");
+      });
+
+      it("then `dependency` service is called with `name` `robot`", function() {
+        sinon.assert.calledWithExactly(bitloader.services.dependency.ignore, "name", "robot");
+      });
+
+      it("then `dependency` service is called with `name` `chicken`", function() {
+        sinon.assert.calledWithExactly(bitloader.services.dependency.ignore, "name", "chicken");
       });
     });
 
@@ -134,6 +154,7 @@ describe("Bitloader Test Suite", function() {
         }];
 
         sinon.stub(bitloader.services.transform, "ignore");
+        sinon.stub(bitloader.services.dependency, "ignore");
         bitloader.ignore(rules);
       });
 
@@ -147,6 +168,18 @@ describe("Bitloader Test Suite", function() {
 
       it("then `transform` service is called with `magic` /chicken/", function() {
         sinon.assert.calledWithExactly(bitloader.services.transform.ignore, "magic", /chicken/);
+      });
+
+      it("then `dependency` service is called with `name` `laguna`", function() {
+        sinon.assert.calledWithExactly(bitloader.services.dependency.ignore, "name", "lagunita");
+      });
+
+      it("then `dependency` service is called with `path` `robot`", function() {
+        sinon.assert.calledWithExactly(bitloader.services.dependency.ignore, "path", "robot");
+      });
+
+      it("then `dependency` service is called with `magic` /chicken/", function() {
+        sinon.assert.calledWithExactly(bitloader.services.dependency.ignore, "magic", /chicken/);
       });
     });
   });

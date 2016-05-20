@@ -415,11 +415,9 @@ Bitloader.prototype.ignore = function(rules) {
 
   function registerRule(rule) {
     var i, length, serviceNames = rule.services;
-    for (var ruleMatchName in rule) {
-      if (ruleMatchName !== "services") {
-        for (i = 0, length = serviceNames.length; i < length; i++) {
-          services[serviceNames[i]].ignore(ruleMatchName, rule[ruleMatchName]);
-        }
+    for (var ruleMatchName in utils.omit(rule, ["services"])) {
+      for (i = 0, length = serviceNames.length; i < length; i++) {
+        services[serviceNames[i]].ignore(ruleMatchName, rule[ruleMatchName]);
       }
     }
   }
