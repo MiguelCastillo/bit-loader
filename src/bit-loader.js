@@ -77,7 +77,7 @@ Bitloader.prototype.configure = Bitloader.prototype.config = function(options) {
   var bitloader = new Bitloader()
     .merge(utils.pick(this, ["ignores", "excludes"]))
     .merge(this.providers)
-    .merge(this.plugins.serialize())
+    .merge({ plugins: this.plugins.serialize() })
     .merge(options);
 
   return bitloader;
