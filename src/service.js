@@ -4,7 +4,7 @@ var Pipeline = require("then-pipeline");
 
 function Service(context) {
   if (!context) {
-    throw new Error("Service contructor requires a context");
+    throw new Error("Service constructor requires a context");
   }
 
   this.context = context;
@@ -55,8 +55,8 @@ Service.prototype.runAsync = function(moduleMeta) {
   }
 
   return Promise.resolve(moduleMeta)
-    .then(processResultAsync(this, runPipelineAsync(this)))
-    .then(processResultAsync(this, runProvider(this)));
+    .then(runPipelineAsync(this))
+    .then(runProviderAsync(this));
 };
 
 
@@ -68,8 +68,8 @@ Service.prototype.runSync = function(moduleMeta) {
   }
 
   return [
-    processResultSync(this, runPipelineSync(this)),
-    processResultSync(this, runProvider(this)),
+    runPipelineSync(this),
+    runProviderSync(this),
   ].reduce(function(data, handler) {
     return handler(data);
   }, moduleMeta);
@@ -81,44 +81,55 @@ Service.prototype.processResult = function(moduleMeta, result) {
 };
 
 
-function runProvider(service) {
-  return function runProviderDelegate(moduleMeta) {
-    if (!service._provider || !service.canProcess(moduleMeta)) {
-      return moduleMeta;
-    }
-
-    return service._provider(moduleMeta);
+function runPipelineAsync(service) {
+  return function runPipelineDelegate(moduleMeta) {
+    return Pipeline
+      .runAsync(moduleMeta, service.transforms)
+      .then(processResult(service, moduleMeta));
   };
 }
 
 
-function runPipelineAsync(service) {
-  return function runPipelineDelegate(moduleMeta) {
-    return Pipeline.runAsync(moduleMeta, service.transforms);
+function runProviderAsync(service) {
+  return function runProviderDelegate(moduleMeta) {
+    if (!canRunProvider(service, moduleMeta)) {
+      return moduleMeta;
+    }
+
+    return Promise
+      .resolve(service._provider(moduleMeta))
+      .then(processResult(service, moduleMeta));
   };
 }
 
 
 function runPipelineSync(service) {
   return function runPipelineDelegate(moduleMeta) {
-    return Pipeline.runSync(moduleMeta, service.transforms);
+    return processResult(service, moduleMeta)(Pipeline.runSync(moduleMeta, service.transforms));
   };
 }
 
 
-function processResultAsync(service, handler) {
-  return function mergeResultAsync(moduleMeta) {
-    return Promise.resolve(handler(moduleMeta)).then(function(result) {
-      return service.processResult(moduleMeta, result);
-    });
+function runProviderSync(service) {
+  return function runProviderDelegate(moduleMeta) {
+    if (!canRunProvider(service, moduleMeta)) {
+      return moduleMeta;
+    }
+
+    return processResult(service, moduleMeta)(service._provider(moduleMeta));
   };
 }
 
 
-function processResultSync(service, handler) {
-  return function mergeResultSync(moduleMeta) {
-    return service.processResult(moduleMeta, handler(moduleMeta));
+function processResult(service, moduleMeta) {
+  return function mergeResultSync(result) {
+    return service.processResult(moduleMeta, result);
   };
+}
+
+
+function canRunProvider(service, moduleMeta) {
+  return service._provider && service.canProcess(moduleMeta);
 }
 
 
