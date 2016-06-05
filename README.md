@@ -39,7 +39,7 @@ First, we need to convert module names to file paths in order to load modules fr
 > This stage is entirely asynchronous, and the output is a module graph.
 
 
-#### 4 pipelines:
+#### 5 pipelines:
 
 The module loading stage has 4 pipelines, which are described below.
 
