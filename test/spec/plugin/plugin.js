@@ -169,7 +169,7 @@ describe("Plugin Test Suite", function() {
       });
 
       it("then plugin will attempt to load all dynamic plugins", () => {
-        sinon.assert.notCalled(registrarMock.loadHandlers);
+        sinon.assert.calledOnce(registrarMock.loadHandlers);
       });
 
       it("then final result is equal to the input - input does not change", () => {
