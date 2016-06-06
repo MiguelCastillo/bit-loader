@@ -108,7 +108,7 @@ Registrar.prototype.getHandlers = function(ids) {
 
 Registrar.prototype.loadHandlers = function(ids) {
   if (this.pending) {
-    return this.pending;
+    return Promise.resolve();
   }
 
   var registrar = this;

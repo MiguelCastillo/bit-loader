@@ -147,13 +147,7 @@ function runHandler(handler, cancel) {
  * the current plugin
  */
 function loadDynamicHandlers(plugin) {
-  var dynamicHandlers = Object.keys(plugin.handlers).filter(function(id) {
-    return plugin.context.getHandler(id).isDynamic();
-  });
-
-  return dynamicHandlers.length ?
-    plugin.context.loadHandlers() :
-    Promise.resolve();
+  return plugin.context.loadHandlers();
 }
 
 
