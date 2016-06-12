@@ -71,19 +71,32 @@ describe("Plugin Test Suite", function() {
           result = plugin.serialize();
         });
 
-        it("then result contains the string handler", () => {
-          expect(result).to.deep.equal({
-            handlers: [{
-              handler: pluginHandler.handler,
-              id: pluginHandler.id,
-              options: null,
-              matchers: {
-                ignores: undefined,
-                matches: undefined
-              }
-            }],
-            id: null
-          });
+        it("then result one handler", () => {
+          expect(result.handlers).to.have.length(1);
+        });
+
+        it("then plugin has a null id", () => {
+          expect(result).to.have.property("id", null);
+        });
+
+        it("then the handler is the configured string", () => {
+          expect(result).to.have.deep.property("handlers[0].handler", pluginHandler.handler);
+        });
+
+        it("then the id is the configured string", () => {
+          expect(result).to.have.deep.property("handlers[0].id", pluginHandler.id);
+        });
+
+        it("then options is null", () => {
+          expect(result).to.have.deep.property("handlers[0].options", null);
+        });
+
+        it("then matchers has undefined ignore rules", () => {
+          expect(result).to.have.deep.property("handlers[0].matchers.ignores", undefined);
+        });
+
+        it("then matchers has undefined match rules", () => {
+          expect(result).to.have.deep.property("handlers[0].matchers.matches", undefined);
         });
       });
     });
