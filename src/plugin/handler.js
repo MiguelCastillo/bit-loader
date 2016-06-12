@@ -69,7 +69,9 @@ Handler.prototype.run = function(data, cancel) {
 
 
 Handler.prototype.serialize = function() {
-  return utils.merge({}, utils.pick(this, ["handler", "id", "matchers", "options"]));
+  return utils.merge({
+    matchers: this.matchers.serialize()
+  }, utils.pick(this, ["handler", "id", "options"]));
 };
 
 

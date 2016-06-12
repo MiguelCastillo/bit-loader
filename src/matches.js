@@ -77,6 +77,14 @@ Matches.prototype.canExecute = function(data) {
 };
 
 
+Matches.prototype.serialize = function() {
+  return utils.merge({}, {
+    ignores: this.ignores,
+    matches: this.matches
+  });
+};
+
+
 Matches.configure = function(target, options) {
   options = options || {};
   var extensions = Matches.mergeExtensions(target.matches, options.extensions);
