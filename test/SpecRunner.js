@@ -6,6 +6,7 @@ require("./spec/load");
 require("./spec/transform");
 require("./spec/module");
 require("./spec/matches");
+require("./spec/repository");
 require("./spec/blueprint");
 require("./spec/service");
 
