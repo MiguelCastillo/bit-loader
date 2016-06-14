@@ -45,14 +45,14 @@
     "grunt-contrib-watch": "^1.0.0",
     "grunt-eslint": "^18.0.0",
     "grunt-mocha": "^1.0.1",
-    "grunt-release": "~0.13.0",
-    "jshint-stylish": "~2.1.0",
+    "grunt-release": "~0.14.0",
+    "jshint-stylish": "~2.2.0",
     "load-grunt-tasks": "^3.5.0",
-    "mocha": "~2.4.5",
+    "mocha": "~2.5.3",
     "sinon": "~1.17.3"
   },
   "dependencies": {
-    "belty": "^3.0.0",
+    "belty": "^4.0.0",
     "dis-isa": "^1.2.3",
     "loggero": "~2.0.1",
     "roolio": "~0.1.1",
