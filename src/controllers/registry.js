@@ -35,12 +35,32 @@ Registry.prototype.hasModule = function(id) {
 };
 
 
+Registry.prototype.findModules = function(criteria) {
+  return this.repository
+    .findAll({
+      module: criteria
+    })
+    .map(function(result) {
+      return result.module;
+    });
+};
+
+
+Registry.prototype.findModule = function(criteria) {
+  var result = this.repository.findFirst({
+    module: criteria
+  });
+
+  return result ? result.module : null;
+};
+
+
 Registry.prototype.getModule = function(id) {
   if (!this.hasModule(id)) {
     throw new Error("Module with id `" + id + "` not found");
   }
 
-  return this.repository.getItem(id).mod;
+  return this.repository.getItem(id).module;
 };
 
 
@@ -51,7 +71,7 @@ Registry.prototype.setModule = function(mod, state) {
     throw new Error("Module instance `" + mod.name || mod.id + "` already exists");
   }
 
-  this.repository.setItem(id, {mod: mod, state: state});
+  this.repository.setItem(id, {module: mod, state: state});
   return mod;
 };
 
@@ -61,7 +81,7 @@ Registry.prototype.deleteModule = function(id) {
     throw new Error("Unable to delete module with id `" + id + "`. Module not found.");
   }
 
-  return this.repository.deleteItem(id).mod;
+  return this.repository.deleteItem(id).module;
 };
 
 

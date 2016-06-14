@@ -320,6 +320,30 @@ Bitloader.prototype.getModule = function(id) {
 
 
 /**
+ * Finds all modules that match the criteria provided.
+ *
+ * @param {object | string} criteria - Pattern (shape) or ID for matching the modules to be returned
+ *
+ * @return {Array.<Module>} Array of modules that match the criteria
+ */
+Bitloader.prototype.findModules = function(criteria) {
+  return this.controllers.registry.findModules(criteria);
+};
+
+
+/**
+ * Finds and returns the first module to match the criteria provided.
+ *
+ * @param {object | string} criteria - Pattern (shape) or ID for matching the modules to be returned
+ *
+ * @return {Module} First module that matches the criteria
+ */
+Bitloader.prototype.findModule = function(criteria) {
+  return this.controllers.registry.findModule(criteria);
+};
+
+
+/**
  * Method to delete a module from the registry.
  *
  * @param {string} id - Id of the module to delete
@@ -327,7 +351,7 @@ Bitloader.prototype.getModule = function(id) {
  * @returns {Module} Deleted module
  */
 Bitloader.prototype.deleteModule = function(mod) {
-  if (!(mod instanceof(Module))) {
+  if (!(mod instanceof(Module)) && !(mod instanceof Module.Meta)) {
     throw new TypeError("Input is not an instance of Module");
   }
 
