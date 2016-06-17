@@ -49,7 +49,7 @@ The module loading stage has 5 pipelines, which are described below.
 - **`dependency`** - responsible for parsing out dependencies from the loaded files and recursively feeding them to the module loading stage.
 - **`precompile`** - provides you with a hook for preemptively building modules in the fetch stage, which effectively prevents module processing in the build stage.
 
-These five pipelines are pluggable, which means that you can register handler functions to process module data in each one of them. These pipelines are executed sequentially in the order listed above, with each pipeline cascading data from one to the next. Furthermore, all these pipelines and their handlers use Promises to control the asynchronous workflow, so feel free to return promises to manage your asynchronous operations.
+These five pipelines are pluggable, which means that you can register handler functions to process module data in each one of them. These pipelines are executed sequentially in the order listed above, with each pipeline cascading data from one to the next. Furthermore, all these pipelines use Promises to orchestrate any asynchronous processing done by each configured handler.
 
 More details on how to hook into these pipelines can be found in the [plugins](#plugins) section.
 
@@ -71,14 +71,14 @@ A plugin is a container with handlers that hook into the pipelines in order to l
 
 A handler can be initially configured as a function, string, object, or an array of them. Ultimately, a handler ought to be a function before it is invoked by the containing plugin. So, when a handler is configured as a string it is processed as a module and loaded dynamically during runtime. When a handler is dynamically loaded, its final result should be a function that plugins invoke.
 
-> A handler is essentially a transform that processes module meta objects.
+> A handler is essentially a function that is intended to process module meta objects.
 
 Handler arguments and return values are:
 
 - *param* { object } **`meta`** - Object with information to be processed. See [module meta](#module-meta).
 - *param* { object } **`options`** - Configuration object for the particular handler.
 - *param* { function } **`cancel`** - Function to cancel the execution of the plugin handlers for the particular pipeline.
-- *returns* { object | Promise } Object with properties to be merged into the module meta object. Plugin handlers can alternatively return promises to control asynchronous work.
+- *returns* { object | Promise } Object with properties to be merged into the module meta object. Plugin handlers can alternatively return promises to control asynchronous data processing.
 
 The example below has a function handler that loads module files from storage and another that adds `'use strict;'` to modules.
 
@@ -116,7 +116,7 @@ bitloader.plugin({
 });
 ```
 
-When the handler is an object, a property `handler` is expected to be defined as either a string (module name) or a function. The primary reason to define a plugin handler as an object is when you need to pass configuration settings to the `handler` function and/or to configure pattern matching. See [pattern matching](#pattern-matching).
+When the handler is an object, a property `handler` is expected to be defined as either a string (module name) or a function. The primary reason to define a plugin handler as an object is to pass configuration settings to the `handler` function and/or to configure pattern matching. See [pattern matching](#pattern-matching).
 
 The example below configures a plugin handler as an object. Notice the `handler` is "add-strict" (which is a string), so it will be loaded at runtime. The configuration for the handler is also forwarded to the `handler` function when it is invoked.
 
@@ -210,7 +210,7 @@ var bitloader = new Bitloader({
 
 ## Module Meta
 
-So what exactly are the different pipelines passing around, anyways? They are passing around a module meta object, which is an object that contains the current state of the module. This object is an intermediate representation that the build stage uses to create module instances that the host application ultimately consumes.
+So what exactly are the different pipelines passing around anyways? They are passing around a module meta object, which is an object that contains the current state of the module. This object is an intermediate representation that the build stage uses to create module instances that the host application ultimately consumes.
 
 > Modifying module meta objects is the primary responsibility of the different pipelines.
 
@@ -227,7 +227,7 @@ The basic shape looks like this, but plugin handlers are free to add more data t
 * first stage (fetch stage) *async*
   * create moduleMeta
   * resolve (moduleMeta)
-    * create module path from moduleMeta.name and set moduleMeta.path
+    * calculate module path from moduleMeta.name and set moduleMeta.path
   * fetch (moduleMeta)
     * read module file using moduleMeta.path and set moduleMeta.source
   * transform (moduleMeta)
@@ -236,7 +236,7 @@ The basic shape looks like this, but plugin handlers are free to add more data t
     * parse out dependencies from moduleMeta.source and set moduleMeta.deps
     * recursively feed each item in moduleMeta.deps through the first stage
   * precompile (moduleMeta)
-    * optionally builds and sets moduleMeta.exports, which prevents the build stage from executing
+    * optionally builds and sets moduleMeta.exports, which prevents the build stage from processing the particular module
 
 * second stage (build stage) *sync*
   * compile - evalutes moduleMeta.source
@@ -249,15 +249,15 @@ Pattern matching rules allow you to define which modules are processed by `bit-l
 
 - `match` and `ignore` rules are objects whose properties are matched against properties in module meta objects. For example, if you have a `match` rule object with a property called `path`, then the `path` in module meta will be tested to determine if the particular module meta can be processed.
 
-- `extensions` rules are a string or array of strings to match the file extension of the module being loaded.
+- `extensions` rules is a strings or array of strings to match the file extension of the module being loaded.
 
-> `bit-loader` pattern matching rules are an abstraction on top of [roolio](https://github.com/MiguelCastillo/roolio), so feel free to explore different matching rules, including custom ones. But generally, you will only specify strings and regex.
+> `bit-loader` pattern matching rules are an abstraction on top of [roolio](https://github.com/MiguelCastillo/roolio), so feel free to explore different matching rules, including custom ones. But generally, you will only specify strings and regexp.
 
 ### match
 
 > match rules define which modules are *processed* by bit-loader.
 
-The following example sets a `match` rule in a plugin to only process modules that have `src/views` in the path.  Other modules are ignored by this plugin.
+The following example sets a `match` rule in a plugin to only process modules that have `src/views` in the path.  All other modules are ignored by this plugin.
 
 ``` javascript
 var Bitloader = require("bit-loader");
@@ -275,7 +275,7 @@ bitloader.plugin({
 });
 ```
 
-Expanding on the previous example, we set a `match` rule for a particular plugin handler so that it only processes modules with names the end in `region`. This basically tells the plugin that it can only process modules in `src/views` and that the particular transform can only process modules with names that end in `region`.
+Expanding on the previous example, we set a `match` rule for a particular plugin handler so that it only processes modules with names that end in `region`. This basically tells the plugin that it can only process modules in `src/views` and that the particular transform can only process modules with names that end in `region`.
 
 ``` javascript
 var Bitloader = require("bit-loader");
@@ -317,7 +317,7 @@ var bitbundler = new Bitbundler({
 
 > You can alternatively use the short form `ignore: ["react", "jquery"]` when configuring ignore rules for bit-loader instances.
 
-By default, ignore rules in bit-loader instances will prevent the `transform` and `dependency` pipelines from processing modules. You can further customize which pipelines ignore which modules by specifying a `services` array with the names of the pipelines that ought to skip module processing.
+By default, ignore rules in bit-loader instances will prevent the `transform` and `dependency` pipelines from processing modules. You can further customize which pipelines ignore which modules by specifying a `services` array with the names of the pipelines that ought to skip module processing. The valid pipelines are `resolve`, `fetch`, `transform`, `dependency`, and `precompile`.
 
 The following example illustrates how to configure a plugin so that it ignores all modules in `src/views`
 
@@ -339,9 +339,9 @@ bitloader.plugin({
 
 ### extensions
 
-> extensions rules defines which module file extensions can be processed by *bit-loader*
+> extensions rules defines which modules with particular file extensions can be processed by *bit-loader*
 
-`extensions` rules are a shortcut for defining pattern matching rules for module meta paths with regular expressions to test for file extensions.  E.g. ```match: { path: /\.(js|jsx)$/gmi }```.  But extension matching is such a common use case that required me to add some abstractions to make it simple to configure.
+`extensions` rules are a shortcut for defining pattern matching rules for module meta paths with regular expressions to test for file extensions.  E.g. `match: { path: /\.(js|jsx)$/gmi }`.  But extension matching is such a common use case that making this simpler is very convenient.
 
 > `extensions` rules are case insensitive.
 
