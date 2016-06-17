@@ -41,7 +41,7 @@ First, we need to convert module names to file paths in order to load modules fr
 
 #### 5 pipelines:
 
-The module loading stage has 4 pipelines, which are described below.
+The module loading stage has 5 pipelines, which are described below.
 
 - **`resolve`** - responsible for generating paths to read module files from storage.
 - **`fetch`** - responsible for loading files from storage.
