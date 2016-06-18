@@ -39,23 +39,64 @@ var Type = {
  * @memberof Module
  */
 var State = {
+  /** @type { string }
+   *  @description Initial state of a module
+   */
   REGISTERED: 0,
-    RESOLVE: 1,
-    FETCH:  2,
-    TRANSFORM: 3,
-    DEPENDENCY: 4,
+
+  /**
+   * @type { string }
+   * @description When the module is being resolved
+   */
+  RESOLVE: 1,
+
+  /**
+   * @type { string }
+   * @description When the module is being fetched
+   */
+  FETCH:  2,
+
+  /**
+   * @type { string }
+   * @description When the module is going through the transform pipeline
+   */
+  TRANSFORM: 3,
+
+  /**
+   * @type { string }
+   * @description When the moule is getting all the dependencies resolved
+   */
+  DEPENDENCY: 4,
+
+  /**
+   * @type { string }
+   * @description When the module and all its dependencies have finished loading
+   */
   LOADED: 5,
-    COMPILE: 6,
-    LINK: 7,
+
+  /**
+   * @type { string }
+   * @description When the module is being compiled or evaled
+   */
+  COMPILE: 6,
+
+  /**
+   * @type { string }
+   * @description When the module is recursively instantiating all dependencies so that the
+   *  module has them available when it is executed
+   */
+  LINK: 7,
+
+  /**
+   * @type { string }
+   * @description When the module is all built and the host application can make use of it
+   */
   READY: 8
 };
 
 
 /**
- * Module class definition. This contains all information used in the processed
- * of creating the module as well as the data the host application consumes. Perhaps
- * the single most important piece of information is `exports`, which is ultimately
- * the piece of data that the host application consumes.
+ * Entity that contains the executable code consumed by the host application.
  *
  * @class
  *
@@ -63,7 +104,9 @@ var State = {
  * @property {string} name - Module name
  * @property {string[]} deps - Array of module dependencies
  * @property {function} factory - Function that generates the data a particular module exports
- * @property {any} exports - Data exported by a module
+ * @property {any} exports - Data exported by the module
+ * @property {Meta} meta - Meta instance that contains all the information used by the pipelines
+ *  the create the Module instance.
  */
 function Module(options) {
   if (!options) {
@@ -86,9 +129,8 @@ function Module(options) {
 
 
 /**
- * Module meta class definition. This is an intermediary representation of the processed
- * module information before a proper Module instance is created. This is what all pipelines
- * interact with before the build stage creates a Module instance.
+ * Intermediate representation of a Module which contains the information that is processed
+ * in the different pipelines in order to generate a Module instance.
  *
  * @class
  * @memberof Module
@@ -136,15 +178,14 @@ Meta.prototype.getFilePath = function() {
 
 
 /**
- * Safely merges data into the instance of module meta. This returns a new instance
- * to keep the module meta object as immutable as possible.
+ * Safely merges data into instances of module meta. This returns a new instance
+ * to keep module meta objects from causing side effects.
  *
  * @param {object} options - Options to merge into the module meta instance.
  *
  * @returns {Meta} New module meta instance with the aggregated options merged in.
  */
 Meta.prototype.configure = function(options) {
-  // Provide immutability to prevent side effects
   return mergeConfiguration(new Meta(this), options);
 };
 
@@ -195,7 +236,7 @@ Meta.isCompiled = function(moduleMeta) {
 
 /**
  * Checks if the module meta object can be compiled by verifying that it has NOT
- * already been compiled and that it has a `source` property that need to be compiled.
+ * already been compiled and that it has a `source` property that can be compiled.
  *
  * @param {Meta} moduleMeta - Module meta instance.
  *
