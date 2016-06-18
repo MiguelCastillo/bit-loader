@@ -22,8 +22,8 @@ var Plugins    = require("./plugin/registrar");
 
 /**
  * Facade for System module loader and some extras. This provisions you with functionality
- * for loading modules and process them via plugins. Some relevant information is
- * found [here](https://whatwg.github.io/loader/), but semantics are not quite the same.
+ * for loading and processing modules via plugins. Some relevant information is found
+ * [here](https://whatwg.github.io/loader/), but semantics are not quite the same.
  * whatwg/loader was more of a model to stay somewhat on track with the spec's affordances.
  *
  * References:
@@ -66,8 +66,33 @@ function Bitloader(options) {
 
 
 /**
- * Method the configures a new instance of bit-loader using the settings
- * from the instance calling this method.
+ * Creates a new instance of bit-loader using the current settings plus all other extra
+ * options passed in.
+ *
+ * @param { object } options - Optional settings for configuring the new instance
+ *  of bit-loader.
+ *
+ * @param { Plugin[] } plugins - Array of plugin configurations
+ *
+ * @param { string[] } excludes - Module names to exclude from loading and processing.
+ *  When a module being loaded is in this list, it will be simply be cached with an
+ *  empty export.
+ *
+ * @param { object[] } ignores - Array of objects whose key/value pairs are matched against
+ *  properties in modules. Those modules that match will skip the processing pipelines.
+ *  Common values include `name` and `path`. String and regexp values are both valid.
+ *
+ * @param { string[] } ignores - Array of module names to exclude from the transform and
+ *  the dependency pipelines.
+ *
+ * @param { string[] } ignores[].services - Array of service names that modules matching
+ *  modules will skip. If a value is not specified, then the transform and the dependency
+ *  pipelines are skipped. You can specify an array of strings for the name(s) of the services
+ *  to be skipped. Possible values are `resolve`, `fetch`, `transform`, `dependency`,
+ *  `precompile`, `compile`, and `link`.  Alternatively, it can be a wild card to skip *all*
+ *  the pipelines just listed.
+ *
+ * @returns {Bitloader} New bit loader instance
  */
 Bitloader.prototype.configure = Bitloader.prototype.config = function(options) {
   //
@@ -84,12 +109,18 @@ Bitloader.prototype.configure = Bitloader.prototype.config = function(options) {
 };
 
 
+/**
+ * Merge in configuration settings into the bit-loader instance. You can merge
+ * in plugins, excludes, and ignores. Please see @see {@link configure}
+ *
+ * @returns { Bitloader } bit-loader instance
+ */
 Bitloader.prototype.merge = function(options) {
   if (!options) {
     return this;
   }
 
-  // Register any default user provided providers that the services use.
+  // Register any default providers that the services use.
   // These guys run after plugins run.
   var providers = utils.pick(options, Object.keys(this.services));
   for (var provider in providers) {
@@ -119,29 +150,31 @@ Bitloader.prototype.merge = function(options) {
 
 
 /**
- * Method that loads source from storage and pushes the loader source
- * through the processing pipelines of the fetch stage
+ * Load modules from storage and processes them with the fetch stage pipelines. The
+ * result is not compiled into a module until they are imported.
  *
- * @param {string|Array.<string>} names - Names of modules to import.
- * @param {{path: string, name: string}} referrer - Module requesting
- *  the module. Essential for processing relative paths.
+ * @param {string|string[]} names - Names of modules to fetch.
  *
- * @returns {Promise} That when resolved, all loaded module sources are returned
+ * @param {{path: string, name: string}} referrer - Module requesting the module. Usually
+ *  needed for processing relative paths.
+ *
+ * @returns {Promise} That when resolved it returns the loaded module meta objects
  */
 Bitloader.prototype.fetch = function(names, referrer) {
   return this.controllers.fetcher.fetch(names, referrer);
 };
 
+
 /**
- * Method that only loads source from storage.  It does not push the loaded
- * source through the processing pipelines.
+ * Load modules from storage. Unlike @see {@link fetch}, modules are only loaded from storage
+ * and not processed until they are imported.
  *
- * @param {string|Array.<string>} names - Names of modules to import.
- * @param {{path: string, name: string}} referrer - Module requesting
- *  the module. Essential for processing relative paths.
+ * @param {string|string[]} names - Names of modules to fetch.
  *
- * @returns {Promise} That when resolved, the loaded module meta objects
- *  are returned.
+ * @param {{path: string, name: string}} referrer - Module requesting the module. Usually
+ *  needed for processing relative paths.
+ *
+ * @returns {Promise} That when resolved it returns the loaded module meta objects
  */
 Bitloader.prototype.fetchOnly = function(names, referrer) {
   return this.controllers.fetcher.fetchOnly(names, referrer);
@@ -149,15 +182,14 @@ Bitloader.prototype.fetchOnly = function(names, referrer) {
 
 
 /**
- * Method for asynchronously loading modules. This method returns the module(s)
- * exports.
+ * Method for importing modules.
  *
- * @param {string|Array.<string>} names - Names of modules to import.
- * @param {{path: string, name: string}} referrer - Module requesting
- *  the module. Essential for processing relative paths.
+ * @param {string|string[]} names - Names of the modules to import.
  *
- * @returns {Promise} That when resolved, all the imported modules' exports
- *  are returned.
+ * @param {{path: string, name: string}} referrer - Module requesting the module. Usually
+ *  needed for processing relative paths.
+ *
+ * @returns {Promise} That when resolved it returns the modules' exports.
  */
 Bitloader.prototype.import = function(names, referrer) {
   return this.controllers.importer.import(names, referrer);
@@ -165,15 +197,15 @@ Bitloader.prototype.import = function(names, referrer) {
 
 
 /**
- * Method that converts a module name to a module file path which can be used
- * for loading a module from disk.
+ * Convert module names to a module file paths.
  *
  * @param {string} name - Name of the module to resolve.
- * @param {{path: string, name: string}} referrer - Module requesting
- *  the module. Essential for processing relative paths.
  *
- * @returns {Promise} When resolved it returns a module meta object with
- *  the file path for the module.
+ * @param {{path: string, name: string}} referrer - Module requesting the module. Usually
+ *  needed for processing relative paths.
+ *
+ * @returns {Promise} When resolved it returns a module meta object with the file path for
+ *  the module.
  */
 Bitloader.prototype.resolve = function(name, referrer) {
   return this.services.resolver
@@ -185,15 +217,15 @@ Bitloader.prototype.resolve = function(name, referrer) {
 
 
 /**
- * Method for asynchronously loading modules. This method returns the module
- * instance(s).
+ * Method for importing modules. Unlike @see {@link import}, this method returns the module
+ * instance instead of the module's exports.
  *
- * @param {string|Array.<string>} names - Names of modules to load.
- * @param {{path: string, name: string}} referrer - Module requesting
- *  the module. Essential for processing relative paths.
+ * @param {string|string[]} names - Names of the modules to import.
  *
- * @returns {Pormise} When resolved it returns the full instance of the
- *  module(s) loaded.
+ * @param {{path: string, name: string}} referrer - Module requesting the module. Usually
+ *  needed for processing relative paths.
+ *
+ * @returns {Pormise} When resolved it returns the full module instances.
  */
 Bitloader.prototype.load = function(names, referrer) {
   return this.controllers.loader.load(names, referrer);
@@ -214,9 +246,10 @@ Bitloader.prototype.load = function(names, referrer) {
 
 
 /**
- * Method to register module exports
+ * Register module exports
  *
  * @param {string} name - Name of the module to register exports for.
+ *
  * @param {any} exports - Module exports.
  *
  * @returns {Bitloader}
@@ -228,7 +261,7 @@ Bitloader.prototype.register = function(name, exports) {
 
 
 /**
- * Method that determines if a module name is excluded from loading and processing.
+ * Determines if a module name is registered as an exclusion.
  *
  * @param {string} name - Name of the module to test for exclusion.
  *
@@ -240,13 +273,16 @@ Bitloader.prototype.isExcluded = function(name) {
 
 
 /**
- * Method to get the source of modules.
+ * Get the source of modules. If a module isn't loaded, then it is loaded and processed
+ * by the fetch stage pipelines. If the module is already loaded then its source gets
+ * returned.
  *
- * @param {string|Array.<string>} names - Names of modules to load.
- * @param {{path: string, name: string}} referrer - Module requesting
- *  the source. Essential for processing relative paths.
+ * @param {string|string[]} names - Names of modules to load.
  *
- * @returns {Promise} When resolved it returns the source(s)
+ * @param {{path: string, name: string}} referrer - Module requesting the module. Usually
+ *  needed for processing relative paths.
+ *
+ * @returns {Promise} When resolved it returns the source of the modules
  */
 Bitloader.prototype.getSource = function(names, referrer) {
   var loader = this;
@@ -265,7 +301,8 @@ Bitloader.prototype.getSource = function(names, referrer) {
 
 
 /**
- * Helper method to push source string through the transformation pipeline
+ * Helper method to push source string through the default transformation pipeline.
+ * If there is no default transform, then the input source is not processed.
  *
  * @param {string} source - Source code to transform.
  *
@@ -283,8 +320,7 @@ Bitloader.prototype.transform = function(source) {
 
 
 /**
- * Clears the registry, which means that all cached modules and other pertinent
- * data will be deleted.
+ * Deletes all modules.
  *
  * @returns {Bitloader}
  */
@@ -295,9 +331,9 @@ Bitloader.prototype.clear = function() {
 
 
 /**
- * Checks if the module instance is in the module registry
+ * Checks if a module with the provided ID is cached
  *
- * @param {string} id - Id of the module to check if it's cached
+ * @param {string} id - Id of the module to check
  *
  * @returns {boolean}
  */
@@ -307,12 +343,12 @@ Bitloader.prototype.hasModule = function(id) {
 
 
 /**
- * Returns the module instance if one exists.  If the module instance isn't in the
- * module registry, then a TypeError exception is thrown
+ * Retrived a cached module by its ID. If the module isn't cached, a TypeError exception
+ * is thrown.
  *
- * @param {string} id - Id of the module to get from cache
+ * @param {string} id - Module id
  *
- * @return {Module} Module instance from cache
+ * @return {Module}
  */
 Bitloader.prototype.getModule = function(id) {
   return this.controllers.registry.getModule(id);
@@ -322,9 +358,9 @@ Bitloader.prototype.getModule = function(id) {
 /**
  * Finds all modules that match the criteria provided.
  *
- * @param {object | string} criteria - Pattern (shape) or ID for matching the modules to be returned
+ * @param {object | string} criteria - Pattern (shape) or ID for module matching
  *
- * @return {Array.<Module>} Array of modules that match the criteria
+ * @return {Module[]} Array of modules that match the criteria
  */
 Bitloader.prototype.findModules = function(criteria) {
   return this.controllers.registry.findModules(criteria);
@@ -334,7 +370,7 @@ Bitloader.prototype.findModules = function(criteria) {
 /**
  * Finds and returns the first module to match the criteria provided.
  *
- * @param {object | string} criteria - Pattern (shape) or ID for matching the modules to be returned
+ * @param {object | string} criteria - Pattern (shape) or ID for module matching
  *
  * @return {Module} First module that matches the criteria
  */
@@ -344,9 +380,11 @@ Bitloader.prototype.findModule = function(criteria) {
 
 
 /**
- * Method to delete a module from the registry.
+ * Deletes specific cached modules. Use the getModule, findModule, or findModules methods
+ * to get a hold of the modules to be deleted.
  *
- * @param {string} id - Id of the module to delete
+ * @param {Module | Module.Meta} mod - Module or module meta instance to delete from
+ *  the cache.
  *
  * @returns {Module} Deleted module
  */
@@ -364,14 +402,13 @@ Bitloader.prototype.deleteModule = function(mod) {
 
 
 /**
- * Method to add module names to exclude. Modules in this list will
- * basically add modules with source of empty string. Generally used
- * to exclude external dependencies where module names are not paths
- * that require name resolution. e.g. jquery, react, path...
+ * Add module names for exclusion. Modules in this list are not loaded from disk and instead
+ * become cached entries with empty exports. This is useful when a module to be loaded isn't
+ * found in storage or the module just isn't needed and a module with an empty export is
+ * sufficient. The names provided will be set as the IDs for the modules.
  *
- * @param {string|Array.<string>} name - Module name (or list of names)
- *  to exclude from loading and processing. This will add a module entry
- *  with the source  of empty string and the ID is the same as the name.
+ * @param {string|string[]} name - Module name (or list of names) to exclude from loading
+ *  and processing.
  *
  * @returns {Bitloader}
  */
@@ -388,9 +425,18 @@ Bitloader.prototype.exclude = function(name) {
 
 
 /**
- * Add ignore rules for configuring what the different pipelines shoud not process.
+ * Add ignore rules for configuring which modules should not be processed by specific
+ * pipelines.
  *
- * @param {Object} rule - Rule configuration
+ * @param {object|object[]|string|string[]} rules - Configuration(s) for matching modules
+ *  to skip different processing pipelines. rules can be strings, in which case they are
+ *  treated as module names. For more fine grained control you can specify an object whose
+ *  properties are matched against the modules being processed. Matches will not be
+ *  processed by the processing pipelines.
+ *
+ * @param {object|object[]} rules[].services - Name of pipelines to skip. Possible values
+ *  are `resolve`, `fetch`, `transform`, `dependency`, `precompile`, `compile`, and `link`.
+ *  Alternatively, it can be a wild card to skip *all* the pipelines just listed.
  *
  * @returns {Bitloader}
  */
@@ -449,7 +495,8 @@ Bitloader.prototype.ignore = function(rules) {
 
 
 /**
- * Registers plugins into the pipeline.
+ * Registers plugins into the different pipelines. Available pipelines are
+ * `resolve`, `fetch`, `transform`, `dependency`, and `precompile`.
  *
  * @param {object} settings - Object whose keys are the name of the particular
  *  pipeline they intend to register with. For example, if the plugin is to
@@ -458,15 +505,15 @@ Bitloader.prototype.ignore = function(rules) {
  *
  * @returns {Bitloader}
  *
- *  @example
- *  bitloader.plugin("js", {
- *    "transform": function(meta) {
- *      console.log(meta);
- *    },
- *    "dependency": function(meta) {
- *      console.log(meta);
- *    }
- *  });
+ * @example
+ * bitloader.plugin("js", {
+ *   "transform": function(meta) {
+ *     console.log(meta);
+ *   },
+ *   "dependency": function(meta) {
+ *     console.log(meta);
+ *   }
+ * });
  */
 Bitloader.prototype.plugin = function(name, settings) {
   if (types.isPlainObject(name)) {
