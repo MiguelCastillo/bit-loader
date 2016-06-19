@@ -243,6 +243,11 @@ The basic shape looks like this, but plugin handlers are free to add more data t
   * link - calls factory, creates module instance, and sets module.exports
 
 
+#### Visual of fetch pipelines
+
+<img src="img/bit-loader-fetch-workflow.png" width="100%"></img>
+
+
 ## Pattern Matching
 
 Pattern matching rules allow you to define which modules are processed by `bit-loader`. This is accomplished by defining `match`, `ignore`, and `extensions` rules, which can be defined in plugins and in plugin handlers. You can also specify `ignore` rules in `bit-loader` instances. This combination gives you lots of control over what parts of your setup can process particular modules.
