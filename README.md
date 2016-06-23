@@ -245,7 +245,7 @@ The basic shape looks like this, but plugin handlers are free to add more data t
 
 #### Visual of fetch pipelines
 
-<img src="img/bit-loader-fetch-workflow.png" width="100%"></img>
+<img src="img/bit-loader-fetch-pipelines-white.png" width="100%"></img>
 
 
 ## Pattern Matching
