@@ -124,9 +124,8 @@ function Module(options) {
   }
 
   this.deps = options.deps ? options.deps.slice(0) : [];
-  this.id = options.id || options.name;
   this.type = options.type || Type.UNKNOWN;
-  return this.merge(utils.omit(options, ["deps", "id", "type"]));
+  return this.merge(utils.omit(options, ["deps", "type"]));
 }
 
 
