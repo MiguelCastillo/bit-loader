@@ -2,6 +2,7 @@
 var inherit = require("../inherit");
 var Module = require("../module");
 var Controller = require("../controller");
+var Repository = require("../repository");
 
 
 function Registry(context) {
@@ -22,13 +23,13 @@ Registry.prototype.register = function(name, exports) {
 
 
 Registry.prototype.hasModule = function(id) {
-  return this.context.repository.hasItem(id);
+  return Repository.hasItem(this.context.cache, id);
 };
 
 
 Registry.prototype.findModules = function(criteria) {
-  return this.context.repository
-    .findAll({
+  return Repository
+    .findAll(this.context.cache, {
       module: criteria
     })
     .map(function(result) {
@@ -38,7 +39,7 @@ Registry.prototype.findModules = function(criteria) {
 
 
 Registry.prototype.findModule = function(criteria) {
-  var result = this.context.repository.findFirst({
+  var result = Repository.findFirst(this.context.cache, {
     module: criteria
   });
 
@@ -51,7 +52,7 @@ Registry.prototype.getModule = function(id) {
     throw new Error("Module with id `" + id + "` not found");
   }
 
-  return this.context.repository.getItem(id).module;
+  return Repository.getItem(this.context.cache, id).module;
 };
 
 
@@ -62,7 +63,7 @@ Registry.prototype.setModule = function(mod, state) {
     throw new Error("Module instance `" + mod.name || mod.id + "` already exists");
   }
 
-  this.context.repository.setItem(id, {module: mod, state: state});
+  Repository.setItem(this.context.cache, id, {module: mod, state: state});
   return mod;
 };
 
@@ -72,7 +73,9 @@ Registry.prototype.deleteModule = function(id) {
     throw new Error("Unable to delete module with id `" + id + "`. Module not found.");
   }
 
-  return this.context.repository.deleteItem(id).module;
+  var mod = Repository.getItem(this.context.cache, id).module;
+  Repository.deleteItem(this.context.cache, id);
+  return mod;
 };
 
 
@@ -81,7 +84,7 @@ Registry.prototype.getModuleState = function(id) {
     throw new Error("Module instance `" + id + "` not found");
   }
 
-  return this.context.repository.getItem(id).state;
+  return Repository.getItem(this.context.cache, id).state;
 };
 
 

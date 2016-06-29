@@ -16,7 +16,6 @@ var Importer   = require("./controllers/importer");
 var Loader     = require("./controllers/loader");
 var Registry   = require("./controllers/registry");
 var Builder    = require("./controllers/builder");
-var Repository = require("./repository");
 var Module     = require("./module");
 var Plugins    = require("./plugin/registrar");
 
@@ -38,6 +37,7 @@ function Bitloader(options) {
   this.excludes = [];
   this.ignores = [];
   this.providers = {};
+  this.cache = {};
 
   // Services! Components that process modules.
   this.services = {
@@ -61,7 +61,6 @@ function Bitloader(options) {
     builder  : new Builder(this)
   };
 
-  this.repository = new Repository();
   this.plugins = new Plugins(this, this.services);
   this.merge(options);
 }
@@ -145,6 +144,10 @@ Bitloader.prototype.merge = function(options) {
 
   if (options.ignores || options.ignore) {
     this.ignore(options.ignores || options.ignore);
+  }
+
+  if (options.cache) {
+    this.cache = utils.merge({}, options.cache);
   }
 
   return this;
