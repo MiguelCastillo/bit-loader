@@ -123,21 +123,49 @@ function Module(options) {
     throw new TypeError("Must provide a name, which is used by the resolver to resolve the path for the resource");
   }
 
-  if (options.hasOwnProperty("exports")) {
-    this.exports = options.exports;
-  }
-
-  if (options.hasOwnProperty("factory")) {
-    this.factory = options.factory;
-  }
-
   this.deps = options.deps ? options.deps.slice(0) : [];
   this.id = options.id || options.name;
-  this.name = options.name;
   this.type = options.type || Type.UNKNOWN;
-
-  mergeConfiguration(this, options);
+  return this.merge(utils.omit(options, ["deps", "id", "type"]));
 }
+
+
+/**
+ * Safely merges data into the current module. Every merge opertion will create
+ * a new instance to prevent unwanted side effects.
+ *
+ * @param {object} options - Options to merge into the module meta instance.
+ *
+ * @returns {Meta} New module meta instance with the aggregated options merged in.
+ */
+Module.prototype.merge = Module.prototype.configure = function(options) {
+  if (!options) {
+    return this;
+  }
+
+  var target = Object.create(Object.getPrototypeOf(this));
+  utils.merge(target, utils.omit(this, ["exports"]), utils.omit(options, ["exports"]));
+
+  if (options.path) {
+    if (!options.hasOwnProperty("directory")) {
+      target.directory = parseDirectoryFromPath(options.path);
+    }
+
+    if (!options.hasOwnProperty("fileName")) {
+      target.fileName = parseFileNameFromPath(options.path);
+    }
+  }
+
+  if (this.hasOwnProperty("exports")) {
+    target.exports = this.exports;
+  }
+
+  if (options.hasOwnProperty("exports")) {
+    target.exports = options.exports;
+  }
+
+  return target;
+};
 
 
 /**
@@ -161,19 +189,6 @@ Module.prototype.getFileName = function() {
  */
 Module.prototype.getFilePath = function() {
   return this.path || "";
-};
-
-
-/**
- * Safely merges data into instances of module meta. This returns a new instance
- * to keep module meta objects from causing side effects.
- *
- * @param {object} options - Options to merge into the module meta instance.
- *
- * @returns {Meta} New module meta instance with the aggregated options merged in.
- */
-Module.prototype.configure = function(options) {
-  return mergeConfiguration(new Module(this), options);
 };
 
 
@@ -232,28 +247,6 @@ Module.isCompiled = function(moduleMeta) {
 Module.canCompile = function(moduleMeta) {
   return !Module.isCompiled(moduleMeta) && types.isString(moduleMeta.source);
 };
-
-
-/**
- * Merges in options into a module meta object
- *
- * @ignore
- */
-function mergeConfiguration(moduleMeta, options) {
-  options = options || {};
-  var result = utils.extend(moduleMeta, options);
-
-  if (options.deps) {
-    result.deps = options.deps.slice(0);
-  }
-
-  if (options.path) {
-    result.directory = parseDirectoryFromPath(options.path);
-    result.fileName = parseFileNameFromPath(options.path);
-  }
-
-  return result;
-}
 
 
 function parseDirectoryFromPath(path) {
