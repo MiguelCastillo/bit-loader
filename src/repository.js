@@ -1,4 +1,3 @@
-var types = require("dis-isa");
 var utils = require("belty");
 
 function hasItem(items, id) {
