@@ -15,7 +15,7 @@ inherit.base(Load).extends(Service);
 
 
 Load.prototype.canProcess = function(moduleMeta) {
-  return this.canExecute(moduleMeta) && Module.Meta.canImport(moduleMeta);
+  return this.canExecute(moduleMeta) && Module.canImport(moduleMeta);
 };
 
 

@@ -13,7 +13,7 @@ inherit.base(Link).extends(Service);
 
 
 Link.prototype.canProcess = function(moduleMeta) {
-  return this.canExecute(moduleMeta) && Module.Meta.isCompiled(moduleMeta);
+  return this.canExecute(moduleMeta) && Module.isCompiled(moduleMeta);
 };
 
 

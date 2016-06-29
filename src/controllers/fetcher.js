@@ -71,7 +71,7 @@ function createModuleMeta(referrer) {
   referrer = referrer || {};
 
   return function(name) {
-    return new Module.Meta({
+    return new Module({
       name: name,
       referrer: {
         name: referrer.name,

@@ -14,7 +14,7 @@ inherit.base(Registry).extends(Controller);
 
 
 Registry.prototype.register = function(name, exports) {
-  return this.setModule(new Module.Meta({
+  return this.setModule(new Module({
     id: name,
     name: name,
     exports: exports

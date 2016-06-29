@@ -95,38 +95,6 @@ var State = {
 };
 
 
-/**
- * Entity that contains the executable code consumed by the host application.
- *
- * @class
- *
- * @property {string} id - Module id
- * @property {string} name - Module name
- * @property {string[]} deps - Array of module dependencies
- * @property {function} factory - Function that generates the data a particular module exports
- * @property {any} exports - Data exported by the module
- * @property {Meta} meta - Meta instance that contains all the information used by the pipelines
- *  the create the Module instance.
- */
-function Module(options) {
-  if (!options) {
-    throw new TypeError("Must provide options to create the module");
-  }
-
-  if (options.hasOwnProperty("exports")) {
-    this.exports = options.exports;
-  }
-
-  if (options.hasOwnProperty("factory")) {
-    this.factory = options.factory;
-  }
-
-  this.type = options.type || Type.UNKNOWN;
-  this.id = options.id || options.name;
-  this.name = options.name;
-  this.deps = options.deps ? options.deps.slice(0) : [];
-}
-
 
 /**
  * Intermediate representation of a Module which contains the information that is processed
@@ -134,8 +102,15 @@ function Module(options) {
  *
  * @class
  * @memberof Module
+ *
+ * @property {string} id - Module id
+ * @property {string} name - Module name
+ * @property {string[]} deps - Array of module dependencies
+ * @property {function} factory - Function that generates the data a particular module exports
+ * @property {any} exports - Data exported by the module
+ *
  */
-function Meta(options) {
+function Module(options) {
   options = options || {};
 
   if (types.isString(options)) {
@@ -148,7 +123,19 @@ function Meta(options) {
     throw new TypeError("Must provide a name, which is used by the resolver to resolve the path for the resource");
   }
 
-  this.deps = [];
+  if (options.hasOwnProperty("exports")) {
+    this.exports = options.exports;
+  }
+
+  if (options.hasOwnProperty("factory")) {
+    this.factory = options.factory;
+  }
+
+  this.deps = options.deps ? options.deps.slice(0) : [];
+  this.id = options.id || options.name;
+  this.name = options.name;
+  this.type = options.type || Type.UNKNOWN;
+
   mergeConfiguration(this, options);
 }
 
@@ -156,7 +143,7 @@ function Meta(options) {
 /**
  * Returns the directory part of a file path.
  */
-Meta.prototype.getDirectory = function() {
+Module.prototype.getDirectory = function() {
   return this.directory || "";
 };
 
@@ -164,7 +151,7 @@ Meta.prototype.getDirectory = function() {
 /**
  * Returns the file name of the file path.
  */
-Meta.prototype.getFileName = function() {
+Module.prototype.getFileName = function() {
   return this.fileName || "";
 };
 
@@ -172,7 +159,7 @@ Meta.prototype.getFileName = function() {
 /**
  * Returns the file path, which is the full path for the file in storage.
  */
-Meta.prototype.getFilePath = function() {
+Module.prototype.getFilePath = function() {
   return this.path || "";
 };
 
@@ -185,8 +172,8 @@ Meta.prototype.getFilePath = function() {
  *
  * @returns {Meta} New module meta instance with the aggregated options merged in.
  */
-Meta.prototype.configure = function(options) {
-  return mergeConfiguration(new Meta(this), options);
+Module.prototype.configure = function(options) {
+  return mergeConfiguration(new Module(this), options);
 };
 
 
@@ -197,12 +184,12 @@ Meta.prototype.configure = function(options) {
  *
  * @returns {boolean}
  */
-Meta.validate = function(moduleMeta) {
+Module.validate = function(moduleMeta) {
   if (!moduleMeta) {
     throw new TypeError("Must provide options");
   }
 
-  if (!Meta.isCompiled(moduleMeta) && !Meta.canCompile(moduleMeta)) {
+  if (!Module.isCompiled(moduleMeta) && !Module.canCompile(moduleMeta)) {
     throw new TypeError("ModuleMeta must provide a `source` string or `exports`.");
   }
 };
@@ -215,7 +202,7 @@ Meta.validate = function(moduleMeta) {
  *
  * @returns {boolean}
  */
-Meta.hasDependencies = function(moduleMeta) {
+Module.hasDependencies = function(moduleMeta) {
   return moduleMeta.deps.length;
 };
 
@@ -229,7 +216,7 @@ Meta.hasDependencies = function(moduleMeta) {
  *
  * @returns {boolean}
  */
-Meta.isCompiled = function(moduleMeta) {
+Module.isCompiled = function(moduleMeta) {
   return moduleMeta.hasOwnProperty("exports") || types.isFunction(moduleMeta.factory);
 };
 
@@ -242,8 +229,8 @@ Meta.isCompiled = function(moduleMeta) {
  *
  * @returns {boolean}
  */
-Meta.canCompile = function(moduleMeta) {
-  return !Meta.isCompiled(moduleMeta) && types.isString(moduleMeta.source);
+Module.canCompile = function(moduleMeta) {
+  return !Module.isCompiled(moduleMeta) && types.isString(moduleMeta.source);
 };
 
 
@@ -280,7 +267,6 @@ function parseFileNameFromPath(path) {
 }
 
 
-Module.Meta  = Meta;
 Module.Type  = Type;
 Module.State = State;
 module.exports = Module;

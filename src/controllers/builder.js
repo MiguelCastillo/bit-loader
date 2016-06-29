@@ -71,7 +71,7 @@ function link(context) {
  *
  * @private
  *
- * @param {Module.Meta} moduleMeta - Module meta object this function is processing
+ * @param { Module } moduleMeta - Module meta object this function is processing
  * @returns {string} The proper source url to be inserted in the module source
  */
 function getSourceUrl(moduleMeta) {
@@ -85,7 +85,7 @@ function getSourceUrl(moduleMeta) {
  * Verifies if the module already has a `sourceURL` so that we don't override it.
  * @private
  *
- * @param {Module.Meta} moduleMeta - Module meta object this function is processing
+ * @param { Module } moduleMeta - Module meta object this function is processing
  * @returns {boolean}
  */
 function hasSourceURL(moduleMeta) {
