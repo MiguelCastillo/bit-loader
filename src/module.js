@@ -138,7 +138,7 @@ function Module(options) {
  * @returns {Meta} New module meta instance with the aggregated options merged in.
  */
 Module.prototype.merge = Module.prototype.configure = function(options) {
-  if (!options) {
+  if (!options || options === this) {
     return this;
   }
 

@@ -7,7 +7,7 @@ function ensureRegisteredState(context, id, state) {
 function setState(context, state) {
   return function setStateDelegate(moduleMeta) {
     if (context.controllers.registry.hasModule(moduleMeta.id)) {
-      context.controllers.registry.setModule(moduleMeta, state);
+      return context.controllers.registry.setModule(moduleMeta, state);
     }
 
     return moduleMeta;

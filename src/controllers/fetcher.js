@@ -75,6 +75,7 @@ function createModuleMeta(referrer) {
   return function(name) {
     return new Module({
       name: name,
+      state: Module.State.REGISTERED,
       referrer: {
         name: referrer.name,
         path: referrer.path,
@@ -96,7 +97,7 @@ function resolveMetaModule(fetcher) {
         source: ""
       });
 
-      context.controllers.registry.setModule(moduleMeta, Module.State.LOADED);
+      moduleMeta = context.controllers.registry.setModule(moduleMeta, Module.State.LOADED);
       return Promise.resolve(moduleMeta);
     }
     else {
@@ -105,7 +106,7 @@ function resolveMetaModule(fetcher) {
         .runAsync(moduleMeta)
         .then(function(moduleMeta) {
           if (!fetcher.context.controllers.registry.hasModule(moduleMeta.id)) {
-            fetcher.context.controllers.registry.setModule(moduleMeta, Module.State.RESOLVE);
+            moduleMeta = fetcher.context.controllers.registry.setModule(moduleMeta, Module.State.RESOLVE);
           }
 
           return moduleMeta;

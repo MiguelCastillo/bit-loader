@@ -28,13 +28,9 @@ Registry.prototype.hasModule = function(id) {
 
 
 Registry.prototype.findModules = function(criteria) {
-  return Repository
-    .findAll(this.context.cache, {
-      module: criteria
-    })
-    .map(function(result) {
-      return result.module;
-    });
+  return Repository.findAll(this.context.cache, {
+    module: criteria
+  });
 };
 
 
@@ -43,7 +39,7 @@ Registry.prototype.findModule = function(criteria) {
     module: criteria
   });
 
-  return result ? result.module : null;
+  return result;
 };
 
 
@@ -52,7 +48,7 @@ Registry.prototype.getModule = function(id) {
     throw new Error("Module with id `" + id + "` not found");
   }
 
-  return Repository.getItem(this.context.cache, id).module;
+  return Repository.getItem(this.context.cache, id);
 };
 
 
@@ -63,7 +59,8 @@ Registry.prototype.setModule = function(mod, state) {
     throw new Error("Module instance `" + mod.name || mod.id + "` already exists");
   }
 
-  Repository.setItem(this.context.cache, id, {module: mod, state: state});
+  mod = mod.configure({ state: state });
+  Repository.setItem(this.context.cache, id, mod);
   return mod;
 };
 
@@ -73,7 +70,7 @@ Registry.prototype.deleteModule = function(id) {
     throw new Error("Unable to delete module with id `" + id + "`. Module not found.");
   }
 
-  var mod = Repository.getItem(this.context.cache, id).module;
+  var mod = Repository.getItem(this.context.cache, id);
   Repository.deleteItem(this.context.cache, id);
   return mod;
 };
