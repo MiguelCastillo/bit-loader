@@ -39,59 +39,59 @@ var Type = {
  * @memberof Module
  */
 var State = {
-  /** @type { number }
+  /** @type { string }
    *  @description Initial state of a module
    */
-  REGISTERED: 0,
+  REGISTERED: "registered",
 
   /**
-   * @type { number }
+   * @type { string }
    * @description When the module is being resolved
    */
-  RESOLVE: 1,
+  RESOLVE: "resolve",
 
   /**
-   * @type { number }
+   * @type { string }
    * @description When the module is being fetched
    */
-  FETCH:  2,
+  FETCH: "fetch",
 
   /**
-   * @type { number }
+   * @type { string }
    * @description When the module is going through the transform pipeline
    */
-  TRANSFORM: 3,
+  TRANSFORM: "transform",
 
   /**
-   * @type { number }
+   * @type { string }
    * @description When the moule is getting all the dependencies resolved
    */
-  DEPENDENCY: 4,
+  DEPENDENCY: "dependency",
 
   /**
-   * @type { number }
+   * @type { string }
    * @description When the module and all its dependencies have finished loading
    */
-  LOADED: 5,
+  LOADED: "loaded",
 
   /**
-   * @type { number }
+   * @type { string }
    * @description When the module is being compiled or evaled
    */
-  COMPILE: 6,
+  COMPILE: "compile",
 
   /**
-   * @type { number }
+   * @type { string }
    * @description When the module is recursively instantiating all dependencies so that the
    *  module has them available when it is executed
    */
-  LINK: 7,
+  LINK: "link",
 
   /**
-   * @type { number }
+   * @type { string }
    * @description When the module is all built and the host application can make use of it
    */
-  READY: 8
+  READY: "ready"
 };
 
 
