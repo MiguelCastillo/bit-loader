@@ -25,33 +25,30 @@ inherit.base(Fetcher).extends(Controller);
 
 
 Fetcher.prototype.fetch = function(names, referrer) {
-  return this._fetch(names, referrer, fetchPipeline(this));
+  return this.resolveNames(names, referrer, fetchPipeline(this));
 };
 
 
 Fetcher.prototype.fetchOnly = function(names, referrer) {
-  return this._fetch(names, referrer, fetch(this.context));
+  return this.resolveNames(names, referrer, fetch(this.context));
 };
 
 
-Fetcher.prototype._fetch = function(names, referrer, cb) {
-  if (types.isArray(names)) {
-    return Promise.all(
+Fetcher.prototype.resolveNames = function(names, referrer, cb) {
+  return types.isString(names) ?
+    resolveMetaModule(this)(createModuleMeta(this, referrer)(names)).then(cb) :
+    Promise.all(
       names
-        .map(createModuleMeta(referrer))
+        .map(createModuleMeta(this, referrer))
         .map(resolveMetaModule(this))
         .map(function(d) { return d.then(cb); })
     );
-  }
-  else {
-    return resolveMetaModule(this)(createModuleMeta(referrer)(names)).then(cb);
-  }
 };
 
 
 function fetchPipeline(fetcher) {
   return function(moduleMeta) {
-    logger.info("fetch", moduleMeta.name, moduleMeta.referrer);
+    logger.info(moduleMeta.name, moduleMeta);
 
     if (fetcher.inProgress.hasOwnProperty(moduleMeta.id)) {
       return fetcher.inProgress[moduleMeta.id].then(function() { return moduleMeta; });
@@ -69,19 +66,22 @@ function fetchPipeline(fetcher) {
 }
 
 
-function createModuleMeta(referrer) {
+function createModuleMeta(fetcher, referrer) {
   referrer = referrer || {};
 
   return function(name) {
-    return new Module({
+    var moduleMeta = new Module({
       name: name,
-      state: Module.State.REGISTERED,
       referrer: {
         name: referrer.name,
         path: referrer.path,
         id: referrer.id
       }
     });
+
+    return fetcher.context.controllers.registry.hasModule(moduleMeta.id) ?
+      moduleMeta :
+      fetcher.context.controllers.registry.setModule(moduleMeta, Module.State.REGISTERED);
   };
 }
 
@@ -105,11 +105,9 @@ function resolveMetaModule(fetcher) {
         .resolve
         .runAsync(moduleMeta)
         .then(function(moduleMeta) {
-          if (!fetcher.context.controllers.registry.hasModule(moduleMeta.id)) {
-            moduleMeta = fetcher.context.controllers.registry.setModule(moduleMeta, Module.State.RESOLVE);
-          }
-
-          return moduleMeta;
+          return fetcher.context.controllers.registry.hasModule(moduleMeta.id) ?
+            moduleMeta :
+            fetcher.context.controllers.registry.setModule(moduleMeta, Module.State.RESOLVE);
         });
     }
   };
