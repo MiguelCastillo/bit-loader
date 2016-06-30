@@ -25,25 +25,25 @@ inherit.base(Fetcher).extends(Controller);
 
 
 Fetcher.prototype.fetch = function(names, referrer) {
-  return this.resolveNames(names, referrer, fetchPipeline(this));
+  return resolveNames(this, names, referrer, fetchPipeline(this));
 };
 
 
 Fetcher.prototype.fetchOnly = function(names, referrer) {
-  return this.resolveNames(names, referrer, fetch(this.context));
+  return resolveNames(this, names, referrer, fetch(this.context));
 };
 
 
-Fetcher.prototype.resolveNames = function(names, referrer, cb) {
+function resolveNames(fetcher, names, referrer, cb) {
   return types.isString(names) ?
-    resolveMetaModule(this)(createModuleMeta(this, referrer)(names)).then(cb) :
+    resolveMetaModule(fetcher)(createModuleMeta(fetcher, referrer)(names)).then(cb) :
     Promise.all(
       names
-        .map(createModuleMeta(this, referrer))
-        .map(resolveMetaModule(this))
+        .map(createModuleMeta(fetcher, referrer))
+        .map(resolveMetaModule(fetcher))
         .map(function(d) { return d.then(cb); })
     );
-};
+}
 
 
 function fetchPipeline(fetcher) {
@@ -99,6 +99,7 @@ function resolveMetaModule(fetcher) {
     else {
       return context.services.resolve
         .runAsync(moduleMeta)
+        .then(configureModuleId)
         .then(function(moduleMeta) {
           return fetcher.context.controllers.registry.hasModule(moduleMeta.id) ?
             moduleMeta :
@@ -106,6 +107,21 @@ function resolveMetaModule(fetcher) {
         });
     }
   };
+}
+
+
+function configureModuleId(moduleMeta) {
+  var result = {};
+
+  if (!moduleMeta.path && moduleMeta.url) {
+    result.path = moduleMeta.url && moduleMeta.url.href;
+  }
+
+  if (!moduleMeta.hasOwnProperty("id") && moduleMeta.path) {
+    result.id = moduleMeta.path;
+  }
+
+  return moduleMeta.configure(result);
 }
 
 
