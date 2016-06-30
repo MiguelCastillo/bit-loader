@@ -194,7 +194,7 @@ describe("Plugin Test Suite", function() {
       var handler, handlerResult;
 
       beforeEach(() => {
-        data = new Module.Meta("modulename").configure({ "source": chance.string() });
+        data = new Module("modulename").configure({ "source": chance.string() });
         handlerResult = { "source": chance.string() };
         handler = sinon.stub().returns(handlerResult);
         registrarMock = new Registrar();
@@ -240,7 +240,7 @@ describe("Plugin Test Suite", function() {
 
         beforeEach(() => {
           handlerName = chance.string();
-          data = new Module.Meta("modulename").configure({ "source": chance.string() });
+          data = new Module("modulename").configure({ "source": chance.string() });
           handlerResult = { "source": chance.string() };
           handler = sinon.stub().returns(handlerResult);
           importStub = sinon.stub();
@@ -284,7 +284,7 @@ describe("Plugin Test Suite", function() {
         var handler1, handler2, handlerResult1, handlerResult2, handlerName, importStub, loader;
 
         beforeEach(() => {
-          data = new Module.Meta("modulename").configure({ "source": chance.string() });
+          data = new Module("modulename").configure({ "source": chance.string() });
           handlerResult1 = { "source": chance.string() };
           handlerResult2 = { "source": chance.string() };
           handler1 = sinon.stub().returns(handlerResult1);
@@ -336,7 +336,7 @@ describe("Plugin Test Suite", function() {
 
         beforeEach(() => {
           moduleName = chance.string();
-          data = new Module.Meta(moduleName).configure({ "source": chance.string() });
+          data = new Module(moduleName).configure({ "source": chance.string() });
           handlerResult1 = { "source": chance.string() };
           handlerResult2 = { "source": chance.string() };
           handler1 = sinon.stub().returns(handlerResult1);
@@ -387,7 +387,7 @@ describe("Plugin Test Suite", function() {
 
         beforeEach(() => {
           moduleName = chance.string();
-          data = new Module.Meta(moduleName).configure({ "source": chance.string() });
+          data = new Module(moduleName).configure({ "source": chance.string() });
           handlerResult1 = { "source": chance.string() };
           handlerResult2 = { "source": chance.string() };
           handler1 = sinon.stub().returns(handlerResult1);

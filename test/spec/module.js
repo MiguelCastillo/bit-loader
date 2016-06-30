@@ -7,7 +7,7 @@ describe("Module Test Suite", function() {
     var meta;
 
     var act = function(config) {
-       meta = new Module.Meta(config);
+       meta = new Module(config);
     };
 
     describe("and the module meta is empty - no name", function() {

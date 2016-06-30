@@ -16,7 +16,6 @@ var Importer   = require("./controllers/importer");
 var Loader     = require("./controllers/loader");
 var Registry   = require("./controllers/registry");
 var Builder    = require("./controllers/builder");
-var Repository = require("./repository");
 var Module     = require("./module");
 var Plugins    = require("./plugin/registrar");
 
@@ -38,6 +37,7 @@ function Bitloader(options) {
   this.excludes = [];
   this.ignores = [];
   this.providers = {};
+  this.cache = {};
 
   // Services! Components that process modules.
   this.services = {
@@ -61,7 +61,6 @@ function Bitloader(options) {
     builder  : new Builder(this)
   };
 
-  this.repository = new Repository();
   this.plugins = new Plugins(this, this.services);
   this.merge(options);
 }
@@ -147,6 +146,10 @@ Bitloader.prototype.merge = function(options) {
     this.ignore(options.ignores || options.ignore);
   }
 
+  if (options.cache) {
+    this.cache = utils.merge({}, options.cache);
+  }
+
   return this;
 };
 
@@ -212,7 +215,7 @@ Bitloader.prototype.import = function(names, referrer) {
  */
 Bitloader.prototype.resolve = function(name, referrer) {
   return this.services.resolver
-    .resolve(new Module.Meta(name), referrer)
+    .resolve(new Module(name), referrer)
     .then(function(moduleMeta) {
       return moduleMeta.path;
     });
@@ -312,7 +315,7 @@ Bitloader.prototype.getSource = function(names, referrer) {
  * @returns {Promise} When resolved it returns the transformed source code.
  */
 Bitloader.prototype.transform = function(source) {
-  return this.services.transform.runAsync(new Module.Meta({
+  return this.services.transform.runAsync(new Module({
     name: "@transform",
     source: source
   }))
@@ -386,13 +389,12 @@ Bitloader.prototype.findModule = function(criteria) {
  * Deletes specific cached modules. Use the getModule, findModule, or findModules methods
  * to get a hold of the modules to be deleted.
  *
- * @param {Module | Module.Meta} mod - Module or module meta instance to delete from
- *  the cache.
+ * @param { Module } mod - Module instance to delete from the cache.
  *
  * @returns {Module} Deleted module
  */
 Bitloader.prototype.deleteModule = function(mod) {
-  if (!(mod instanceof(Module)) && !(mod instanceof Module.Meta)) {
+  if (!(mod instanceof(Module))) {
     throw new TypeError("Input is not an instance of Module");
   }
 

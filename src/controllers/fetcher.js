@@ -25,39 +25,38 @@ inherit.base(Fetcher).extends(Controller);
 
 
 Fetcher.prototype.fetch = function(names, referrer) {
-  return this._fetch(names, referrer, fetchPipeline(this));
+  return resolveNames(this, names, referrer, fetchPipeline(this));
 };
 
 
 Fetcher.prototype.fetchOnly = function(names, referrer) {
-  return this._fetch(names, referrer, fetch(this.context));
+  return resolveNames(this, names, referrer, fetch(this.context));
 };
 
 
-Fetcher.prototype._fetch = function(names, referrer, cb) {
-  if (types.isArray(names)) {
-    return Promise.all(
+function resolveNames(fetcher, names, referrer, cb) {
+  return types.isString(names) ?
+    resolveMetaModule(fetcher)(createModuleMeta(fetcher, referrer)(names)).then(cb) :
+    Promise.all(
       names
-        .map(createModuleMeta(referrer))
-        .map(resolveMetaModule(this))
+        .map(createModuleMeta(fetcher, referrer))
+        .map(resolveMetaModule(fetcher))
         .map(function(d) { return d.then(cb); })
     );
-  }
-  else {
-    return resolveMetaModule(this)(createModuleMeta(referrer)(names)).then(cb);
-  }
-};
+}
 
 
 function fetchPipeline(fetcher) {
   return function(moduleMeta) {
-    logger.info("fetch", moduleMeta.name, moduleMeta.referrer);
+    logger.info(moduleMeta.name, moduleMeta);
 
     if (fetcher.inProgress.hasOwnProperty(moduleMeta.id)) {
       return fetcher.inProgress[moduleMeta.id].then(function() { return moduleMeta; });
     }
     else if (fetcher.context.controllers.registry.hasModule(moduleMeta.id)) {
-      if (fetcher.context.controllers.registry.getModuleState(moduleMeta.id) < Module.State.LOADED) {
+      var state = fetcher.context.controllers.registry.getModuleState(moduleMeta.id);
+
+      if (state !== Module.State.LOADED && state !== Module.State.READY) {
         return runPipeline(fetcher, moduleMeta).then(function() { return moduleMeta; });
       }
     }
@@ -67,11 +66,11 @@ function fetchPipeline(fetcher) {
 }
 
 
-function createModuleMeta(referrer) {
+function createModuleMeta(fetcher, referrer) {
   referrer = referrer || {};
 
   return function(name) {
-    return new Module.Meta({
+    return new Module({
       name: name,
       referrer: {
         name: referrer.name,
@@ -94,22 +93,35 @@ function resolveMetaModule(fetcher) {
         source: ""
       });
 
-      context.controllers.registry.setModule(moduleMeta, Module.State.LOADED);
+      moduleMeta = context.controllers.registry.setModule(moduleMeta, Module.State.LOADED);
       return Promise.resolve(moduleMeta);
     }
     else {
-      return context.services
-        .resolve
+      return context.services.resolve
         .runAsync(moduleMeta)
+        .then(configureModuleId)
         .then(function(moduleMeta) {
-          if (!fetcher.context.controllers.registry.hasModule(moduleMeta.id)) {
+          return fetcher.context.controllers.registry.hasModule(moduleMeta.id) ?
+            moduleMeta :
             fetcher.context.controllers.registry.setModule(moduleMeta, Module.State.RESOLVE);
-          }
-
-          return moduleMeta;
         });
     }
   };
+}
+
+
+function configureModuleId(moduleMeta) {
+  var result = {};
+
+  if (!moduleMeta.path && moduleMeta.url) {
+    result.path = moduleMeta.url && moduleMeta.url.href;
+  }
+
+  if (!moduleMeta.hasOwnProperty("id") && moduleMeta.path) {
+    result.id = moduleMeta.path;
+  }
+
+  return moduleMeta.configure(result);
 }
 
 

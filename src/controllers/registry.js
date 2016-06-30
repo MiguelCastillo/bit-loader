@@ -2,6 +2,7 @@
 var inherit = require("../inherit");
 var Module = require("../module");
 var Controller = require("../controller");
+var Repository = require("../repository");
 
 
 function Registry(context) {
@@ -13,7 +14,7 @@ inherit.base(Registry).extends(Controller);
 
 
 Registry.prototype.register = function(name, exports) {
-  return this.setModule(new Module.Meta({
+  return this.setModule(new Module({
     id: name,
     name: name,
     exports: exports
@@ -22,36 +23,32 @@ Registry.prototype.register = function(name, exports) {
 
 
 Registry.prototype.hasModule = function(id) {
-  return this.context.repository.hasItem(id);
+  return Repository.hasItem(this.context.cache, id);
 };
 
 
 Registry.prototype.findModules = function(criteria) {
-  return this.context.repository
-    .findAll({
-      module: criteria
-    })
-    .map(function(result) {
-      return result.module;
-    });
+  return Repository.findAll(this.context.cache, {
+    module: criteria
+  });
 };
 
 
 Registry.prototype.findModule = function(criteria) {
-  var result = this.context.repository.findFirst({
+  var result = Repository.findFirst(this.context.cache, {
     module: criteria
   });
 
-  return result ? result.module : null;
+  return result;
 };
 
 
 Registry.prototype.getModule = function(id) {
   if (!this.hasModule(id)) {
-    throw new Error("Module with id `" + id + "` not found");
+    throw new Error("Module with id '" + id + "' not found");
   }
 
-  return this.context.repository.getItem(id).module;
+  return Repository.getItem(this.context.cache, id);
 };
 
 
@@ -59,29 +56,32 @@ Registry.prototype.setModule = function(mod, state) {
   var id = mod.id;
 
   if (this.hasModule(id) && this.getModuleState(id) === state) {
-    throw new Error("Module instance `" + mod.name || mod.id + "` already exists");
+    throw new Error("Module instance '" + (mod.name || mod.id) + "' already exists. State '" + state + "'");
   }
 
-  this.context.repository.setItem(id, {module: mod, state: state});
+  mod = mod.configure({ state: state });
+  Repository.setItem(this.context.cache, id, mod);
   return mod;
 };
 
 
 Registry.prototype.deleteModule = function(id) {
   if (!this.hasModule(id)) {
-    throw new Error("Unable to delete module with id `" + id + "`. Module not found.");
+    throw new Error("Unable to delete module with id '" + id + "'. Module not found.");
   }
 
-  return this.context.repository.deleteItem(id).module;
+  var mod = Repository.getItem(this.context.cache, id);
+  Repository.deleteItem(this.context.cache, id);
+  return mod;
 };
 
 
 Registry.prototype.getModuleState = function(id) {
   if (!this.hasModule(id)) {
-    throw new Error("Module instance `" + id + "` not found");
+    throw new Error("Module instance '" + id + "' not found");
   }
 
-  return this.context.repository.getItem(id).state;
+  return Repository.getItem(this.context.cache, id).state;
 };
 
 

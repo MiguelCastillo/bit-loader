@@ -39,93 +39,61 @@ var Type = {
  * @memberof Module
  */
 var State = {
-  /** @type { number }
+  /** @type { string }
    *  @description Initial state of a module
    */
-  REGISTERED: 0,
+  REGISTERED: "registered",
 
   /**
-   * @type { number }
+   * @type { string }
    * @description When the module is being resolved
    */
-  RESOLVE: 1,
+  RESOLVE: "resolve",
 
   /**
-   * @type { number }
+   * @type { string }
    * @description When the module is being fetched
    */
-  FETCH:  2,
+  FETCH: "fetch",
 
   /**
-   * @type { number }
+   * @type { string }
    * @description When the module is going through the transform pipeline
    */
-  TRANSFORM: 3,
+  TRANSFORM: "transform",
 
   /**
-   * @type { number }
+   * @type { string }
    * @description When the moule is getting all the dependencies resolved
    */
-  DEPENDENCY: 4,
+  DEPENDENCY: "dependency",
 
   /**
-   * @type { number }
+   * @type { string }
    * @description When the module and all its dependencies have finished loading
    */
-  LOADED: 5,
+  LOADED: "loaded",
 
   /**
-   * @type { number }
+   * @type { string }
    * @description When the module is being compiled or evaled
    */
-  COMPILE: 6,
+  COMPILE: "compile",
 
   /**
-   * @type { number }
+   * @type { string }
    * @description When the module is recursively instantiating all dependencies so that the
    *  module has them available when it is executed
    */
-  LINK: 7,
+  LINK: "link",
 
   /**
-   * @type { number }
+   * @type { string }
    * @description When the module is all built and the host application can make use of it
    */
-  READY: 8
+  READY: "ready"
 };
 
-
-/**
- * Entity that contains the executable code consumed by the host application.
- *
- * @class
- *
- * @property {string} id - Module id
- * @property {string} name - Module name
- * @property {string[]} deps - Array of module dependencies
- * @property {function} factory - Function that generates the data a particular module exports
- * @property {any} exports - Data exported by the module
- * @property {Meta} meta - Meta instance that contains all the information used by the pipelines
- *  the create the Module instance.
- */
-function Module(options) {
-  if (!options) {
-    throw new TypeError("Must provide options to create the module");
-  }
-
-  if (options.hasOwnProperty("exports")) {
-    this.exports = options.exports;
-  }
-
-  if (options.hasOwnProperty("factory")) {
-    this.factory = options.factory;
-  }
-
-  this.type = options.type || Type.UNKNOWN;
-  this.id = options.id || options.name;
-  this.name = options.name;
-  this.deps = options.deps ? options.deps.slice(0) : [];
-}
 
 
 /**
@@ -134,8 +102,15 @@ function Module(options) {
  *
  * @class
  * @memberof Module
+ *
+ * @property {string} id - Module id
+ * @property {string} name - Module name
+ * @property {string[]} deps - Array of module dependencies
+ * @property {function} factory - Function that generates the data a particular module exports
+ * @property {any} exports - Data exported by the module
+ *
  */
-function Meta(options) {
+function Module(options) {
   options = options || {};
 
   if (types.isString(options)) {
@@ -148,15 +123,54 @@ function Meta(options) {
     throw new TypeError("Must provide a name, which is used by the resolver to resolve the path for the resource");
   }
 
-  this.deps = [];
-  mergeConfiguration(this, options);
+  this.deps = options.deps ? options.deps.slice(0) : [];
+  this.type = options.type || Type.UNKNOWN;
+  return this.merge(utils.omit(options, ["deps", "type"]));
 }
+
+
+/**
+ * Safely merges data into the current module. Every merge opertion will create
+ * a new instance to prevent unwanted side effects.
+ *
+ * @param {object} options - Options to merge into the module meta instance.
+ *
+ * @returns {Module} New module meta instance with the aggregated options merged in.
+ */
+Module.prototype.merge = Module.prototype.configure = function(options) {
+  if (!options || options === this) {
+    return this;
+  }
+
+  var target = Object.create(Object.getPrototypeOf(this));
+  utils.merge(target, utils.omit(this, ["exports"]), utils.omit(options, ["exports"]));
+
+  if (options.path) {
+    if (!options.hasOwnProperty("directory")) {
+      target.directory = parseDirectoryFromPath(options.path);
+    }
+
+    if (!options.hasOwnProperty("fileName")) {
+      target.fileName = parseFileNameFromPath(options.path);
+    }
+  }
+
+  if (this.hasOwnProperty("exports")) {
+    target.exports = this.exports;
+  }
+
+  if (options.hasOwnProperty("exports")) {
+    target.exports = options.exports;
+  }
+
+  return target;
+};
 
 
 /**
  * Returns the directory part of a file path.
  */
-Meta.prototype.getDirectory = function() {
+Module.prototype.getDirectory = function() {
   return this.directory || "";
 };
 
@@ -164,7 +178,7 @@ Meta.prototype.getDirectory = function() {
 /**
  * Returns the file name of the file path.
  */
-Meta.prototype.getFileName = function() {
+Module.prototype.getFileName = function() {
   return this.fileName || "";
 };
 
@@ -172,37 +186,24 @@ Meta.prototype.getFileName = function() {
 /**
  * Returns the file path, which is the full path for the file in storage.
  */
-Meta.prototype.getFilePath = function() {
+Module.prototype.getFilePath = function() {
   return this.path || "";
-};
-
-
-/**
- * Safely merges data into instances of module meta. This returns a new instance
- * to keep module meta objects from causing side effects.
- *
- * @param {object} options - Options to merge into the module meta instance.
- *
- * @returns {Meta} New module meta instance with the aggregated options merged in.
- */
-Meta.prototype.configure = function(options) {
-  return mergeConfiguration(new Meta(this), options);
 };
 
 
 /**
  * Verifies that a module meta object is either already compiled or can be compiled.
  *
- * @param {Meta} moduleMeta - Module meta instance.
+ * @param {Module} moduleMeta - Module meta instance.
  *
  * @returns {boolean}
  */
-Meta.validate = function(moduleMeta) {
+Module.validate = function(moduleMeta) {
   if (!moduleMeta) {
     throw new TypeError("Must provide options");
   }
 
-  if (!Meta.isCompiled(moduleMeta) && !Meta.canCompile(moduleMeta)) {
+  if (!Module.isCompiled(moduleMeta) && !Module.canCompile(moduleMeta)) {
     throw new TypeError("ModuleMeta must provide a `source` string or `exports`.");
   }
 };
@@ -211,26 +212,36 @@ Meta.validate = function(moduleMeta) {
 /**
  * Verifies if a module meta object has dependencies.
  *
- * @param {Meta} moduleMeta - Module meta instance.
+ * @param {Module} moduleMeta - Module meta instance.
  *
  * @returns {boolean}
  */
-Meta.hasDependencies = function(moduleMeta) {
+Module.hasDependencies = function(moduleMeta) {
   return moduleMeta.deps.length;
 };
 
 
 /**
- * A module meta object is considered compiled if it has a `exports` or `factory` method.
- * That's because those are the two things that the compile step actually generates
- * before creating a Module instance.
+ * Checks if the module meta object has a factory method, which is called to
+ * initialize a module instance.
  *
- * @param {Meta} moduleMeta - Module meta instance.
+ * @para {Module} - moduleMeta - Module meta instance.
+ */
+Module.hasFactory = function(moduleMeta) {
+  return types.isFunction(moduleMeta.factory);
+};
+
+
+/**
+ * Checks is module meta object is compiled, which means that it has a `exports`
+ * definition.
+ *
+ * @param {Module} moduleMeta - Module meta instance.
  *
  * @returns {boolean}
  */
-Meta.isCompiled = function(moduleMeta) {
-  return moduleMeta.hasOwnProperty("exports") || types.isFunction(moduleMeta.factory);
+Module.isCompiled = function(moduleMeta) {
+  return moduleMeta.hasOwnProperty("exports");
 };
 
 
@@ -238,35 +249,13 @@ Meta.isCompiled = function(moduleMeta) {
  * Checks if the module meta object can be compiled by verifying that it has NOT
  * already been compiled and that it has a `source` property that can be compiled.
  *
- * @param {Meta} moduleMeta - Module meta instance.
+ * @param {Module} moduleMeta - Module meta instance.
  *
  * @returns {boolean}
  */
-Meta.canCompile = function(moduleMeta) {
-  return !Meta.isCompiled(moduleMeta) && types.isString(moduleMeta.source);
+Module.canCompile = function(moduleMeta) {
+  return !Module.isCompiled(moduleMeta) && types.isString(moduleMeta.source);
 };
-
-
-/**
- * Merges in options into a module meta object
- *
- * @ignore
- */
-function mergeConfiguration(moduleMeta, options) {
-  options = options || {};
-  var result = utils.extend(moduleMeta, options);
-
-  if (options.deps) {
-    result.deps = options.deps.slice(0);
-  }
-
-  if (options.path) {
-    result.directory = parseDirectoryFromPath(options.path);
-    result.fileName = parseFileNameFromPath(options.path);
-  }
-
-  return result;
-}
 
 
 function parseDirectoryFromPath(path) {
@@ -280,7 +269,6 @@ function parseFileNameFromPath(path) {
 }
 
 
-Module.Meta  = Meta;
 Module.Type  = Type;
 Module.State = State;
 module.exports = Module;

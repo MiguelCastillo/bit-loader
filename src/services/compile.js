@@ -16,7 +16,7 @@ inherit.base(Compile).extends(Service);
 
 
 Compile.prototype.canProcess = function(moduleMeta) {
-  return this.canExecute(moduleMeta) && Module.Meta.canCompile(moduleMeta);
+  return this.canExecute(moduleMeta) && Module.canCompile(moduleMeta);
 };
 
 

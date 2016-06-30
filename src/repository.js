@@ -1,101 +1,44 @@
-var types = require("dis-isa");
+var utils = require("belty");
 
-/**
- * Generic repository for data.
- */
-function Repository(options) {
-  options = options || {};
-  this.items = options.items || {};
+function hasItem(items, id) {
+  return items && items.hasOwnProperty(id);
 }
 
-Repository.prototype.clear = function() {
-  delete this.items;
-  this.items = {};
-  return this;
-};
-
-Repository.prototype.hasItem = function(id) {
-  return this.items.hasOwnProperty(id);
-};
-
-Repository.prototype.getItem = function(id) {
-  if (!this.hasItem(id)) {
+function getItem(items, id) {
+  if (!hasItem(items, id)) {
     throw new Error("`" + id + "` not found");
   }
 
-  return this.items[id];
-};
+  return items[id];
+}
 
-Repository.prototype.deleteItem = function(id) {
-  if (!this.hasItem(id)) {
+function findItem(items, criteria) {
+  return utils.find(items, criteria);
+}
+
+function findAll(items, criteria) {
+  return utils.findAll(items, criteria);
+}
+
+function deleteItem(items, id) {
+  if (!hasItem(items, id)) {
     throw new Error("Item with `" + id + "` cannot be deleted. Item not found");
   }
 
-  var item = this.items[id];
-  delete this.items[id];
-  return item;
-};
-
-Repository.prototype.setItem = function(id, item) {
-  return (this.items[id] = item);
-};
-
-Repository.prototype.findAll = function(criteria) {
-  if (this.hasItem(criteria)) {
-    return [this.getItem(criteria)];
-  }
-
-  var result = [];
-  var items = this.items;
-
-  for (var item in items) {
-    if (matchPattern(criteria, items[item])) {
-      result.push(items[item]);
-    }
-  }
-
-  return result;
-};
-
-Repository.prototype.findFirst = function(criteria) {
-  if (this.hasItem(criteria)) {
-    return [this.getItem(criteria)];
-  }
-
-  var items = this.items;
-
-  for (var item in items) {
-    if (matchPattern(criteria, items[item])) {
-      return items[item];
-    }
-  }
-};
-
-function matchPattern(criteria, item) {
-  if (criteria === item) {
-    return true;
-  }
-
-  if (!criteria || !item) {
-    return false;
-  }
-
-  for (var prop in criteria) {
-    if (!criteria.hasOwnProperty(prop)) {
-      continue;
-    }
-
-    if (criteria[prop] !== item[prop]) {
-      if (criteria[prop] && (types.isArray(criteria[prop]) || types.isObject(criteria[prop]))) {
-        return matchPattern(criteria[prop], item[prop]);
-      }
-      else {
-        return false;
-      }
-    }
-  }
-
-  return true;
+  delete items[id];
+  return items;
 }
 
-module.exports = Repository;
+function setItem(items, id, item) {
+  items[id] = item;
+  return items;
+}
+
+module.exports = {
+  hasItem: hasItem,
+  getItem: getItem,
+  deleteItem: deleteItem,
+  setItem: setItem,
+  findItem: findItem,
+  findAll: findAll
+};

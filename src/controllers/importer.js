@@ -25,7 +25,7 @@ inherit.base(Import).extends(Controller);
  * @returns {Promise}
  */
 Import.prototype.import = function(names, options) {
-  logger.info("import", names, options);
+  logger.info(names, options);
   if (types.isArray(names)) {
     return Promise.all(names.map(getModuleByName(this, options)));
   }
