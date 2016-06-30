@@ -70,18 +70,15 @@ function createModuleMeta(fetcher, referrer) {
   referrer = referrer || {};
 
   return function(name) {
-    var moduleMeta = new Module({
+    return new Module({
       name: name,
+      state: Module.State.REGISTERED,
       referrer: {
         name: referrer.name,
         path: referrer.path,
         id: referrer.id
       }
     });
-
-    return fetcher.context.controllers.registry.hasModule(moduleMeta.id) ?
-      moduleMeta :
-      fetcher.context.controllers.registry.setModule(moduleMeta, Module.State.REGISTERED);
   };
 }
 
@@ -101,8 +98,7 @@ function resolveMetaModule(fetcher) {
       return Promise.resolve(moduleMeta);
     }
     else {
-      return context.services
-        .resolve
+      return context.services.resolve
         .runAsync(moduleMeta)
         .then(function(moduleMeta) {
           return fetcher.context.controllers.registry.hasModule(moduleMeta.id) ?
