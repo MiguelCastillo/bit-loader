@@ -13,7 +13,7 @@ inherit.base(Link).extends(Service);
 
 
 Link.prototype.canProcess = function(moduleMeta) {
-  return this.canExecute(moduleMeta) && Module.isCompiled(moduleMeta);
+  return this.canExecute(moduleMeta) && (Module.isCompiled(moduleMeta) || Module.hasFactory(moduleMeta));
 };
 
 
@@ -55,18 +55,8 @@ Link.prototype.runSync = function(moduleMeta) {
     return mod;
   }
 
-  // Create module instance...
-  var _module = new Module(moduleMeta);
-
-  // We will coerce the name no matter what name (if one at all) the Module was
-  // created with. This will ensure a consistent state in the loading engine.
-  _module.name = moduleMeta.name;
-
-  // Set the mod.meta for convenience
-  _module.meta = moduleMeta;
-
   // Link it
-  return traverseDependencies(_module);
+  return traverseDependencies(moduleMeta.merge({ meta: moduleMeta }));
 };
 
 

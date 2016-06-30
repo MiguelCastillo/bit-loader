@@ -135,7 +135,7 @@ function Module(options) {
  *
  * @param {object} options - Options to merge into the module meta instance.
  *
- * @returns {Meta} New module meta instance with the aggregated options merged in.
+ * @returns {Module} New module meta instance with the aggregated options merged in.
  */
 Module.prototype.merge = Module.prototype.configure = function(options) {
   if (!options || options === this) {
@@ -194,7 +194,7 @@ Module.prototype.getFilePath = function() {
 /**
  * Verifies that a module meta object is either already compiled or can be compiled.
  *
- * @param {Meta} moduleMeta - Module meta instance.
+ * @param {Module} moduleMeta - Module meta instance.
  *
  * @returns {boolean}
  */
@@ -212,7 +212,7 @@ Module.validate = function(moduleMeta) {
 /**
  * Verifies if a module meta object has dependencies.
  *
- * @param {Meta} moduleMeta - Module meta instance.
+ * @param {Module} moduleMeta - Module meta instance.
  *
  * @returns {boolean}
  */
@@ -222,16 +222,26 @@ Module.hasDependencies = function(moduleMeta) {
 
 
 /**
- * A module meta object is considered compiled if it has a `exports` or `factory` method.
- * That's because those are the two things that the compile step actually generates
- * before creating a Module instance.
+ * Checks if the module meta object has a factory method, which is called to
+ * initialize a module instance.
  *
- * @param {Meta} moduleMeta - Module meta instance.
+ * @para {Module} - moduleMeta - Module meta instance.
+ */
+Module.hasFactory = function(moduleMeta) {
+  return types.isFunction(moduleMeta.factory);
+};
+
+
+/**
+ * Checks is module meta object is compiled, which means that it has a `exports`
+ * definition.
+ *
+ * @param {Module} moduleMeta - Module meta instance.
  *
  * @returns {boolean}
  */
 Module.isCompiled = function(moduleMeta) {
-  return moduleMeta.hasOwnProperty("exports") || types.isFunction(moduleMeta.factory);
+  return moduleMeta.hasOwnProperty("exports");
 };
 
 
@@ -239,7 +249,7 @@ Module.isCompiled = function(moduleMeta) {
  * Checks if the module meta object can be compiled by verifying that it has NOT
  * already been compiled and that it has a `source` property that can be compiled.
  *
- * @param {Meta} moduleMeta - Module meta instance.
+ * @param {Module} moduleMeta - Module meta instance.
  *
  * @returns {boolean}
  */
