@@ -72,7 +72,6 @@ function createModuleMeta(fetcher, referrer) {
   return function(name) {
     return new Module({
       name: name,
-      state: Module.State.REGISTERED,
       referrer: {
         name: referrer.name,
         path: referrer.path,
