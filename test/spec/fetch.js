@@ -11,19 +11,19 @@ describe("Fetch Test Suite", function() {
 
   beforeEach(function() {
     nameLikeData = {name: "like"};
-    resolveLikeData = {path: "this is the real path"};
+    resolveLikeData = {path: "this is the real path to like/like-name", id: "like-id"};
     fetchLikeData = {source: "source content"};
     transformLikeData = {source: "transformed source"};
     dependencyLikeData = {deps: ["dep1", "common-dep"]};
 
     nameDep1Data = {name: "dep1"};
-    resolveDep1Data = {path: "real path to dep1"};
+    resolveDep1Data = {path: "real path to dep1", id: "dep1-id"};
     fetchDep1Data = {source: "dep1 source"};
     transformDep1Data = {source: "changed dep1 source"};
     dependencyDep1Data = {deps: ["common-dep"]};
 
     nameCommonData = {name: "common-dep"};
-    resolveCommonData = {path: "path to common-dep dependency"};
+    resolveCommonData = {path: "path to common-dep dependency", id: "common-id"};
     fetchCommonData = {source: "source for common-dep"};
     transformCommonData = {source: "transformed source for common-data"};
     dependencyCommonData = {deps: []};
@@ -156,11 +156,11 @@ describe("Fetch Test Suite", function() {
     it("then the result will have all the aggregated data", function() {
       expect(result).to.eql(new Module({
         deps: [],
-        directory: "",
-        fileName: "this is the real path",
-        id: "this is the real path",
+        directory: "this is the real path to like/",
+        fileName: "like-name",
+        id: "like-id",
         name: "like",
-        path: "this is the real path",
+        path: "this is the real path to like/like-name",
         referrer: {
           id: undefined,
           name: undefined,
@@ -169,6 +169,86 @@ describe("Fetch Test Suite", function() {
         state: "resolve",
         type: "UNKNOWN"
       }));
+    });
+
+    describe("and reading the loaded `like` module", function() {
+      var loadedModule;
+
+      beforeEach(function() {
+        loadedModule = loader.getModule("like-id");
+      });
+
+      it("the module has two dependencies", function() {
+        expect(loadedModule.deps).to.have.lengthOf(2);
+      });
+
+      it("then the first dependency is dep1", function() {
+        expect(loadedModule.deps[0].id).to.equal("dep1-id");
+      });
+
+      it("then the first dependency has the correct referrer", function() {
+        expect(loadedModule.deps[0].referrer).to.eql({
+          id: "like-id",
+          name: "like",
+          path: "this is the real path to like/like-name"
+        });
+      });
+
+      it("then the second dependency is common-dep", function() {
+        expect(loadedModule.deps[1].id).to.equal("common-id");
+      });
+
+      it("then the second dependency has the correct referrer", function() {
+        expect(loadedModule.deps[1].referrer).to.eql({
+          id: "like-id",
+          name: "like",
+          path: "this is the real path to like/like-name"
+        });
+      });
+    });
+
+    describe("and reading the loaded `dep1` module", function() {
+      var loadedModule;
+
+      beforeEach(function() {
+        loadedModule = loader.getModule("dep1-id");
+      });
+
+      it("the module has one dependency", function() {
+        expect(loadedModule.deps).to.have.lengthOf(1);
+      });
+
+      it("then the first dependency is common-dep", function() {
+        expect(loadedModule.deps[0].id).to.equal("common-id");
+      });
+
+      it("then the dependency has the correct referrer", function() {
+        expect(loadedModule.deps[0].referrer).to.eql({
+          id: "dep1-id",
+          name: "dep1",
+          path: "real path to dep1"
+        });
+      });
+    });
+
+    describe("and reading the loaded `common-dep` module", function() {
+      var loadedModule;
+
+      beforeEach(function() {
+        loadedModule = loader.getModule("common-id");
+      });
+
+      it("the module has no dependencies", function() {
+        expect(loadedModule.deps).to.be.empty;
+      });
+
+      it("then the common-dep has the correct referrer", function() {
+        expect(loadedModule.referrer).to.eql({
+          id: "like-id",
+          name: "like",
+          path: "this is the real path to like/like-name"
+        });
+      });
     });
   });
 
