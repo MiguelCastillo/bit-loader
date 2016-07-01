@@ -39,7 +39,7 @@ describe("Fetch Test Suite", function() {
       .withArgs(sinon.match(nameCommonData))
       .returns(resolveCommonData);
 
-    fetchStub = sinon.stub()
+    fetchStub = sinon.stub();
     fetchStub
       .withArgs(sinon.match(nameLikeData))
       .returns(fetchLikeData);
