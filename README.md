@@ -3,6 +3,32 @@
 [![Build Status](https://travis-ci.org/MiguelCastillo/bit-loader.svg?branch=master)](https://travis-ci.org/MiguelCastillo/bit-loader) [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/MiguelCastillo/bit-loader?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Introduction](#introduction)
+- [Examples](#examples)
+- [Install npm dependencies, build, and test](#install-npm-dependencies-build-and-test)
+- [Architecture Overview](#architecture-overview)
+  - [The first stage - the module loading stage](#the-first-stage---the-module-loading-stage)
+    - [5 pipelines:](#5-pipelines)
+  - [The second stage - the module building stage](#the-second-stage---the-module-building-stage)
+- [Plugins](#plugins)
+- [Default providers](#default-providers)
+    - [Example](#example)
+- [Module Meta](#module-meta)
+    - [Pipeline Flow of the first and second stage](#pipeline-flow-of-the-first-and-second-stage)
+    - [Visual of fetch pipelines](#visual-of-fetch-pipelines)
+- [Pattern Matching](#pattern-matching)
+  - [match](#match)
+  - [ignore](#ignore)
+  - [extensions](#extensions)
+- [License](#license)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+
 ## Introduction
 
 > Framework for building module loaders. This is the core library for [bit-imports](https://github.com/MiguelCastillo/bit-imports) and [bit-bundler](https://github.com/MiguelCastillo/bit-bundler).
