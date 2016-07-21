@@ -12,7 +12,7 @@
 - [Install npm dependencies, build, and test](#install-npm-dependencies-build-and-test)
 - [Architecture Overview](#architecture-overview)
   - [The first stage - the module loading stage](#the-first-stage---the-module-loading-stage)
-    - [5 pipelines:](#5-pipelines)
+    - [5 pipelines](#5-pipelines)
   - [The second stage - the module building stage](#the-second-stage---the-module-building-stage)
 - [Plugins](#plugins)
 - [Default providers](#default-providers)
@@ -65,7 +65,7 @@ First, we need to convert module names to file paths in order to load modules fr
 > This stage is entirely asynchronous, and the output is a module graph.
 
 
-#### 5 pipelines:
+#### 5 pipelines
 
 The module loading stage has 5 pipelines, which are described below.
 
