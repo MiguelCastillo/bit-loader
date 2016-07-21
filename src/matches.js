@@ -133,7 +133,7 @@ Matches.mergeMatcher = function(target, matchers) {
       }
 
       if (types.isArray(matchers[matcher])) {
-        matchers[matcher] = target[matcher].concat(matchers[matcher]);
+        target[matcher] = target[matcher].concat(matchers[matcher]);
       }
       else {
         target[matcher].push(matchers[matcher]);
