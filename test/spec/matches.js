@@ -33,7 +33,7 @@ describe("Matches Test Suite", function() {
       });
     });
 
-    describe("and configuring a matching rule", function() {
+    describe("and configuring a matching rule with one criterion", function() {
       var ruleValue;
 
       beforeEach(function() {
@@ -65,7 +65,44 @@ describe("Matches Test Suite", function() {
       });
     });
 
-    describe("and configuring ignore rules", function() {
+    describe("and configuring a matching rule with multiple criteria", function() {
+      var ruleValue1, ruleValue2;
+
+      beforeEach(function() {
+        act();
+
+        ruleValue1 = chance().string();
+        ruleValue2 = chance().string();
+
+        matches = matches.configure({
+          matches: {
+            name: [ruleValue1, ruleValue2]
+          }
+        });
+      });
+
+      it("then matches contain the new rule added", function() {
+        expect(matches.matches).to.deep.equal({name: [ruleValue1, ruleValue2]});
+      });
+
+      it("then running matches against the first configured criterion passes validation", function() {
+        expect(matches.runMatch( { name: ruleValue1 } )).to.equal(true);
+      });
+
+      it("then running matches against the second configured criterion passes validation", function() {
+        expect(matches.runMatch( { name: ruleValue2 } )).to.equal(true);
+      });
+
+      it("then running matches against a non-matching value fails validation", function() {
+        expect(matches.runMatch( { name: chance().string() } )).to.equal(false);
+      });
+
+      it("then running ignore against any value passes validation", function() {
+        expect(matches.runIgnore( { name: chance().string() } )).to.equal(false);
+      });
+    });
+
+    describe("and configuring an ignore rule with one criterion", function() {
       var ruleValue;
 
       beforeEach(function() {
@@ -84,6 +121,37 @@ describe("Matches Test Suite", function() {
 
       it("then running ignore against the configured value passes validation", function() {
         expect(matches.runIgnore({ name: ruleValue })).to.equal(true);
+      });
+
+      it("then running ignore against a random value fails validation", function() {
+        expect(matches.runIgnore({ name: chance().string() })).to.equal(false);
+      });
+    });
+
+    describe("and configuring an ignore rule with multiple criteria", function() {
+      var ruleValue1, ruleValue2;
+
+      beforeEach(function() {
+        act();
+
+        ruleValue1 = chance().string();
+        ruleValue2 = chance().string();
+
+        var matches1 = matches.configure({
+          ignores: {
+             name: [ruleValue1, ruleValue2]
+          }
+        });
+
+        matches = matches1;
+      });
+
+      it("then running ignore against the first configured criterion passes validation", function() {
+        expect(matches.runIgnore({ name: ruleValue1 })).to.equal(true);
+      });
+
+      it("then running ignore against the second configured criterion passes validation", function() {
+        expect(matches.runIgnore({ name: ruleValue2 })).to.equal(true);
       });
 
       it("then running ignore against a random value fails validation", function() {
