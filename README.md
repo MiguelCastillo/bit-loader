@@ -1,4 +1,4 @@
-<img src="img/bit-loader_white.png" width="100%"></img>
+<img src="https://raw.githubusercontent.com/MiguelCastillo/bit-loader/master/img/bit-loader_white.png" width="100%"></img>
 
 [![Build Status](https://travis-ci.org/MiguelCastillo/bit-loader.svg?branch=master)](https://travis-ci.org/MiguelCastillo/bit-loader) [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/MiguelCastillo/bit-loader?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
