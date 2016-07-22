@@ -15,7 +15,7 @@ inherit.base(Dependency).extends(Service);
 
 
 Dependency.prototype.canProcess = function(moduleMeta) {
-  return this.canExecute(moduleMeta) && types.isString(moduleMeta.source);
+  return types.isString(moduleMeta.source);
 };
 
 

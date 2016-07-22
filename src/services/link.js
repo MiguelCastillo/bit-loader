@@ -13,7 +13,7 @@ inherit.base(Link).extends(Service);
 
 
 Link.prototype.canProcess = function(moduleMeta) {
-  return this.canExecute(moduleMeta) && (Module.isCompiled(moduleMeta) || Module.hasFactory(moduleMeta));
+  return Module.isCompiled(moduleMeta) || Module.hasFactory(moduleMeta);
 };
 
 
@@ -28,7 +28,7 @@ Link.prototype.canProcess = function(moduleMeta) {
 Link.prototype.runSync = function(moduleMeta) {
   this._logger && this._logger.log(moduleMeta.name, moduleMeta);
 
-  if (!this.canProcess(moduleMeta)) {
+  if (!this.validate(moduleMeta)) {
     throw new TypeError("Module " + moduleMeta.name + " cannot be linked");
   }
 

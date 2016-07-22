@@ -15,7 +15,7 @@ inherit.base(Transform).extends(Service);
 
 
 Transform.prototype.canProcess = function(moduleMeta) {
-  return this.canExecute(moduleMeta) && types.isString(moduleMeta.source);
+  return types.isString(moduleMeta.source);
 };
 
 

@@ -14,8 +14,7 @@ inherit.base(Fetch).extends(Service);
 
 
 Fetch.prototype.canProcess = function(moduleMeta) {
-  return this.canExecute(moduleMeta)
-    && moduleMeta.hasOwnProperty("path")
+  return moduleMeta.hasOwnProperty("path")
     && !moduleMeta.hasOwnProperty("code")
     && !moduleMeta.hasOwnProperty("source")
     && !moduleMeta.hasOwnProperty("factory");
