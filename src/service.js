@@ -37,20 +37,20 @@ Service.prototype.match = function(prop, matches) {
 };
 
 
-Service.prototype.canExecute = function(moduleMeta) {
-  return this.matchers.canExecute(moduleMeta);
+Service.prototype.validate = function(moduleMeta) {
+  return this.matchers.canExecute(moduleMeta) && this.canProcess(moduleMeta);
 };
 
 
-Service.prototype.canProcess = function(moduleMeta) {
-  return this.canExecute(moduleMeta);
+Service.prototype.canProcess = function(/*moduleMeta*/) {
+  return true;
 };
 
 
 Service.prototype.runAsync = function(moduleMeta) {
   this._logger && this._logger.log(moduleMeta.name, moduleMeta);
 
-  if (!this.canProcess(moduleMeta)) {
+  if (!this.validate(moduleMeta)) {
     return Promise.resolve(moduleMeta);
   }
 
@@ -63,7 +63,7 @@ Service.prototype.runAsync = function(moduleMeta) {
 Service.prototype.runSync = function(moduleMeta) {
   this._logger && this._logger.log(moduleMeta.name, moduleMeta);
 
-  if (!this.canProcess(moduleMeta)) {
+  if (!this.validate(moduleMeta)) {
     return moduleMeta;
   }
 

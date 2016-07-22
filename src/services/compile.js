@@ -16,14 +16,14 @@ inherit.base(Compile).extends(Service);
 
 
 Compile.prototype.canProcess = function(moduleMeta) {
-  return this.canExecute(moduleMeta) && Module.canCompile(moduleMeta);
+  return Module.canCompile(moduleMeta);
 };
 
 
 Compile.prototype.runSync = function(moduleMeta) {
   this._logger && this._logger.log(moduleMeta.name, moduleMeta);
 
-  if (!this.canProcess(moduleMeta)) {
+  if (!this.validate(moduleMeta)) {
     return moduleMeta;
   }
 
