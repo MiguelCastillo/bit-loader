@@ -5,6 +5,7 @@ var helpers    = require("./helpers");
 var Module     = require("../module");
 var Controller = require("../controller");
 var Pipeline   = require("then-pipeline");
+var utils      = require("belty");
 
 function Fetcher(context) {
   Controller.call(this, context);
@@ -15,7 +16,6 @@ function Fetcher(context) {
     fetch(context),
     transform(context),
     dependency(context),
-    fetchDependencies(this),
     precompile(context)
   ]);
 }
@@ -25,23 +25,39 @@ inherit.base(Fetcher).extends(Controller);
 
 
 Fetcher.prototype.fetch = function(names, referrer) {
-  return resolveNames(this, names, referrer, fetchPipeline(this));
+  var fetcher = this;
+
+  return resolveNames(this, utils.toArray(names), referrer)
+    .then(function(result) {
+      return Promise.all(result.map(fetchPipeline(fetcher)));
+    })
+    .then(function(result) {
+      return Promise.all(result.map(fetchDependencies(fetcher)));
+    })
+    .then(function(result) {
+      return types.isArray(names) ? result : result[0];
+    });
 };
 
 
 Fetcher.prototype.fetchOnly = function(names, referrer) {
-  return resolveNames(this, names, referrer, fetch(this.context));
+  var fetcher = this;
+
+  return resolveNames(this, utils.toArray(names), referrer)
+    .then(function(result) {
+      return Promise.all(result.map(fetch(fetcher.context)));
+    })
+    .then(function(result) {
+      return types.isArray(names) ? result : result[0];
+    });
 };
 
 
-function resolveNames(fetcher, names, referrer, cb) {
-  return types.isString(names) ?
-    resolveMetaModule(fetcher)(createModuleMeta(fetcher, referrer)(names)).then(cb) :
-    Promise.all(
+function resolveNames(fetcher, names, referrer) {
+  return Promise.all(
       names
         .map(createModuleMeta(fetcher, referrer))
         .map(resolveMetaModule(fetcher))
-        .map(function(d) { return d.then(cb); })
     );
 }
 
@@ -69,15 +85,21 @@ function fetchPipeline(fetcher) {
 function createModuleMeta(fetcher, referrer) {
   referrer = referrer || {};
 
-  return function(name) {
-    return new Module({
-      name: name,
-      referrer: {
-        name: referrer.name,
-        path: referrer.path,
-        id: referrer.id
-      }
-    });
+  return function(config) {
+    if (types.isString(config)) {
+      config = {
+        name: config
+      };
+    }
+    else if (config instanceof Module) {
+      return config.merge({ referrer: referrer });
+    }
+
+    return new Module(utils.merge({}, config, { referrer: {
+      name: referrer.name,
+      path: referrer.path,
+      id: referrer.id
+    } }));
   };
 }
 
@@ -147,10 +169,30 @@ function precompile(context) {
 
 function fetchDependencies(fetcher) {
   return function fetchDependenciesDelegate(moduleMeta) {
-    return fetcher
-      .fetch(moduleMeta.deps, moduleMeta)
-      .then(function(deps) {
-        return moduleMeta.configure({ deps: deps });
+    var mod = fetcher.context.controllers.registry.getModule(moduleMeta.id);
+
+    if (!mod.deps.length) {
+      return Promise.resolve(moduleMeta);
+    }
+
+    return resolveNames(fetcher, mod.deps, mod)
+      .then(function(result) {
+        return Promise
+          .all(result.map(function(dependency) {
+            if (fetcher.context.controllers.registry.hasModule(dependency.id)) {
+              var state = fetcher.context.controllers.registry.getModuleState(dependency.id);
+
+              if (state === Module.State.LOADED || state === Module.State.READY) {
+                return dependency;
+              }
+            }
+
+            return fetcher.fetch(dependency.name, mod);
+          }))
+          .then(function(dependencies) {
+            fetcher.context.controllers.registry.updateModule(mod.configure({ deps: dependencies }));
+            return moduleMeta;
+          });
       });
   };
 }
@@ -162,9 +204,9 @@ function runPipeline(fetcher, moduleMeta) {
   };
 
   var inProgress = fetcher.pipeline.runAsync(moduleMeta);
-  fetcher.inProgress[moduleMeta.id] = inProgress;
   inProgress.then(deleteInProgress, deleteInProgress);
-  return inProgress;
+  fetcher.inProgress[moduleMeta.id] = inProgress;
+  return fetcher.inProgress[moduleMeta.id];
 }
 
 

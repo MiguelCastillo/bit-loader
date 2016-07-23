@@ -65,6 +65,18 @@ Registry.prototype.setModule = function(mod, state) {
 };
 
 
+Registry.prototype.updateModule = function(mod) {
+  var id = mod.id;
+
+  if (!this.hasModule(id)) {
+    throw new Error("Module instance '" + (mod.name || mod.id) + "' does not exist");
+  }
+
+  Repository.setItem(this.context.cache, id, mod);
+  return mod;
+};
+
+
 Registry.prototype.deleteModule = function(id) {
   if (!this.hasModule(id)) {
     throw new Error("Unable to delete module with id '" + id + "'. Module not found.");
