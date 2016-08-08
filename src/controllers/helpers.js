@@ -7,21 +7,23 @@ function ensureRegisteredState(context, moduleMeta, state) {
   );
 }
 
-function setState(context, moduleMeta, state) {
-  return context.controllers.registry.hasModule(moduleMeta.id) ?
-    context.controllers.registry.setModule(moduleMeta, state) :
-    moduleMeta;
+function setState(context, newState) {
+  return function(moduleMeta) {
+    return context.controllers.registry.hasModule(moduleMeta.id) ?
+      context.controllers.registry.setModule(moduleMeta, newState) :
+      moduleMeta;
+  };
 }
 
 function runService(context, currentState, nextState, service, moduleMeta) {
   return ensureRegisteredState(context, moduleMeta, currentState) ?
-    service.runAsync(setState(context, moduleMeta, nextState)) :
+    service.runAsync(moduleMeta).then(setState(context, nextState)) :
     Promise.resolve(moduleMeta);
 }
 
 function runServiceSync(context, currentState, nextState, service, moduleMeta) {
   return ensureRegisteredState(context, moduleMeta, currentState) ?
-    service.runSync(setState(context, moduleMeta, nextState)) :
+    setState(context, nextState)(service.runSync(moduleMeta)) :
     moduleMeta;
 }
 

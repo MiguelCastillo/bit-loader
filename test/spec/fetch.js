@@ -5,7 +5,7 @@ import Module from "src/module";
 
 describe("Fetch Test Suite", function() {
   var loader, fetchStub, resolveStub, transformStub, dependencyStub, precompileStub;
-  var nameLikeData, resolveLikeData, fetchLikeData, transformLikeData, dependencyLikeData;
+  var nameLikeData, resolveLikeData, fetchLikeData, transformLikeData, dependencyLikeData, precompileLikeData;
   var nameDep1Data, resolveDep1Data, fetchDep1Data, transformDep1Data, dependencyDep1Data;
   var nameCommonData, resolveCommonData, fetchCommonData, transformCommonData, dependencyCommonData;
 
@@ -15,6 +15,8 @@ describe("Fetch Test Suite", function() {
     fetchLikeData = {source: "source content"};
     transformLikeData = {source: "transformed source"};
     dependencyLikeData = {deps: ["dep1", "common-dep"]};
+    precompileLikeData = {source: "precompiled source"};
+
 
     nameDep1Data = {name: "dep1"};
     resolveDep1Data = {path: "real path to dep1", id: "dep1-id"};
@@ -73,6 +75,9 @@ describe("Fetch Test Suite", function() {
       .returns(dependencyCommonData);
 
     precompileStub = sinon.stub();
+    precompileStub
+      .withArgs(sinon.match(transformLikeData))
+      .returns(precompileLikeData);
 
     loader = new Bitloader({
       resolve: resolveStub,
@@ -205,6 +210,10 @@ describe("Fetch Test Suite", function() {
           path: "this is the real path to like/like-name"
         });
       });
+
+      it("then the source is the precompiled source", function() {
+        expect(loadedModule.source).to.equal(precompileLikeData.source);
+      });
     });
 
     describe("and reading the loaded `dep1` module", function() {
@@ -229,6 +238,10 @@ describe("Fetch Test Suite", function() {
           path: "real path to dep1"
         });
       });
+
+      it("then the source is the transformed source", function() {
+        expect(loadedModule.source).to.equal(transformDep1Data.source);
+      });
     });
 
     describe("and reading the loaded `common-dep` module", function() {
@@ -248,6 +261,10 @@ describe("Fetch Test Suite", function() {
           name: "like",
           path: "this is the real path to like/like-name"
         });
+      });
+
+      it("then the source is the transformed source", function() {
+        expect(loadedModule.source).to.equal(transformCommonData.source);
       });
     });
   });
