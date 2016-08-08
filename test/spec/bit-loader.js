@@ -15,7 +15,7 @@ describe("Bitloader Test Suite", function() {
   });
 
   describe("When creating a new instance of Bitloader with a plugin with handlers for `fetch`, `transform`, `dependency`, and `compile`", function() {
-    var defaultResolveStub, defaultFetchStub, defaultCompileStub, resolveStub, fetchStub, transformStub, dependencyStub, compileStub;
+    var defaultResolveStub, defaultFetchStub, defaultCompileStub, resolveStub, fetchStub, transformStub, dependencyStub, precompileStub, compileStub;
 
     beforeEach(function() {
       defaultResolveStub = sinon.stub();
@@ -25,6 +25,7 @@ describe("Bitloader Test Suite", function() {
       fetchStub          = sinon.spy(function() { return { source: "var t = 'some source'; module.exports = t;" }; });
       transformStub      = sinon.spy(function() { return { source: "var t = 'transformed source'; module.exports = t;" }; });
       dependencyStub     = sinon.spy(function() { return { deps: [] }; });
+      precompileStub     = sinon.spy(function() { return { source: "module.exports = 'final vvvvalue';" }; });
       compileStub        = sinon.spy(function() { return { exports: "compiled source" }; });
 
       bitloader = new Bitloader({
@@ -37,6 +38,7 @@ describe("Bitloader Test Suite", function() {
           fetch      : fetchStub,
           transform  : transformStub,
           dependency : dependencyStub,
+          precompile : precompileStub,
           compile    : compileStub
         });
     });
@@ -78,8 +80,20 @@ describe("Bitloader Test Suite", function() {
         sinon.assert.calledOnce(transformStub);
       });
 
+      it("then `transfom` plugin was called with the proper source", function() {
+        sinon.assert.calledWith(transformStub, sinon.match({source: "var t = 'some source'; module.exports = t;"}));
+      });
+
       it("then `dependency` plugin is called once", function() {
         sinon.assert.calledOnce(dependencyStub);
+      });
+
+      it("then `precompile` plugin is called once", function() {
+        sinon.assert.calledOnce(precompileStub);
+      });
+
+      it("then `precompile` plugin is called once", function() {
+        sinon.assert.calledWith(precompileStub, sinon.match({deps: []}));
       });
 
       it("then `compile` plugin is NOT called", function() {
