@@ -36,7 +36,7 @@
 
 ## Examples
 
-Please checkout the [examples](./example).  There you will find different recipes for setting things up.
+Please checkout the [examples](https://github.com/MiguelCastillo/bit-loader/tree/master/example).  There you will find different recipes for setting things up.
 
 
 ## Install npm dependencies, build, and test
@@ -93,9 +93,7 @@ The combination of the first (*asynchronous*) stage with the second (*synchronou
 
 ## Plugins
 
-A plugin is a container with handlers that hook into the pipelines in order to load and process module meta objects.
-
-A handler is a function that processes modules. When configuring it in a plugin, it a function, string, object, or an array of them. When a handler is configured as a string it is processed as a module and dynamically loaded at runtime. The result the dynamically loaded handler needs to be a function.
+A plugin is a container with handler functions that hook into the pipelines in order to load and process modules.
 
 > A handler is fundamentally a `transform` as found in many other systems. However, it is called `handler` in `bit-loader` to prevent confusion with the `transform` pipeline.
 
@@ -103,12 +101,13 @@ Handler arguments and return values are:
 
 - *param* { object } **`meta`** - Object with information to be processed. See [module meta](#module-meta).
 - *param* { object } **`options`** - Configuration object for the particular handler.
-- *param* { function } **`cancel`** - Function to cancel the execution of the plugin handlers for the particular pipeline.
+- *param* { function } **`cancel`** - Function to cancel the execution of the plugin handlers for the particular pipeline the handler is executing on.
 - *returns* { object | Promise } Object with properties to be merged into the module meta object. Plugin handlers can alternatively return promises to control asynchronous data processing.
 
-The example below has a function handler that loads module files from storage and another that adds `'use strict;'` to modules.
+The example below is a plugin with a handler that hooks into the fetch pipeline to load modules from storage, and another handler that hooks into the transform pipeline to add `'use strict;'` to loaded modules.
 
 ``` javascript
+// Plugin handler to load file from storage using the fetch API.
 function loadFile(meta, options, cancel) {
   return window
     .fetch(meta.path)
@@ -119,32 +118,32 @@ function loadFile(meta, options, cancel) {
     });
 }
 
+// Plugin handler to add `use strict` to loaded modules
 function addStrict(meta, options, cancel) {
   return {
     source: "'use strict;'\n" + meta.source
   };
 }
-```
 
-``` javascript
+// Configure plugin with the two handlers
 bitloader.plugin({
   fetch: loadFile,
   transform: addStrict
 });
 ```
 
-All plugins can take a single or an array of handlers, and a handler can be a module name (a string). When the handler is a module name, `bit-loader` will load the plugin handler dynamically at runtime. E.g.
+Plugins can take a single or an array of handlers, and a handler can be a module name (a string). When a handler is a module name, `bit-loader` will dynamically load it at runtime. The following example shows the handlers passed in as an array and one of the handlers is a module name.
 
 ``` javascript
 bitloader.plugin({
-  fetch: loadFile,
-  transform: "add-strict"
+  fetch: [ loadFile ],
+  transform: [ "add-strict" ]
 });
 ```
 
-When the handler is an object, a property `handler` is expected to be defined as either a string (module name) or a function. The primary reason to define a plugin handler as an object is to pass configuration settings to the `handler` function and/or to configure pattern matching. See [pattern matching](#pattern-matching).
+When a handler is an object, a property `handler` is expected to be defined as either a module name or a function. Some of the reasons to define a plugin handler as an object is to specify options to be passed onto the `handler` function when it is executed and/or to configure pattern matching. See [pattern matching](#pattern-matching).
 
-The example below configures a plugin handler as an object. Notice the `handler` is "add-strict" (which is a string), so it will be loaded at runtime. The configuration for the handler is also forwarded to the `handler` function when it is invoked.
+The example below configures a plugin handler as an object. Notice the `handler` is "add-strict" which is the name of the module to be dynamically loaded at runtime. The options for the handler is also forwarded to the `handler` function when it is invoked.
 
 ``` javascript
 bitloader.plugin({
@@ -158,7 +157,7 @@ bitloader.plugin({
 });
 ```
 
-Plugins also provide a way to define the shape of the modules your plugins can process. For example, you can specify properties like the module path, module name, or even match content in the module source. This is all done via pattern matching rules. Below is an example configuring a plugin to only process files with `js` and `es6` extensions:
+Plugins also provide a way to define the shape of the modules your plugins can process via pattern matching. For example, you can specify properties like the module path, module name, or even match content in the module source. Below is an example configuring a plugin to only process files with `js` and `es6` extensions:
 
 ``` javascript
 bitloader.plugin({
@@ -193,7 +192,7 @@ var bitloader = new Bitloader({
 
 ## Default providers
 
-All pluggable pipelines have an optional default provider, which is just a default handler that is executed when plugins can't process a particular module. These are configured by providing the corresponding handlers in `bit-loader`'s constructor.
+All pluggable pipelines have an optional default provider, which is just a default handler that is executed when no plugin can process a particular module. These are configured by providing the corresponding handlers in `bit-loader`'s constructor.
 
 > [bit imports](https://github.com/MiguelCastillo/bit-imports) and [bit-bundler](https://github.com/MiguelCastillo/bit-bundler) both implement default providers to give base functionality without configuring plugins.
 
