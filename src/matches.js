@@ -132,13 +132,7 @@ Matches.mergeMatcher = function(target, matchers) {
         target[matcher] = [];
       }
 
-      if (types.isArray(matchers[matcher])) {
-        target[matcher] = target[matcher].concat(matchers[matcher]);
-      }
-      else {
-        target[matcher].push(matchers[matcher]);
-      }
-
+      target[matcher] = target[matcher].concat(utils.toArray(matchers[matcher]));
       return target;
     }, utils.merge({}, target));
 };

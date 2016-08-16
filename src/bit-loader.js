@@ -131,11 +131,11 @@ Bitloader.prototype.merge = function(options) {
 
   // Register plugins
   if (options.plugins) {
-    var plugins = types.isArray(options.plugins) ? options.plugins : [options.plugins];
-
-    plugins.forEach(function(plugin) {
-      this.plugin(plugin);
-    }.bind(this));
+    utils
+      .toArray(options.plugins)
+      .forEach(function(plugin) {
+        this.plugin(plugin);
+      }.bind(this));
   }
 
   if (options.excludes) {
@@ -418,13 +418,7 @@ Bitloader.prototype.deleteModule = function(mod) {
  * @returns {Bitloader}
  */
 Bitloader.prototype.exclude = function(name) {
-  if (types.isArray(name)) {
-    this.excludes = this.excludes.concat(name);
-  }
-  else {
-    this.excludes.push(name);
-  }
-
+  this.excludes = this.excludes.concat(utils.toArray(name));
   return this;
 };
 
@@ -450,12 +444,9 @@ Bitloader.prototype.ignore = function(rules) {
     throw new TypeError("Must provide a rule configuration");
   }
 
-  if (!types.isArray(rules)) {
-    rules = [rules];
-  }
-
   var services = this.services;
   var serviceName = Object.keys(this.services);
+  rules = utils.toArray(rules);
 
   rules
     .map(configureRule)
@@ -482,7 +473,7 @@ Bitloader.prototype.ignore = function(rules) {
       rule.services = serviceName;
     }
     else {
-      rule.services = types.isArray(rule.services) ? rule.services : [rule.services];
+      rule.services = utils.toArray(rule.services);
     }
 
     return rule;
