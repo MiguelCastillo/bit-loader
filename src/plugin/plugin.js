@@ -22,11 +22,8 @@ inherit.base(Plugin).extends(PluginBlueprint);
 
 
 Plugin.prototype.configure = function(options) {
-  if (!types.isArray(options)) {
-    options = [options];
-  }
-
-  var handlers = options
+  var handlers = utils
+    .toArray(options)
     .filter(Boolean)
     .map(configureHandler(this))
     .reduce(function(handlers, handler) {
