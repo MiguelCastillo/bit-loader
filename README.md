@@ -36,7 +36,7 @@
 
 ## Examples
 
-Please checkout the [examples](./example).  There you will find different recipes for setting things up.
+Please checkout the [examples](https://github.com/MiguelCastillo/bit-loader/tree/master/example).  There you will find different recipes for setting things up.
 
 
 ## Install npm dependencies, build, and test
