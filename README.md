@@ -95,9 +95,9 @@ The combination of the first (*asynchronous*) stage with the second (*synchronou
 
 A plugin is a container with handlers that hook into the pipelines in order to load and process module meta objects.
 
-A handler can be initially configured as a function, string, object, or an array of them. Ultimately, a handler ought to be a function before it is invoked by the containing plugin. So, when a handler is configured as a string it is processed as a module and loaded dynamically during runtime. When a handler is dynamically loaded, its final result should be a function that plugins invoke.
+A handler is a function that processes modules. When configuring it in a plugin, it a function, string, object, or an array of them. When a handler is configured as a string it is processed as a module and dynamically loaded at runtime. The result the dynamically loaded handler needs to be a function.
 
-> A handler is essentially a function that is intended to process module meta objects.
+> A handler is fundamentally a `transform` as found in many other systems. However, it is called `handler` in `bit-loader` to prevent confusion with the `transform` pipeline.
 
 Handler arguments and return values are:
 
