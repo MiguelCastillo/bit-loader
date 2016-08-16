@@ -14,10 +14,12 @@ inherit.base(Fetch).extends(Service);
 
 
 Fetch.prototype.canProcess = function(moduleMeta) {
-  return moduleMeta.hasOwnProperty("path")
-    && !moduleMeta.hasOwnProperty("code")
-    && !moduleMeta.hasOwnProperty("source")
-    && !moduleMeta.hasOwnProperty("factory");
+  return (
+    moduleMeta.hasOwnProperty("path") &&
+    !moduleMeta.hasOwnProperty("exports") &&
+    !moduleMeta.hasOwnProperty("source") &&
+    !moduleMeta.hasOwnProperty("factory")
+  );
 };
 
 
