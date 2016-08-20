@@ -1,7 +1,7 @@
 module.exports = {
   build: {
     options: {
-      preserveComments: "some",
+      preserveComments: /(?:^!|@(?:license|preserve|cc_on))/,
       sourceMap: true
     },
     files: {
