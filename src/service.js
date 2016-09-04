@@ -48,21 +48,18 @@ Service.prototype.canProcess = function(/*moduleMeta*/) {
 
 
 Service.prototype.runAsync = function(moduleMeta) {
-  this._logger && this._logger.log(moduleMeta.name, moduleMeta);
-
   if (!this.validate(moduleMeta)) {
     return Promise.resolve(moduleMeta);
   }
 
   return Promise.resolve(moduleMeta)
     .then(runPipelineAsync(this))
-    .then(runProviderAsync(this));
+    .then(runProviderAsync(this))
+    .then(logIt(this));
 };
 
 
 Service.prototype.runSync = function(moduleMeta) {
-  this._logger && this._logger.log(moduleMeta.name, moduleMeta);
-
   if (!this.validate(moduleMeta)) {
     return moduleMeta;
   }
@@ -70,6 +67,7 @@ Service.prototype.runSync = function(moduleMeta) {
   return [
     runPipelineSync(this),
     runProviderSync(this),
+    logIt(this)
   ].reduce(function(data, handler) {
     return handler(data);
   }, moduleMeta);
@@ -79,6 +77,14 @@ Service.prototype.runSync = function(moduleMeta) {
 Service.prototype.processResult = function(moduleMeta, result) {
   return result && moduleMeta !== result ? moduleMeta.configure(result) : moduleMeta;
 };
+
+
+function logIt(service) {
+  return function(moduleMeta) {
+    service._logger && service._logger.log(moduleMeta.name, moduleMeta);
+    return moduleMeta;
+  };
+}
 
 
 function runPipelineAsync(service) {
