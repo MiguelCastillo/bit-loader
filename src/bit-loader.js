@@ -3,13 +3,14 @@ var types  = require("dis-isa");
 var Rule   = require("roolio");
 var utils  = require("belty");
 
-var Link       = require("./services/link");
-var Resolve    = require("./services/resolve");
-var Fetch      = require("./services/fetch");
-var Transform  = require("./services/transform");
-var Dependency = require("./services/dependency");
-var PreCompile = require("./services/precompile");
-var Compile    = require("./services/compile");
+var Link         = require("./services/link");
+var Resolve      = require("./services/resolve");
+var Fetch        = require("./services/fetch");
+var PreTransform = require("./services/pretransform");
+var Transform    = require("./services/transform");
+var Dependency   = require("./services/dependency");
+var PreCompile   = require("./services/precompile");
+var Compile      = require("./services/compile");
 
 var Fetcher    = require("./controllers/fetcher");
 var Importer   = require("./controllers/importer");
@@ -41,13 +42,14 @@ function Bitloader(options) {
 
   // Services! Components that process modules.
   this.services = {
-    resolve    : new Resolve(this),
-    fetch      : new Fetch(this),
-    transform  : new Transform(this),
-    dependency : new Dependency(this),
-    precompile : new PreCompile(this),
-    compile    : new Compile(this),
-    link       : new Link(this)
+    resolve      : new Resolve(this),
+    fetch        : new Fetch(this),
+    pretransform : new PreTransform(this),
+    transform    : new Transform(this),
+    dependency   : new Dependency(this),
+    precompile   : new PreCompile(this),
+    compile      : new Compile(this),
+    link         : new Link(this)
   };
 
   // Controllers!  These guys make use of the services to build pipelines
@@ -89,9 +91,9 @@ function Bitloader(options) {
  * @param { string[] } ignores[].services - Array of service names that modules matching
  *  modules will skip. If a value is not specified, then the transform and the dependency
  *  pipelines are skipped. You can specify an array of strings for the name(s) of the services
- *  to be skipped. Possible values are `resolve`, `fetch`, `transform`, `dependency`,
- *  `precompile`, `compile`, and `link`.  Alternatively, it can be a wild card to skip *all*
- *  the pipelines just listed.
+ *  to be skipped. Possible values are `resolve`, `fetch`, `pretransform`, `transform`,
+ *  `dependency`, `precompile`, `compile`, and `link`.  Alternatively, it can be a wild card
+ *  to skip *all* the pipelines just listed.
  *
  * @returns {Bitloader} New bit loader instance
  */
@@ -492,7 +494,7 @@ Bitloader.prototype.ignore = function(rules) {
 
 /**
  * Registers plugins into the different pipelines. Available pipelines are
- * `resolve`, `fetch`, `transform`, `dependency`, and `precompile`.
+ * `resolve`, `fetch`, `pretransfrom`, transform`, `dependency`, and `precompile`.
  *
  * @param {object} settings - Object whose keys are the name of the particular
  *  pipeline they intend to register with. For example, if the plugin is to
