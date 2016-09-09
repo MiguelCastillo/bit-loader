@@ -87,6 +87,7 @@ Matches.prototype.serialize = function() {
 
 Matches.configure = function(target, options) {
   options = options || {};
+
   var extensions = Matches.mergeExtensions(target.matches, options.extensions);
 
   return {
@@ -101,12 +102,12 @@ Matches.configure = function(target, options) {
  * rules.
  */
 Matches.mergeExtensions = function(target, extensions) {
-  if (!extensions) {
-    return target;
+  if (extensions) {
+    extensions = utils.toArray(extensions).join("|");
   }
 
-  if (types.isArray(extensions)) {
-    extensions = extensions.join("|");
+  if (!extensions) {
+    return target;
   }
 
   return Matches.mergeMatcher(target, {

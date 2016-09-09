@@ -58,6 +58,12 @@ var State = {
 
   /**
    * @type { string }
+   * @description Before the module goes through the transform pipeline
+   */
+  PRETRANSFORM: "pretransform",
+
+  /**
+   * @type { string }
    * @description When the module is going through the transform pipeline
    */
   TRANSFORM: "transform",
@@ -188,6 +194,14 @@ Module.prototype.getFileName = function() {
  */
 Module.prototype.getFilePath = function() {
   return this.path || "";
+};
+
+
+/**
+ * Method to set the state of the module
+ */
+Module.prototype.withState = function(state) {
+  return this.merge({ state: state });
 };
 
 

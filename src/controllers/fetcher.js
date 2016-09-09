@@ -14,6 +14,7 @@ function Fetcher(context) {
 
   this.pipeline = new Pipeline([
     fetch(context),
+    pretransform(context),
     transform(context),
     dependency(context),
     precompile(context)
@@ -112,10 +113,11 @@ function resolveMetaModule(fetcher) {
       moduleMeta = moduleMeta.configure({
         id: moduleMeta.name,
         path: null,
-        source: ""
+        source: "",
+        state: Module.State.LOADED
       });
 
-      moduleMeta = context.controllers.registry.setModule(moduleMeta, Module.State.LOADED);
+      context.controllers.registry.setModule(moduleMeta);
       return Promise.resolve(moduleMeta);
     }
     else {
@@ -125,7 +127,7 @@ function resolveMetaModule(fetcher) {
         .then(function(moduleMeta) {
           return fetcher.context.controllers.registry.hasModule(moduleMeta.id) ?
             moduleMeta :
-            fetcher.context.controllers.registry.setModule(moduleMeta, Module.State.RESOLVE);
+            fetcher.context.controllers.registry.setModule(moduleMeta.withState(Module.State.RESOLVE));
         });
     }
   };
@@ -152,8 +154,13 @@ function fetch(context) {
 }
 
 
+function pretransform(context) {
+  return helpers.serviceRunner(context, Module.State.FETCH, Module.State.PRETRANSFORM, context.services.pretransform);
+}
+
+
 function transform(context) {
-  return helpers.serviceRunner(context, Module.State.FETCH, Module.State.TRANSFORM, context.services.transform);
+  return helpers.serviceRunner(context, Module.State.PRETRANSFORM, Module.State.TRANSFORM, context.services.transform);
 }
 
 

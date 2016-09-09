@@ -11,10 +11,12 @@ describe("Build Test Suite", function() {
 
   describe("When building a module meta object with source that exports a string", function() {
     beforeEach(function() {
-      moduleMeta = new Module("test module");
-      moduleMeta = moduleMeta.configure({ source: "module.exports = 'test';" });
-      moduleMeta = loader.controllers.registry.setModule(moduleMeta, Module.State.LOADED);
+      moduleMeta = new Module("test module").configure({
+        source: "module.exports = 'test';",
+        state: Module.State.LOADED
+      });
 
+      moduleMeta = loader.controllers.registry.setModule(moduleMeta);
       result = loader.controllers.builder.build(moduleMeta.id);
     });
 
@@ -28,11 +30,13 @@ describe("Build Test Suite", function() {
 
     beforeEach(function() {
       getDependencyExportsByNameStub = sinon.stub().returns(1);
-      moduleMeta = new Module("test module");
-      moduleMeta = moduleMeta.configure({ source: "var a = require('a'); module.exports = {name: 'test', dep: a};" });
-      moduleMeta = moduleMeta.configure({ getDependencyExportsByName: getDependencyExportsByNameStub });
-      moduleMeta = loader.controllers.registry.setModule(moduleMeta, Module.State.LOADED);
+      moduleMeta = new Module("test module").configure({
+        source: "var a = require('a'); module.exports = {name: 'test', dep: a};",
+        getDependencyExportsByName: getDependencyExportsByNameStub,
+        state: Module.State.LOADED
+      });
 
+      moduleMeta = loader.controllers.registry.setModule(moduleMeta);
       result = loader.controllers.builder.build(moduleMeta.id);
     });
 
@@ -49,15 +53,20 @@ describe("Build Test Suite", function() {
     var dependencyMeta;
 
     beforeEach(function() {
-      dependencyMeta = new Module("a");
-      dependencyMeta = dependencyMeta.configure({ id: "a", source: "module.exports = 1;" });
-      dependencyMeta = loader.controllers.registry.setModule(dependencyMeta, Module.State.LOADED);
+      dependencyMeta = new Module("a").configure({
+        id: "a",
+        source: "module.exports = 1;",
+        state: Module.State.LOADED
+      });
 
-      moduleMeta = new Module("test module");
-      moduleMeta = moduleMeta.configure({ deps: [ dependencyMeta ] });
-      moduleMeta = moduleMeta.configure({ source: "var a = require('a'); module.exports = {name: 'test', dep: a};" });
-      moduleMeta = loader.controllers.registry.setModule(moduleMeta, Module.State.LOADED);
+      moduleMeta = new Module("test module").configure({
+        deps: [ dependencyMeta ],
+        source: "var a = require('a'); module.exports = {name: 'test', dep: a};",
+        state: Module.State.LOADED
+      });
 
+      dependencyMeta = loader.controllers.registry.setModule(dependencyMeta);
+      moduleMeta = loader.controllers.registry.setModule(moduleMeta);
       result = loader.controllers.builder.build(moduleMeta.id);
     });
 
@@ -75,10 +84,13 @@ describe("Build Test Suite", function() {
         beforeEach(function() {
           modulePath = "some-real-path-url";
 
-          moduleMeta = new Module("test module");
-          moduleMeta = moduleMeta.configure({ source: "module.exports = {name: 'test', dep: 'a'};", path: modulePath });
-          moduleMeta = loader.controllers.registry.setModule(moduleMeta, Module.State.LOADED);
+          moduleMeta = new Module("test module").configure({
+            source: "module.exports = {name: 'test', dep: 'a'};",
+            path: modulePath,
+            state: Module.State.LOADED
+          });
 
+          moduleMeta = loader.controllers.registry.setModule(moduleMeta);
           result = loader.controllers.builder.build(moduleMeta.id);
         });
 
@@ -94,10 +106,13 @@ describe("Build Test Suite", function() {
           domainName = "http://domain:994";
           modulePath = "/some-real-path-url";
 
-          moduleMeta = new Module("test module");
-          moduleMeta = moduleMeta.configure({ source: "module.exports = {name: 'test', dep: 'a'};", path: domainName + modulePath });
-          moduleMeta = loader.controllers.registry.setModule(moduleMeta, Module.State.LOADED);
+          moduleMeta = new Module("test module").configure({
+            source: "module.exports = {name: 'test', dep: 'a'};",
+            path: domainName + modulePath,
+            state: Module.State.LOADED
+          });
 
+          moduleMeta = loader.controllers.registry.setModule(moduleMeta);
           result = loader.controllers.builder.build(moduleMeta.id);
         });
 
@@ -112,10 +127,12 @@ describe("Build Test Suite", function() {
       beforeEach(function() {
         sourceURL = "some-url";
 
-        moduleMeta = new Module("test module");
-        moduleMeta = moduleMeta.configure({ source: "module.exports = {name: 'test', dep: 'a'};\n//# sourceURL=" + sourceURL });
-        moduleMeta = loader.controllers.registry.setModule(moduleMeta, Module.State.LOADED);
+        moduleMeta = new Module("test module").configure({
+          source: "module.exports = {name: 'test', dep: 'a'};\n//# sourceURL=" + sourceURL,
+          state: Module.State.LOADED
+        });
 
+        moduleMeta = loader.controllers.registry.setModule(moduleMeta);
         result = loader.controllers.builder.build(moduleMeta.id);
       });
 
