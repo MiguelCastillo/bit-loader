@@ -1,29 +1,36 @@
-function ensureRegisteredState(context, moduleMeta, state) {
-  var id = moduleMeta && moduleMeta.id;
+function verifyCurrentState(context, moduleMeta, currentState) {
+  var id = moduleMeta.id;
 
   return (
     context.controllers.registry.hasModule(id) &&
-    context.controllers.registry.getModuleState(id) === state
+    context.controllers.registry.getModuleState(id) === currentState
   );
 }
 
-function setState(context, newState) {
+function setState(context, currentState, nextState) {
   return function(moduleMeta) {
-    return context.controllers.registry.hasModule(moduleMeta.id) ?
-      context.controllers.registry.setModule(moduleMeta, newState) :
-      moduleMeta;
+    if (context.controllers.registry.hasModule(moduleMeta.id)) {
+      if (!moduleMeta.state || moduleMeta.state === currentState) {
+        moduleMeta = moduleMeta.withState(nextState);
+      }
+
+      context.controllers.registry.setModule(moduleMeta);
+      return moduleMeta;
+    }
+
+    throw new Error("Unable to set state because module does not exist");
   };
 }
 
 function runService(context, currentState, nextState, service, moduleMeta) {
-  return ensureRegisteredState(context, moduleMeta, currentState) ?
-    service.runAsync(moduleMeta).then(setState(context, nextState)) :
+  return verifyCurrentState(context, moduleMeta, currentState) ?
+    service.runAsync(moduleMeta).then(setState(context, currentState, nextState)) :
     Promise.resolve(moduleMeta);
 }
 
 function runServiceSync(context, currentState, nextState, service, moduleMeta) {
-  return ensureRegisteredState(context, moduleMeta, currentState) ?
-    setState(context, nextState)(service.runSync(moduleMeta)) :
+  return verifyCurrentState(context, moduleMeta, currentState) ?
+    setState(context, currentState, nextState)(service.runSync(moduleMeta)) :
     moduleMeta;
 }
 

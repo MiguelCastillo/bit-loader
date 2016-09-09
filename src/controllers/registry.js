@@ -17,8 +17,9 @@ Registry.prototype.register = function(name, exports) {
   return this.setModule(new Module({
     id: name,
     name: name,
-    exports: exports
-  }), Module.State.READY);
+    exports: exports,
+    state: Module.State.READY
+  }));
 };
 
 
@@ -52,14 +53,13 @@ Registry.prototype.getModule = function(id) {
 };
 
 
-Registry.prototype.setModule = function(mod, state) {
+Registry.prototype.setModule = function(mod) {
   var id = mod.id;
 
-  if (this.hasModule(id) && this.getModuleState(id) === state) {
+  if (this.hasModule(id) && this.getModuleState(id) === mod.state) {
     throw new Error("Module instance '" + (mod.name || mod.id) + "' already exists. State '" + state + "'");
   }
 
-  mod = mod.configure({ state: state });
   Repository.setItem(this.context.cache, id, mod);
   return mod;
 };

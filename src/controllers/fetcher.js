@@ -113,10 +113,11 @@ function resolveMetaModule(fetcher) {
       moduleMeta = moduleMeta.configure({
         id: moduleMeta.name,
         path: null,
-        source: ""
+        source: "",
+        state: Module.State.LOADED
       });
 
-      moduleMeta = context.controllers.registry.setModule(moduleMeta, Module.State.LOADED);
+      context.controllers.registry.setModule(moduleMeta);
       return Promise.resolve(moduleMeta);
     }
     else {
@@ -126,7 +127,7 @@ function resolveMetaModule(fetcher) {
         .then(function(moduleMeta) {
           return fetcher.context.controllers.registry.hasModule(moduleMeta.id) ?
             moduleMeta :
-            fetcher.context.controllers.registry.setModule(moduleMeta, Module.State.RESOLVE);
+            fetcher.context.controllers.registry.setModule(moduleMeta.withState(Module.State.RESOLVE));
         });
     }
   };
