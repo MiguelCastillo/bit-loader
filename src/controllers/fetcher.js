@@ -29,14 +29,11 @@ Fetcher.prototype.fetch = function(names, referrer) {
   var fetcher = this;
 
   return resolveNames(this, utils.toArray(names), referrer)
-    .then(function(result) {
-      return Promise.all(result.map(fetchPipeline(fetcher)));
+    .then(function(moduleMetas) {
+      return Promise.all(moduleMetas.map(fetchModuleMeta(fetcher)));
     })
-    .then(function(result) {
-      return Promise.all(result.map(fetchDependencies(fetcher)));
-    })
-    .then(function(result) {
-      return types.isArray(names) ? result : result[0];
+    .then(function(moduleMetas) {
+      return types.isArray(names) ? moduleMetas : moduleMetas[0];
     });
 };
 
@@ -56,10 +53,10 @@ Fetcher.prototype.fetchOnly = function(names, referrer) {
 
 function resolveNames(fetcher, names, referrer) {
   return Promise.all(
-      names
-        .map(createModuleMeta(fetcher, referrer))
-        .map(resolveMetaModule(fetcher))
-    );
+    names
+      .map(createModuleMeta(fetcher, referrer))
+      .map(resolveMetaModule(fetcher))
+  );
 }
 
 
@@ -70,15 +67,16 @@ function fetchPipeline(fetcher) {
     if (fetcher.inProgress.hasOwnProperty(moduleMeta.id)) {
       return fetcher.inProgress[moduleMeta.id].then(function() { return moduleMeta; });
     }
-    else if (fetcher.context.controllers.registry.hasModule(moduleMeta.id)) {
+
+    if (fetcher.context.controllers.registry.hasModule(moduleMeta.id)) {
       var state = fetcher.context.controllers.registry.getModuleState(moduleMeta.id);
 
-      if (state !== Module.State.LOADED && state !== Module.State.READY) {
-        return runPipeline(fetcher, moduleMeta).then(function() { return moduleMeta; });
+      if (state !== Module.State.RESOLVE) {
+        return Promise.resolve(moduleMeta);
       }
     }
 
-    return Promise.resolve(moduleMeta);
+    return runPipeline(fetcher, moduleMeta).then(function() { return moduleMeta; });
   };
 }
 
@@ -130,6 +128,13 @@ function resolveMetaModule(fetcher) {
             fetcher.context.controllers.registry.setModule(moduleMeta.withState(Module.State.RESOLVE));
         });
     }
+  };
+}
+
+
+function fetchModuleMeta(fetcher) {
+  return function fetchModuleMetaDelegate(moduleMeta) {
+    return fetchPipeline(fetcher)(moduleMeta).then(fetchDependencies(fetcher));
   };
 }
 
@@ -186,15 +191,19 @@ function fetchDependencies(fetcher) {
       .then(function(result) {
         return Promise
           .all(result.map(function(dependency) {
+            if (fetcher.inProgress.hasOwnProperty(dependency.id)) {
+              return fetcher.inProgress[dependency.id].then(function() { return dependency; });
+            }
+
             if (fetcher.context.controllers.registry.hasModule(dependency.id)) {
               var state = fetcher.context.controllers.registry.getModuleState(dependency.id);
 
-              if (state === Module.State.LOADED || state === Module.State.READY) {
+              if (state !== Module.State.RESOLVE) {
                 return dependency;
               }
             }
 
-            return fetcher.fetch(dependency.name, mod);
+            return fetchModuleMeta(fetcher)(dependency);
           }))
           .then(function(dependencies) {
             fetcher.context.controllers.registry.updateModule(mod.configure({ deps: dependencies }));
