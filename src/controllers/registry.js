@@ -55,8 +55,9 @@ Registry.prototype.getModule = function(id) {
 
 Registry.prototype.setModule = function(mod) {
   var id = mod.id;
+  var state = mod.state;
 
-  if (this.hasModule(id) && this.getModuleState(id) === mod.state) {
+  if (this.hasModule(id) && this.getModuleState(id) === state) {
     throw new Error("Module instance '" + (mod.name || mod.id) + "' already exists. State '" + state + "'");
   }
 
