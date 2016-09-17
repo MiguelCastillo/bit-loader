@@ -3,7 +3,7 @@ var utils = require("belty");
 var inherit = require("../inherit");
 var Matches = require("../matches");
 var blueprint = require("../blueprint");
-
+var loggerFactory = require("loggero");
 
 var HandlerBlueprint = blueprint({
   context: null,
@@ -64,7 +64,12 @@ Handler.prototype.run = function(data, cancel) {
     return Promise.resolve(data);
   }
 
-  return Promise.resolve(this.handler(data, this, cancel));
+  return Promise.resolve(this.handler.call((void 0), data, this, cancel));
+};
+
+
+Handler.prototype.getLogger = function(name) {
+  return loggerFactory.create(name || this.id);
 };
 
 
