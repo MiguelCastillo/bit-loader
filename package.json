@@ -34,7 +34,7 @@
     "chance": "^1.0.4",
     "config-grunt-tasks": "^1.0.3",
     "connect-livereload": "^0.6.0",
-    "eslint-tap": "^1.1.0",
+    "eslint-tap": "^2.0.0",
     "grunt": "~1.0.1",
     "grunt-browserify": "~5.0.0",
     "grunt-cli": "^1.2.0",
