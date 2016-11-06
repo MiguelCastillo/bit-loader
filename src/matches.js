@@ -1,4 +1,3 @@
-var types = require("dis-isa");
 var Rule = require("roolio");
 var utils = require("belty");
 var blueprint = require("./blueprint");

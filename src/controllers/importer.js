@@ -41,8 +41,7 @@ Import.prototype.import = function(names, options) {
  * @param {Array<string>} names - Array of module names
  * @param {Object} options
  */
-Import.prototype._getModule = function(name, options) {
-  options = options || {};
+Import.prototype._getModule = function(name) {
   var context = this.context;
   var registry = context.controllers.registry;
 
