@@ -2,7 +2,9 @@ var logger = require("loggero").create("plugin/registrar");
 var Manager = require("./manager");
 var Plugin = require("./plugin");
 var Handler = require("./handler");
+var Builder = require("./builder");
 var utils = require("belty");
+var types = require("dis-isa");
 var _managerId = 1;
 
 
@@ -24,13 +26,33 @@ Registrar.prototype.configure = function(options) {
 };
 
 
+Registrar.prototype._configure = function(id, options, container, Constructor) {
+  var item = container[id] || new Constructor({ context: this, id: id });
+  return item.configure(options);
+};
+
+
+Registrar.prototype._items = function(ids, container) {
+  return (ids || Object.keys(container)).map(function(id) {
+    return container[id];
+  });
+};
+
+
 Registrar.prototype.configureManager = function(id, options) {
   if (!id) {
     id = _managerId++;
   }
 
-  var manager = this.managers[id] || new Manager({ context: this, id: id });
-  this.managers[id] = manager.configure(options);
+  if (types.isFunction(options)) {
+    options = options(new Builder());
+
+    if (options instanceof Builder) {
+      options = options.build();
+    }
+  }
+
+  this.managers[id] = this._configure(id, options, this.managers, Manager);
   return this;
 };
 
@@ -46,17 +68,12 @@ Registrar.prototype.getManager = function(id) {
 
 
 Registrar.prototype.getManagers = function(ids) {
-  var registrar = this;
-
-  return (ids || Object.keys(registrar.managers)).map(function(id) {
-    return registrar.managers[id];
-  });
+  return this._items(ids, this.managers);
 };
 
 
 Registrar.prototype.configurePlugin = function(id, options) {
-  var plugin = this.plugins[id] || new Plugin({ context: this, id: id });
-  this.plugins[id] = plugin.configure(options);
+  this.plugins[id] = this._configure(id, options, this.plugins, Plugin);
   return this;
 };
 
@@ -72,17 +89,12 @@ Registrar.prototype.getPlugin = function(id) {
 
 
 Registrar.prototype.getPlugins = function(ids) {
-  var registrar = this;
-
-  return (ids || Object.keys(registrar.plugins)).map(function(id) {
-    return registrar.plugins[id];
-  });
+  return this._items(ids, this.plugins);
 };
 
 
 Registrar.prototype.configureHandler = function(id, options) {
-  var handler = this.handlers[id] || new Handler({ context: this, id: id });
-  this.handlers[id] = handler.configure(options);
+  this.handlers[id] = this._configure(id, options, this.handlers, Handler);
   return this;
 };
 
@@ -98,11 +110,7 @@ Registrar.prototype.getHandler = function(id) {
 
 
 Registrar.prototype.getHandlers = function(ids) {
-  var registrar = this;
-
-  return (ids || Object.keys(registrar.handlers)).map(function(id) {
-    return registrar.handlers[id];
-  });
+  return this._items(ids, this.handlers);
 };
 
 
