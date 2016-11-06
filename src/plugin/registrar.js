@@ -2,7 +2,9 @@ var logger = require("loggero").create("plugin/registrar");
 var Manager = require("./manager");
 var Plugin = require("./plugin");
 var Handler = require("./handler");
+var Builder = require("./builder");
 var utils = require("belty");
+var types = require("dis-isa");
 var _managerId = 1;
 
 
@@ -40,6 +42,14 @@ Registrar.prototype._items = function(ids, container) {
 Registrar.prototype.configureManager = function(id, options) {
   if (!id) {
     id = _managerId++;
+  }
+
+  if (types.isFunction(options)) {
+    options = options(new Builder());
+
+    if (options instanceof Builder) {
+      options = options.build();
+    }
   }
 
   this.managers[id] = this._configure(id, options, this.managers, Manager);
