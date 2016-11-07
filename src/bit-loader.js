@@ -519,7 +519,7 @@ Bitloader.prototype.plugin = function(name, settings) {
     name = settings.name;
   }
 
-  this.plugins.configureManager(name, settings);
+  this.plugins.configurePlugin(name, settings);
   return this;
 };
 

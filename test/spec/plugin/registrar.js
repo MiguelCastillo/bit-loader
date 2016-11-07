@@ -17,7 +17,7 @@ describe("Plugin Registrar Test Suite", () => {
 
       beforeEach(() => {
         act = () => {
-          registrarMock.configureManager(chance.string(), {
+          registrarMock.configurePlugin(chance.string(), {
             transform: () => {}
           });
         };
@@ -44,7 +44,7 @@ describe("Plugin Registrar Test Suite", () => {
 
     describe("and registering a transform plugin", () => {
       beforeEach(() => {
-        registrarMock.configureManager(chance.string(), {
+        registrarMock.configurePlugin(chance.string(), {
           transform: transformPlugin
         });
       });
@@ -58,22 +58,5 @@ describe("Plugin Registrar Test Suite", () => {
       });
     });
 
-    describe("and registering a plugin with a service that does not exist", () => {
-      var act, serviceName;
-
-      beforeEach(() => {
-        serviceName = chance.string();
-
-        act = () => {
-          registrarMock.configureManager(chance.string(), {
-            [serviceName]: () => {}
-          });
-        };
-      });
-
-      it("then the plugin registration throw an error", () => {
-        expect(act).to.throw(TypeError, "Unable to register plugin. '" + serviceName + "' service does not exist");
-      });
-    });
   });
 });

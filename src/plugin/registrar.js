@@ -1,11 +1,12 @@
 var logger = require("loggero").create("plugin/registrar");
-var Manager = require("./manager");
 var Plugin = require("./plugin");
 var Handler = require("./handler");
 var Builder = require("./builder");
 var utils = require("belty");
 var types = require("dis-isa");
-var _managerId = 1;
+
+var _pluginId = 1;
+var _handlerId = 1;
 
 
 /**
@@ -15,14 +16,13 @@ var _managerId = 1;
 function Registrar(context, services) {
   this.context = context;
   this.services = services;
-  this.managers = {};
   this.plugins = {};
   this.handlers = {};
 }
 
 
 Registrar.prototype.configure = function(options) {
-  return utils.merge(this, utils.pick(options, ["managers", "plugins", "handlers"]));
+  return utils.merge(this, utils.pick(options, ["plugins", "handlers"]));
 };
 
 
@@ -39,9 +39,9 @@ Registrar.prototype._items = function(ids, container) {
 };
 
 
-Registrar.prototype.configureManager = function(id, options) {
+Registrar.prototype.configurePlugin = function(id, options) {
   if (!id) {
-    id = _managerId++;
+    id = "plugin-" + _pluginId++;
   }
 
   if (types.isFunction(options)) {
@@ -52,29 +52,8 @@ Registrar.prototype.configureManager = function(id, options) {
     }
   }
 
-  this.managers[id] = this._configure(id, options, this.managers, Manager);
-  return this;
-};
-
-
-Registrar.prototype.hasManager = function(id) {
-  return this.managers.hasOwnProperty(id);
-};
-
-
-Registrar.prototype.getManager = function(id) {
-  return this.managers[id];
-};
-
-
-Registrar.prototype.getManagers = function(ids) {
-  return this._items(ids, this.managers);
-};
-
-
-Registrar.prototype.configurePlugin = function(id, options) {
   this.plugins[id] = this._configure(id, options, this.plugins, Plugin);
-  return this;
+  return this.plugins[id];
 };
 
 
@@ -94,8 +73,12 @@ Registrar.prototype.getPlugins = function(ids) {
 
 
 Registrar.prototype.configureHandler = function(id, options) {
+  if (!id) {
+    id = "handler-" + _handlerId++;
+  }
+
   this.handlers[id] = this._configure(id, options, this.handlers, Handler);
-  return this;
+  return this.handlers[id];
 };
 
 
@@ -161,7 +144,7 @@ Registrar.prototype.loadHandlers = function(ids) {
 };
 
 
-Registrar.prototype.registerPluginWithService = function(serviceName, pluginDelegate) {
+Registrar.prototype.registerPluginWithService = function(serviceName, pluginId) {
   if (!this.services) {
     throw TypeError("Unable to register plugin. Services have not been configured");
   }
@@ -170,14 +153,22 @@ Registrar.prototype.registerPluginWithService = function(serviceName, pluginDele
     throw TypeError("Unable to register plugin. '" + serviceName + "' service does not exist");
   }
 
-  this.services[serviceName].use(pluginDelegate);
+  var registrar = this;
+
+  this.services[serviceName].use(function() {
+    var plugin = registrar.getPlugin(pluginId);
+    var args = Array.prototype.slice.call(arguments);
+    args.unshift(serviceName);
+    return plugin.run.apply(plugin, args);
+  });
+
   return this;
 };
 
 
 Registrar.prototype.serialize = function() {
-  return this.getManagers().map(function(manager) {
-    return manager.serialize();
+  return this.getPlugins().map(function(plugin) {
+    return plugin.serialize();
   });
 };
 

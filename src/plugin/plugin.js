@@ -1,15 +1,28 @@
-//var logger = require("loggero").create("plugin");
 var utils = require("belty");
 var types = require("dis-isa");
+var Builder = require("./builder");
+var Matches = require("../matches");
 var inherit = require("../inherit");
 var blueprint = require("../blueprint");
 
 
-var PluginBlueprint = blueprint({
+var defaultServiceHooks = {
+  resolve: [],
+  fetch: [],
+  pretransform: [],
+  transform: [],
+  dependency: [],
+  precompile: []
+};
+
+
+var PluginBlueprint = blueprint(utils.merge({
   context: null,
-  handlers: {},
-  id: null
-});
+  id: null,
+
+  // pattern mathing rules
+  matchers: new Matches()
+}, defaultServiceHooks));
 
 
 function Plugin(options) {
@@ -22,28 +35,49 @@ inherit.base(Plugin).extends(PluginBlueprint);
 
 
 Plugin.prototype.configure = function(options) {
-  var handlers = utils
-    .toArray(options)
-    .filter(Boolean)
-    .map(configureHandler(this))
-    .reduce(function(handlers, handler) {
-      handlers[handler.id] = true;
-      return handlers;
+  var plugin = this;
+  var configuration = configurPlugin(options);
+  var serviceHooks = utils.pick(configuration, Object.keys(defaultServiceHooks));
+
+  var handlers = Object
+    .keys(serviceHooks)
+    .reduce(function(container, serviceName) {
+      if (!plugin[serviceName].length) {
+        plugin.context.registerPluginWithService(serviceName, plugin.id);
+      }
+
+      var handlerIds = utils
+        .toArray(serviceHooks[serviceName])
+        .map(function(config) {
+          var handler = plugin.context.configureHandler(config.id, configureHandler(config));
+          return handler.id;
+        });
+
+      container[serviceName] = plugin[serviceName].concat(handlerIds);
+      return container;
     }, {});
 
-  return this.merge({
-    handlers: handlers
-  });
+  return this
+    .merge(handlers)
+    .merge({ matchers: this.matchers.configure(configuration.matchers || configuration) });
 };
 
 
 /**
  * Runs all plugin handlers to process the data.
  */
-Plugin.prototype.run = function(data) {
+Plugin.prototype.run = function(serviceName, data) {
   var plugin = this;
-  var handlers = this.handlers;
+  var handlers = this[serviceName];
   var cancelled = false;
+
+  if (!types.isString(serviceName)) {
+    throw new Error("Service name must be a string");
+  }
+
+  if (!handlers) {
+    throw new Error("Service '" + serviceName + "' is unknown");
+  }
 
   function cancel() {
     cancelled = true;
@@ -55,10 +89,14 @@ Plugin.prototype.run = function(data) {
     }
   }
 
-  return loadDynamicHandlers(plugin).then(function() {
-    return Object.keys(handlers)
-      .map(getHandler(plugin))
-      .filter(canExecuteHandler(data))
+  return plugin.context.loadHandlers().then(function() {
+    return handlers
+      .map(function(id) {
+        return plugin.context.getHandler(id);
+      })
+      .filter(function(handler) {
+        return handler.canExecute(data);
+      })
       .reduce(function(current, handler) {
         return current
           .then(canRun)
@@ -71,51 +109,52 @@ Plugin.prototype.run = function(data) {
 Plugin.prototype.serialize = function() {
   var plugin = this;
 
-  return utils.merge({
-    handlers: Object.keys(this.handlers).map(function(handlerId) {
-      return plugin.context.getHandler(handlerId).serialize();
+  var handlers = Object
+    .keys(defaultServiceHooks)
+    .filter(function(serviceName) {
+      return plugin[serviceName].length;
     })
-  }, utils.pick(this, ["id"]));
-};
-
-
-var _handlerId = 1;
-Plugin.prototype.getHandlerId = function() {
-  return this.id + "-handler-" + _handlerId++;
-};
-
-
-function getHandler(plugin) {
-  return function(id) {
-    return plugin.context.getHandler(id);
-  };
-}
-
-
-function configureHandler(plugin) {
-  return function createHandlerDelegate(options) {
-    if (types.isFunction(options) || types.isString(options)) {
-      options = {
-        handler: options
+    .map(function(serviceName) {
+      return {
+        serviceName: serviceName,
+        handlers: plugin[serviceName]
       };
+    })
+    .reduce(function(handlers, handlerConfigs) {
+      handlers[handlerConfigs.serviceName] = handlerConfigs.handlers.map(function(handlerId) {
+        return plugin.context.getHandler(handlerId).serialize();
+      });
+
+      return handlers;
+    }, {});
+
+  return utils.merge(utils.pick(this, ["id"]), handlers);
+};
+
+
+function configurPlugin(options) {
+  if (types.isFunction(options)) {
+    options = options(new Builder());
+
+    if (options instanceof Builder) {
+      options = options.build();
     }
+  }
 
-    var handlerId = options.id || plugin.getHandlerId();
-
-    if (!plugin.context.hasHandler(handlerId)) {
-      plugin.context.configureHandler(handlerId, options);
-    }
-
-    return plugin.context.getHandler(handlerId);
-  };
+  return options;
 }
 
 
-function canExecuteHandler(data) {
-  return function(handler) {
-    return handler.canExecute(data);
-  };
+function configureHandler(options) {
+  if (types.isFunction(options) || types.isString(options)) {
+    options = {
+      handler: options
+    };
+  }
+
+  return options;
 }
+
 
 
 /**
@@ -136,15 +175,6 @@ function runHandler(handler, cancel) {
         return data.configure(result);
       });
   };
-}
-
-
-/**
- * Load dynamic handlers if there are any that need to be loaded for
- * the current plugin
- */
-function loadDynamicHandlers(plugin) {
-  return plugin.context.loadHandlers();
 }
 
 
