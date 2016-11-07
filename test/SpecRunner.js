@@ -11,6 +11,5 @@ require("./spec/service");
 
 require("./spec/plugin/plugin");
 require("./spec/plugin/handler");
-require("./spec/plugin/manager");
 require("./spec/plugin/registrar");
 require("./spec/plugin/builder");
