@@ -75,6 +75,10 @@ Plugin.prototype.run = function(serviceName, data) {
   var handlers = this.handlers[serviceName];
   var cancelled = false;
 
+  if (!this.matchers.canExecute(data)) {
+    return Promise.resolve(data);
+  }
+
   if (!types.isString(serviceName)) {
     throw new Error("Service name must be a string");
   }
@@ -97,9 +101,6 @@ Plugin.prototype.run = function(serviceName, data) {
     return handlers
       .map(function(id) {
         return plugin.context.getHandler(id);
-      })
-      .filter(function(handler) {
-        return handler.canExecute(data);
       })
       .reduce(function(current, handler) {
         return current
