@@ -102,9 +102,6 @@ Plugin.prototype.run = function(serviceName, data) {
       .map(function(id) {
         return plugin.context.getHandler(id);
       })
-      .filter(function(handler) {
-        return handler.canExecute(data);
-      })
       .reduce(function(current, handler) {
         return current
           .then(canRun)

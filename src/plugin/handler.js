@@ -54,13 +54,8 @@ Handler.prototype.configure = function(options) {
 };
 
 
-Handler.prototype.canExecute = function(data) {
-  return this.matchers.canExecute(data);
-};
-
-
 Handler.prototype.run = function(data, cancel) {
-  if (!this.canExecute(data)) {
+  if (!this.matchers.canExecute(data)) {
     return Promise.resolve(data);
   }
 
