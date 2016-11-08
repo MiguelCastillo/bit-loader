@@ -113,11 +113,8 @@ Plugin.prototype.run = function(serviceName, data) {
 Plugin.prototype.serialize = function() {
   var plugin = this;
 
-  var handlers = this.context
-    .getServiceNames()
-    .filter(function(serviceName) {
-      return plugin.handlers[serviceName];
-    })
+  var handlers = Object
+    .keys(plugin.handlers)
     .map(function(serviceName) {
       return {
         serviceName: serviceName,
