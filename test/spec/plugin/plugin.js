@@ -19,37 +19,33 @@ describe("Plugin Test Suite", function() {
     };
   });
 
-  describe("When creating a plugin with no registrar", () => {
+  describe("Given no registrar", () => {
+    var error;
+
     beforeEach(() => {
       registrarMock = null;
-      createPlugin();
+
+      try {
+        createPlugin();
+      }
+      catch(ex) {
+        error = ex;
+      }
     });
 
-    it("then plugin is an instance of Plugin", () => {
-      expect(plugin).to.be.an.instanceof(Plugin);
-    });
-
-    describe("and serializing the plugin", () => {
-      var result;
-
-      beforeEach(() => {
-        result = plugin.serialize();
-      });
-
-      it("then plugin.serialize generate default values", () => {
-        expect(result).to.deep.equal({
-          id: null
-        });
-      });
+    it("then creating a plugin throws an exception", () => {
+      expect(error).to.be.an.instanceof(Error);
     });
   });
 
-  describe("When creating a plugin with an empty registrar", () => {
-    var configurePlugin, pluginOptions;
+  describe("Given a plugin with an empty registrar", () => {
+    var configurePlugin, pluginOptions, serviceName;
 
     beforeEach(() => {
+      serviceName = chance.word();
       configurePlugin = () => plugin = plugin.configure(pluginOptions);
       registrarMock = new Registrar();
+      registrarMock.getServiceNames = sinon.stub().returns([serviceName]);
       registrarMock.registerPluginWithService = sinon.stub();
       createPlugin();
     });
@@ -57,7 +53,7 @@ describe("Plugin Test Suite", function() {
     describe("and configuring it with one string handler", () => {
       beforeEach(() => {
         pluginOptions = {
-          transform: {
+          [serviceName]: {
             handler: chance.string(),
             id: chance.string()
           }
@@ -66,51 +62,51 @@ describe("Plugin Test Suite", function() {
         configurePlugin();
       });
 
-      describe("and serializing the plugin", () => {
+      describe("and serializing it", () => {
         var result;
 
         beforeEach(() => {
           result = plugin.serialize();
         });
 
-        it("then result one handler", () => {
-          expect(result.transform).to.have.length(1);
+        it("then the plugin has one handler", () => {
+          expect(result[serviceName]).to.have.length(1);
         });
 
-        it("then plugin has a null id", () => {
+        it("then the plugin has a null id", () => {
           expect(result).to.have.property("id", null);
         });
 
         it("then the handler is the configured string", () => {
-          expect(result).to.have.deep.property("transform[0].handler", pluginOptions.transform.handler);
+          expect(result).to.have.deep.property(`${serviceName}[0].handler`, pluginOptions[serviceName].handler);
         });
 
         it("then the id is the configured string", () => {
-          expect(result).to.have.deep.property("transform[0].id", pluginOptions.transform.id);
+          expect(result).to.have.deep.property(`${serviceName}[0].id`, pluginOptions[serviceName].id);
         });
 
         it("then options is null", () => {
-          expect(result).to.have.deep.property("transform[0].options", null);
+          expect(result).to.have.deep.property(`${serviceName}[0].options`, null);
         });
 
         it("then matchers has undefined ignore rules", () => {
-          expect(result).to.have.deep.property("transform[0].matchers.ignores", undefined);
+          expect(result).to.have.deep.property(`${serviceName}[0].matchers.ignores`, undefined);
         });
 
         it("then matchers has undefined match rules", () => {
-          expect(result).to.have.deep.property("transform[0].matchers.matches", undefined);
+          expect(result).to.have.deep.property(`${serviceName}[0].matchers.matches`, undefined);
         });
       });
     });
 
-    describe("and configuring it with one function handler, ignore, match rules, and options", () => {
+    describe("and configuring it with one function handler, ignore rules, match rules, and options", () => {
       var handlerOption;
 
       beforeEach(() => {
         handlerOption = chance.string();
 
         pluginOptions = {
-          transform: {
+          [serviceName]: {
             handler: () => {},
             options: {
               rounders: handlerOption
@@ -137,24 +133,24 @@ describe("Plugin Test Suite", function() {
           result = plugin.serialize();
         });
 
-        it("then the result contains the proper data structure", () => {
+        it("then the result contains the expected data structure", () => {
           expect(result).to.deep.equal({
-            transform: [{
-              handler: pluginOptions.transform.handler,
-              id: pluginOptions.transform.id,
+            id: null,
+            [serviceName]: [{
+              handler: pluginOptions[serviceName].handler,
+              id: pluginOptions[serviceName].id,
               options: {
                 rounders: handlerOption
               },
               matchers: {
                 ignores: {
-                  corner: [pluginOptions.transform.matchers.ignores.corner]
+                  corner: [pluginOptions[serviceName].matchers.ignores.corner]
                 },
                 matches: {
-                  round: [pluginOptions.transform.matchers.matches.round]
+                  round: [pluginOptions[serviceName].matchers.matches.round]
                 }
               }
-            }],
-            id: null
+            }]
           });
         });
       });
@@ -174,23 +170,26 @@ describe("Plugin Test Suite", function() {
     });
 
     describe("and running it with a random string as data with no registered handlers", () => {
+      var error;
+
       beforeEach(() => {
         data = chance.string();
 
-        registrarMock = {
-          loadHandlers: sinon.stub().returns(Promise.resolve())
-        };
+        registrarMock = new Registrar();
+        registrarMock.loadHandlers = sinon.stub().returns(Promise.resolve());
 
         createPlugin();
-        return runPlugin();
+
+        try {
+          return runPlugin();
+        }
+        catch(ex) {
+          error = ex;
+        }
       });
 
-      it("then plugin will attempt to load all dynamic plugins", () => {
-        sinon.assert.calledOnce(registrarMock.loadHandlers);
-      });
-
-      it("then final result is equal to the input - input does not change", () => {
-        expect(result).to.equal(data);
+      it("then an exception is thrown", () => {
+        expect(error).to.be.an.instanceof(Error);
       });
     });
 
@@ -202,6 +201,7 @@ describe("Plugin Test Suite", function() {
         handlerResult = { "source": chance.string() };
         handler = sinon.stub().returns(handlerResult);
         registrarMock = new Registrar();
+        registrarMock.getServiceNames = sinon.stub().returns(["transform"]);
         registrarMock.registerPluginWithService = sinon.stub();
 
         createPlugin();
@@ -258,6 +258,7 @@ describe("Plugin Test Suite", function() {
         loader.import = importStub;
         loader.config = sinon.stub().returns(loader);
         registrarMock = new Registrar(loader);
+        registrarMock.getServiceNames = sinon.stub().returns(["transform"]);
         registrarMock.registerPluginWithService = sinon.stub();
 
         createPlugin();
@@ -311,6 +312,7 @@ describe("Plugin Test Suite", function() {
         loader.import = importStub;
         loader.config = sinon.stub().returns(loader);
         registrarMock = new Registrar(loader);
+        registrarMock.getServiceNames = sinon.stub().returns(["transform"]);
         registrarMock.registerPluginWithService = sinon.stub();
 
         createPlugin();
@@ -369,6 +371,7 @@ describe("Plugin Test Suite", function() {
         loader.import = importStub;
         loader.config = sinon.stub().returns(loader);
         registrarMock = new Registrar(loader);
+        registrarMock.getServiceNames = sinon.stub().returns(["transform"]);
         registrarMock.registerPluginWithService = sinon.stub();
 
         createPlugin();
@@ -425,6 +428,7 @@ describe("Plugin Test Suite", function() {
         loader.import = importStub;
         loader.config = sinon.stub().returns(loader);
         registrarMock = new Registrar(loader);
+        registrarMock.getServiceNames = sinon.stub().returns(["transform"]);
         registrarMock.registerPluginWithService = sinon.stub();
 
         createPlugin();
