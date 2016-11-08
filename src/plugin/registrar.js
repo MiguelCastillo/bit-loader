@@ -40,16 +40,18 @@ Registrar.prototype._items = function(ids, container) {
 
 
 Registrar.prototype.configurePlugin = function(id, options) {
-  if (!id) {
-    id = "plugin-" + _pluginId++;
-  }
-
   if (types.isFunction(options)) {
     options = options(new Builder());
 
     if (options instanceof Builder) {
       options = options.build();
     }
+  }
+
+  id = id || options.id;
+
+  if (!id) {
+    id = "plugin-" + _pluginId++;
   }
 
   this.plugins[id] = this._configure(id, options, this.plugins, Plugin);
@@ -162,8 +164,7 @@ Registrar.prototype.registerPluginWithService = function(serviceName, pluginId) 
 
   this.services[serviceName].use(function() {
     var plugin = registrar.getPlugin(pluginId);
-    var args = Array.prototype.slice.call(arguments);
-    args.unshift(serviceName);
+    var args = [serviceName].concat([].slice.call(arguments));
     return plugin.run.apply(plugin, args);
   });
 
