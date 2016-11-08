@@ -57,6 +57,11 @@ Registrar.prototype.configurePlugin = function(id, options) {
 };
 
 
+Registrar.prototype.getServiceNames = function() {
+  return Object.keys(this.services);
+};
+
+
 Registrar.prototype.hasPlugin = function(id) {
   return this.plugins.hasOwnProperty(id);
 };

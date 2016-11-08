@@ -5,20 +5,21 @@ import Registrar from "src/plugin/registrar";
 var chance = chanceFactory();
 
 describe("Plugin Registrar Test Suite", () => {
-  var registrarMock;
+  var registrarMock, serviceName;
 
-  describe("When creating a Plugin Registrar with no options", () => {
+  describe("Given a Plugin Registrar with no options", () => {
     beforeEach(() => {
       registrarMock = new Registrar();
+      registrarMock.getServiceNames = sinon.stub().returns([serviceName]);
     });
 
-    describe("and configuring a `transform` plugin", () => {
+    describe("and configuring a plugin", () => {
       var act;
 
       beforeEach(() => {
         act = () => {
           registrarMock.configurePlugin(chance.string(), {
-            transform: () => {}
+            [serviceName]: () => {}
           });
         };
       });
