@@ -77,7 +77,11 @@ The module loading stage has 5 pipelines, which are described below.
 
 These five pipelines are pluggable, which means that you can register handler functions to process module data in each one of them. These pipelines are executed sequentially in the order listed above, with each pipeline cascading data from one to the next. Furthermore, all these pipelines use Promises to orchestrate any asynchronous processing done by each configured handler.
 
+Each one of these pipelines (with the exception of precompile) has a corresponding pre and post companion. That means that resolve really provides you with `preresolve`, `resolve`, and `postresolve`.
+
 More details on how to hook into these pipelines can be found in the [plugins](#plugins) section.
+
+> BTW - pipelines are internally known as `Services`
 
 ### The second stage - the module building stage
 
