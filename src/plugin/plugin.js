@@ -42,7 +42,7 @@ Plugin.prototype.configure = function(options) {
       };
     })
     .reduce(function(result, handlersConfig) {
-      var serviceName = handlersConfig.serviceName
+      var serviceName = handlersConfig.serviceName;
       var handlers = handlersConfig.handlers;
 
       if (!handlers) {
