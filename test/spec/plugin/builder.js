@@ -19,12 +19,6 @@ describe("bit-plugin-builder test suite", function() {
 
       it("then result has default settings", () => {
         expect(result).to.deep.equal({
-          resolve: [],
-          fetch: [],
-          pretransform: [],
-          transform: [],
-          dependency: [],
-          precompile: [],
           extensions: []
         });
       });

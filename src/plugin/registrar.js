@@ -41,7 +41,17 @@ Registrar.prototype._items = function(ids, container) {
 
 Registrar.prototype.configurePlugin = function(id, options) {
   if (types.isFunction(options)) {
-    options = options(new Builder());
+    var servicesMap = this
+      .getServiceNames()
+      .filter(function(name) {
+        return name !== "compile" && name !== "link"
+      })
+      .reduce(function(result, name) {
+        result[name] = [];
+        return result;
+      }, {});
+
+    options = options(new Builder(servicesMap));
 
     if (options instanceof Builder) {
       options = options.build();
