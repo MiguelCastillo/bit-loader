@@ -3,10 +3,10 @@ var types  = require("dis-isa");
 var Rule   = require("roolio");
 var utils  = require("belty");
 
+var Service      = require("./service");
 var Link         = require("./services/link");
 var Resolve      = require("./services/resolve");
 var Fetch        = require("./services/fetch");
-var PreTransform = require("./services/pretransform");
 var Transform    = require("./services/transform");
 var Dependency   = require("./services/dependency");
 var PreCompile   = require("./services/precompile");
@@ -41,16 +41,10 @@ function Bitloader(options) {
   this.cache = {};
 
   // Services! Components that process modules.
-  this.services = {
-    resolve      : new Resolve(this),
-    fetch        : new Fetch(this),
-    pretransform : new PreTransform(this),
-    transform    : new Transform(this),
-    dependency   : new Dependency(this),
-    precompile   : new PreCompile(this),
-    compile      : new Compile(this),
-    link         : new Link(this)
-  };
+  this.services = utils.merge({},
+    Service.create(this, { resolve: Resolve, fetch: Fetch, transform: Transform, dependency: Dependency }, true),
+    Service.create(this, { precompile: PreCompile, compile: Compile, link: Link })
+  );
 
   // Controllers!  These guys make use of the services to build pipelines
   // that build modules. Controllers use services, but services only use

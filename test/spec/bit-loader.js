@@ -1,17 +1,43 @@
 import { expect } from "chai";
-import Bitloader from "src/bit-loader";
+import Bitloader from "../../src/bit-loader";
 
 describe("Bitloader Test Suite", function() {
   var bitloader;
 
-  describe("When creating an empty instance of Bitloader", function() {
+  describe("Given an empty instance of Bitloader", function() {
     beforeEach(function() {
       bitloader = new Bitloader();
     });
 
-    it("then bitloader is an instance of `Bitloader`", function() {
+    function checkService(name) {
+      it("then the instance has a " + name + " service", function() {
+        expect(bitloader.services[name]).to.be.ok;
+      });
+    }
+
+    it("then the instance is of type `Bitloader`", function() {
       expect(bitloader instanceof(Bitloader)).to.equal(true);
     });
+
+    checkService("preresolve");
+    checkService("resolve");
+    checkService("postresolve");
+
+    checkService("prefetch");
+    checkService("fetch");
+    checkService("postfetch");
+
+    checkService("pretransform");
+    checkService("transform");
+    checkService("posttransform");
+
+    checkService("predependency");
+    checkService("dependency");
+    checkService("postdependency");
+
+    checkService("precompile");
+    checkService("compile");
+    checkService("link");
   });
 
   describe("When creating a new instance of Bitloader with a plugin with handlers for `fetch`, `transform`, `dependency`, and `compile`", function() {
