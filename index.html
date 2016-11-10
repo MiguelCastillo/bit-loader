@@ -1,0 +1,530 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Bit-loader by MiguelCastillo</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Bit-loader</h1>
+        <p>Framework for building module loaders with very little effort</p>
+
+        <p class="view"><a href="https://github.com/MiguelCastillo/bit-loader">View the Project on GitHub <small>MiguelCastillo/bit-loader</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/MiguelCastillo/bit-loader/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/MiguelCastillo/bit-loader/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/MiguelCastillo/bit-loader">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <p><img src="https://raw.githubusercontent.com/MiguelCastillo/bit-loader/master/img/bit-loader_white.png" width="100%"></p>
+
+<p><a href="https://travis-ci.org/MiguelCastillo/bit-loader"><img src="https://travis-ci.org/MiguelCastillo/bit-loader.svg?branch=master" alt="Build Status"></a> <a href="https://gitter.im/MiguelCastillo/bit-loader?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://badges.gitter.im/Join%20Chat.svg" alt="Gitter"></a></p>
+
+
+
+
+
+<p><strong>Table of Contents</strong></p>
+
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#examples">Examples</a></li>
+<li><a href="#install-npm-dependencies-build-and-test">Install npm dependencies, build, and test</a></li>
+<li>
+<a href="#architecture-overview">Architecture Overview</a>
+
+<ul>
+<li>
+<a href="#the-first-stage---the-module-loading-stage">The first stage - the module loading stage</a>
+
+<ul>
+<li><a href="#5-pipelines">5 pipelines</a></li>
+</ul>
+</li>
+<li><a href="#the-second-stage---the-module-building-stage">The second stage - the module building stage</a></li>
+</ul>
+</li>
+<li><a href="#plugins">Plugins</a></li>
+<li>
+<a href="#default-providers">Default providers</a>
+
+<ul>
+<li><a href="#example">Example</a></li>
+</ul>
+</li>
+<li>
+<a href="#module-meta">Module Meta</a>
+
+<ul>
+<li><a href="#pipeline-flow-of-the-first-and-second-stage">Pipeline Flow of the first and second stage</a></li>
+<li><a href="#visual-of-fetch-pipelines">Visual of fetch pipelines</a></li>
+</ul>
+</li>
+<li>
+<a href="#pattern-matching">Pattern Matching</a>
+
+<ul>
+<li><a href="#match">match</a></li>
+<li><a href="#ignore">ignore</a></li>
+<li><a href="#extensions">extensions</a></li>
+</ul>
+</li>
+<li><a href="#license">License</a></li>
+</ul>
+
+
+
+<h2>
+<a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Introduction</h2>
+
+<blockquote>
+<p>Framework for building module loaders. This is the core library for <a href="https://github.com/MiguelCastillo/bit-imports">bit-imports</a> and <a href="https://github.com/MiguelCastillo/bit-bundler">bit-bundler</a>.</p>
+</blockquote>
+
+<h2>
+<a id="examples" class="anchor" href="#examples" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Examples</h2>
+
+<p>Please checkout the <a href="https://github.com/MiguelCastillo/bit-loader/tree/master/example">examples</a>.  There you will find different recipes for setting things up.</p>
+
+<h2>
+<a id="install-npm-dependencies-build-and-test" class="anchor" href="#install-npm-dependencies-build-and-test" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Install npm dependencies, build, and test</h2>
+
+<pre><code>$ npm install
+$ grunt build
+$ grunt test
+</code></pre>
+
+<p>All build artifacts will be in the <code>dist</code> folder.</p>
+
+<h2>
+<a id="architecture-overview" class="anchor" href="#architecture-overview" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Architecture Overview</h2>
+
+<p><code>bit-loader</code> is composed of a two stage system. The first stage is responsible for loading and processing files via puggable pipelines. And a second stage is responsible for building (compiling and linking) modules.</p>
+
+<h3>
+<a id="the-first-stage---the-module-loading-stage" class="anchor" href="#the-first-stage---the-module-loading-stage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The first stage - the module loading stage</h3>
+
+<p>This stage is responsible for loading files from storage and processing them in order to generate a graph, which we refer to as module graph. The module graph is basically a tree structure that outlines the dependency hierarchy of the modules.</p>
+
+<p>This stage is composed of several pluggable pipelines that cascade <em>information</em> from one pipeline to the next. This <em>information</em> is encapsulated in an object we refer to as <em>module meta</em>. More information on the module meta objects can be found <a href="#module-meta">here</a>. The flow that module meta objects go through is described below:</p>
+
+<p>First, we need to convert module names to file paths in order to load modules from storage. This conversion is called <em>module name resolution</em>, which is done in the <code>resolve</code> pipeline. The <code>path</code> generated in the <code>resolve</code> pipeline is then used by the <code>fetch</code> pipeline to load module files from storage. These files are subsequently processed by the <code>transform</code> pipeline, which is generally where all transpilation/transformation is done. The result of the <code>transform</code> pipeline is pushed through the <code>dependency</code> pipeline, which pulls out dependencies and recursively feeds them through the first stage (module loading stage) until no more modules are left to load into the module graph. And finally, a helper pipeline called <code>precompile</code> that allows you to preemptively set the module <code>exports</code>, which effectively prevents modules from being processed in the build stage.</p>
+
+<blockquote>
+<p>This stage is entirely asynchronous, and the output is a module graph.</p>
+</blockquote>
+
+<h4>
+<a id="5-pipelines" class="anchor" href="#5-pipelines" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>5 pipelines</h4>
+
+<p>The module loading stage has 5 pipelines, which are described below.</p>
+
+<ul>
+<li>
+<strong><code>resolve</code></strong> - responsible for generating paths to read module files from storage.</li>
+<li>
+<strong><code>fetch</code></strong> - responsible for loading files from storage.</li>
+<li>
+<strong><code>transform</code></strong> - responsible for processing and transforming loaded files.  E.g. ES2015 to ES5 via babeljs. Or CoffeeScript to JavaScript.</li>
+<li>
+<strong><code>dependency</code></strong> - responsible for parsing out dependencies from the loaded files and recursively feeding them to the module loading stage.</li>
+<li>
+<strong><code>precompile</code></strong> - provides you with a hook for preemptively building modules in the fetch stage, which effectively prevents module processing in the build stage.</li>
+</ul>
+
+<p>These five pipelines are pluggable, which means that you can register handler functions to process module data in each one of them. These pipelines are executed sequentially in the order listed above, with each pipeline cascading data from one to the next. Furthermore, all these pipelines use Promises to orchestrate any asynchronous processing done by each configured handler.</p>
+
+<p>Each one of these pipelines (with the exception of precompile) has a corresponding pre and post companion. That means that resolve really provides you with <code>preresolve</code>, <code>resolve</code>, and <code>postresolve</code>.</p>
+
+<p>More details on how to hook into these pipelines can be found in the <a href="#plugins">plugins</a> section.</p>
+
+<blockquote>
+<p>BTW - pipelines are internally known as <code>Services</code></p>
+</blockquote>
+
+<h3>
+<a id="the-second-stage---the-module-building-stage" class="anchor" href="#the-second-stage---the-module-building-stage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The second stage - the module building stage</h3>
+
+<p>The build stage (compile + linking) is where the <em>transformed files</em> are converted to <em>evaluated code</em>, which is what host applications generally consume.</p>
+
+<blockquote>
+<p>The build stage is synchronous and it is <em>not</em> pluggable.</p>
+</blockquote>
+
+<p>The combination of the first (<em>asynchronous</em>) stage with the second (<em>synchronous</em>) build stage enables support for <code>CJS</code>,<code>AMD</code>, and <code>ES6 modules</code> simultaneously.</p>
+
+<hr>
+
+<h2>
+<a id="plugins" class="anchor" href="#plugins" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Plugins</h2>
+
+<p>A plugin is a container with handler functions that hook into the pipelines in order to load and process modules.</p>
+
+<blockquote>
+<p>A handler is fundamentally a <code>transform</code> as found in many other systems. However, it is called <code>handler</code> in <code>bit-loader</code> to prevent confusion with the <code>transform</code> pipeline.</p>
+</blockquote>
+
+<p>Handler arguments and return values are:</p>
+
+<ul>
+<li>
+<em>param</em> { object } <strong><code>meta</code></strong> - Object with information to be processed. See <a href="#module-meta">module meta</a>.</li>
+<li>
+<em>param</em> { object } <strong><code>options</code></strong> - Configuration object for the particular handler.</li>
+<li>
+<em>param</em> { function } <strong><code>cancel</code></strong> - Function to cancel the execution of the plugin handlers for the particular pipeline the handler is executing on.</li>
+<li>
+<em>returns</em> { object | Promise } Object with properties to be merged into the module meta object. Plugin handlers can alternatively return promises to control asynchronous data processing.</li>
+</ul>
+
+<p>The example below is a plugin with a handler that hooks into the fetch pipeline to load modules from storage, and another handler that hooks into the transform pipeline to add <code>'use strict;'</code> to loaded modules.</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-c">// Plugin handler to load file from storage using the fetch API.</span>
+<span class="pl-k">function</span> <span class="pl-en">loadFile</span>(<span class="pl-smi">meta</span>, <span class="pl-smi">options</span>, <span class="pl-smi">cancel</span>) {
+  <span class="pl-k">return</span> <span class="pl-c1">window</span>
+    .<span class="pl-en">fetch</span>(<span class="pl-smi">meta</span>.<span class="pl-smi">path</span>)
+    .<span class="pl-en">then</span>(<span class="pl-k">function</span>(<span class="pl-smi">response</span>) {
+      <span class="pl-k">return</span> {
+        source<span class="pl-k">:</span> <span class="pl-smi">response</span>.<span class="pl-c1">text</span>();
+      };
+    });
+}
+
+<span class="pl-c">// Plugin handler to add `use strict` to loaded modules</span>
+<span class="pl-k">function</span> <span class="pl-en">addStrict</span>(<span class="pl-smi">meta</span>, <span class="pl-smi">options</span>, <span class="pl-smi">cancel</span>) {
+  <span class="pl-k">return</span> {
+    source<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">"</span>'use strict;'<span class="pl-cce">\n</span><span class="pl-pds">"</span></span> <span class="pl-k">+</span> <span class="pl-smi">meta</span>.<span class="pl-c1">source</span>
+  };
+}
+
+<span class="pl-c">// Configure plugin with the two handlers</span>
+<span class="pl-smi">bitloader</span>.<span class="pl-en">plugin</span>({
+  fetch<span class="pl-k">:</span> loadFile,
+  transform<span class="pl-k">:</span> addStrict
+});</pre></div>
+
+<p>Plugins can take a single or an array of handlers, and a handler can be a module name (a string). When a handler is a module name, <code>bit-loader</code> will dynamically load it at runtime. The following example shows the handlers passed in as an array and one of the handlers is a module name.</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-smi">bitloader</span>.<span class="pl-en">plugin</span>({
+  fetch<span class="pl-k">:</span> [ loadFile ],
+  transform<span class="pl-k">:</span> [ <span class="pl-s"><span class="pl-pds">"</span>add-strict<span class="pl-pds">"</span></span> ]
+});</pre></div>
+
+<p>When a handler is an object, a property <code>handler</code> is expected to be defined as either a module name or a function. Some of the reasons to define a plugin handler as an object is to specify options to be passed onto the <code>handler</code> function when it is executed and/or to configure pattern matching. See <a href="#pattern-matching">pattern matching</a>.</p>
+
+<p>The example below configures a plugin handler as an object. Notice the <code>handler</code> is "add-strict" which is the name of the module to be dynamically loaded at runtime. The options for the handler is also forwarded to the <code>handler</code> function when it is invoked.</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-smi">bitloader</span>.<span class="pl-en">plugin</span>({
+  fetch<span class="pl-k">:</span> loadFile,
+  transform<span class="pl-k">:</span> {
+    handler<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">"</span>add-strict<span class="pl-pds">"</span></span>,
+    options<span class="pl-k">:</span> {
+      inlineMap<span class="pl-k">:</span> <span class="pl-c1">true</span>
+    }
+  }
+});</pre></div>
+
+<p>Plugins also provide a way to define the shape of the modules your plugins can process via pattern matching. For example, you can specify properties like the module path, module name, or even match content in the module source. Below is an example configuring a plugin to only process files with <code>js</code> and <code>es6</code> extensions:</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-smi">bitloader</span>.<span class="pl-en">plugin</span>({
+  extensions<span class="pl-k">:</span> [<span class="pl-s"><span class="pl-pds">"</span>js<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>es6<span class="pl-pds">"</span></span>]
+});</pre></div>
+
+<p>We did all the previous steps separately for illustration purposes, but we can certainly do all that stuff in a single call.</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> bitloader <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-en">Bitloader</span>();
+
+<span class="pl-smi">bitloader</span>.<span class="pl-en">plugin</span>({
+  extensions<span class="pl-k">:</span> [<span class="pl-s"><span class="pl-pds">"</span>js<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>es6<span class="pl-pds">"</span></span>],
+  fetch<span class="pl-k">:</span> loadFile,
+  transform<span class="pl-k">:</span> addStrict
+});</pre></div>
+
+<p>Or alternatively, via <code>bit-loader</code>'s constructor</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> bitloader <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-en">Bitloader</span>({
+  plugins<span class="pl-k">:</span> [{
+    extensions<span class="pl-k">:</span> [<span class="pl-s"><span class="pl-pds">"</span>js<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>es6<span class="pl-pds">"</span></span>],
+    fetch<span class="pl-k">:</span> loadFile,
+    transform<span class="pl-k">:</span> addStrict
+  }]
+});</pre></div>
+
+<h2>
+<a id="default-providers" class="anchor" href="#default-providers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Default providers</h2>
+
+<p>All pluggable pipelines have an optional default provider, which is just a default handler that is executed when no plugin can process a particular module. These are configured by providing the corresponding handlers in <code>bit-loader</code>'s constructor.</p>
+
+<blockquote>
+<p><a href="https://github.com/MiguelCastillo/bit-imports">bit imports</a> and <a href="https://github.com/MiguelCastillo/bit-bundler">bit-bundler</a> both implement default providers to give base functionality without configuring plugins.</p>
+</blockquote>
+
+<h4>
+<a id="example" class="anchor" href="#example" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Example</h4>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-k">function</span> <span class="pl-en">resolvePath</span>(<span class="pl-smi">meta</span>) {
+  <span class="pl-k">return</span> {
+    path<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">"</span>path/to/module/<span class="pl-pds">"</span></span> <span class="pl-k">+</span> <span class="pl-smi">meta</span>.<span class="pl-c1">name</span>
+  };
+}
+
+<span class="pl-k">function</span> <span class="pl-en">loadFile</span>(<span class="pl-smi">meta</span>) {
+  <span class="pl-k">return</span> <span class="pl-c1">window</span>
+    .<span class="pl-en">fetch</span>(<span class="pl-smi">meta</span>.<span class="pl-smi">path</span>)
+    .<span class="pl-en">then</span>(<span class="pl-k">function</span>(<span class="pl-smi">response</span>) {
+      <span class="pl-k">return</span> {
+        source<span class="pl-k">:</span> <span class="pl-smi">response</span>.<span class="pl-c1">text</span>();
+      };
+    });
+}
+
+<span class="pl-c">// The compilation is not pluggable. However, you can always set `exports` in</span>
+<span class="pl-c">// any stage to tell bit-loader that the module is ready for consumption.</span>
+<span class="pl-k">function</span> <span class="pl-en">compileModule</span>(<span class="pl-smi">meta</span>) {
+  <span class="pl-k">return</span> {
+    exports<span class="pl-k">:</span> <span class="pl-c1">eval</span>(<span class="pl-smi">meta</span>.<span class="pl-c1">source</span>)
+  };
+}
+
+
+<span class="pl-c">//</span>
+<span class="pl-c">// Instantiate bitloader with default providers.</span>
+<span class="pl-c">//</span>
+<span class="pl-k">var</span> bitloader <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-en">Bitloader</span>({
+  resolve    <span class="pl-k">:</span> resolvePath,
+  fetch      <span class="pl-k">:</span> loadFile,
+  precompile <span class="pl-k">:</span> compileModule
+});</pre></div>
+
+<h2>
+<a id="module-meta" class="anchor" href="#module-meta" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Module Meta</h2>
+
+<p>So what exactly are the different pipelines passing around anyways? They are passing around a module meta object, which is an object that contains the current state of the module. This object is an intermediate representation that the build stage uses to create module instances that the host application ultimately consumes.</p>
+
+<blockquote>
+<p>Modifying module meta objects is the primary responsibility of the different pipelines.</p>
+</blockquote>
+
+<p>The basic shape looks like this, but plugin handlers are free to add more data to it.</p>
+
+<ul>
+<li>
+<strong><code>deps</code></strong> { Array[ string ] } - Collection of module names a particular module depends on. Used by the <code>dependency</code> stage.</li>
+<li>
+<strong><code>name</code></strong> { string } - Name of the module to load. Used by <code>resolve</code> to figure out the <code>path</code>.</li>
+<li>
+<strong><code>path</code></strong> { string } - Path for the module file. Used by <code>fetch</code> to load the module file.</li>
+<li>
+<strong><code>source</code></strong> { string } - File content of the module.  Use by <code>transform</code> to transpile the module content.</li>
+<li>
+<strong><code>referrer</code></strong> { { string: path, string: name } } - Information about the module requesting to load the current module.</li>
+</ul>
+
+<h4>
+<a id="pipeline-flow-of-the-first-and-second-stage" class="anchor" href="#pipeline-flow-of-the-first-and-second-stage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Pipeline Flow of the first and second stage</h4>
+
+<ul>
+<li>
+<p>first stage (fetch stage) <em>async</em></p>
+
+<ul>
+<li>create moduleMeta</li>
+<li>resolve (moduleMeta)
+
+<ul>
+<li>calculate module path from moduleMeta.name and set moduleMeta.path</li>
+</ul>
+</li>
+<li>fetch (moduleMeta)
+
+<ul>
+<li>read module file using moduleMeta.path and set moduleMeta.source</li>
+</ul>
+</li>
+<li>transform (moduleMeta)
+
+<ul>
+<li>run custom transforms and set moduleMeta.source</li>
+</ul>
+</li>
+<li>dependency (moduleMeta)
+
+<ul>
+<li>parse out dependencies from moduleMeta.source and set moduleMeta.deps</li>
+<li>recursively feed each item in moduleMeta.deps through the first stage</li>
+</ul>
+</li>
+<li>precompile (moduleMeta)
+
+<ul>
+<li>optionally builds and sets moduleMeta.exports, which prevents the build stage from processing the particular module</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>second stage (build stage) <em>sync</em></p>
+
+<ul>
+<li>compile - evalutes moduleMeta.source</li>
+<li>link - calls factory, creates module instance, and sets module.exports</li>
+</ul>
+</li>
+</ul>
+
+<h4>
+<a id="visual-of-fetch-pipelines" class="anchor" href="#visual-of-fetch-pipelines" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Visual of fetch pipelines</h4>
+
+<p><img src="img/bit-loader-fetch-pipelines-white.png" width="100%"></p>
+
+<h2>
+<a id="pattern-matching" class="anchor" href="#pattern-matching" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Pattern Matching</h2>
+
+<p>Pattern matching rules allow you to define which modules are processed by <code>bit-loader</code>. This is accomplished by defining <code>match</code>, <code>ignore</code>, and <code>extensions</code> rules, which can be defined in plugins and in plugin handlers. You can also specify <code>ignore</code> rules in <code>bit-loader</code> instances. This combination gives you lots of control over what parts of your setup can process particular modules.</p>
+
+<ul>
+<li><p><code>match</code> and <code>ignore</code> rules are objects whose properties are matched against properties in module meta objects. For example, if you have a <code>match</code> rule object with a property called <code>path</code>, then the <code>path</code> in module meta will be tested to determine if the particular module meta can be processed.</p></li>
+<li><p><code>extensions</code> rules is a strings or array of strings to match the file extension of the module being loaded.</p></li>
+</ul>
+
+<blockquote>
+<p><code>bit-loader</code> pattern matching rules are an abstraction on top of <a href="https://github.com/MiguelCastillo/roolio">roolio</a>, so feel free to explore different matching rules, including custom ones. But generally, you will only specify strings and regexp.</p>
+</blockquote>
+
+<h3>
+<a id="match" class="anchor" href="#match" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>match</h3>
+
+<blockquote>
+<p>match rules define which modules are <em>processed</em> by bit-loader.</p>
+</blockquote>
+
+<p>The following example sets a <code>match</code> rule in a plugin to only process modules that have <code>src/views</code> in the path.  All other modules are ignored by this plugin.</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> Bitloader <span class="pl-k">=</span> <span class="pl-c1">require</span>(<span class="pl-s"><span class="pl-pds">"</span>bit-loader<span class="pl-pds">"</span></span>);
+<span class="pl-k">var</span> bitloader <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-en">Bitloader</span>();
+
+<span class="pl-smi">bitloader</span>.<span class="pl-en">plugin</span>({
+  match {
+    path<span class="pl-k">:</span><span class="pl-sr"> <span class="pl-pds">/</span>src<span class="pl-cce">\/</span>views<span class="pl-pds">/</span></span>
+  },
+  transform<span class="pl-k">:</span> [
+    <span class="pl-k">function</span>(<span class="pl-smi">meta</span>) {
+      <span class="pl-en">console</span>.<span class="pl-c1">log</span>(<span class="pl-smi">meta</span>.<span class="pl-c1">name</span>);
+    }
+  ]
+});</pre></div>
+
+<p>Expanding on the previous example, we set a <code>match</code> rule for a particular plugin handler so that it only processes modules with names that end in <code>region</code>. This basically tells the plugin that it can only process modules in <code>src/views</code> and that the particular transform can only process modules with names that end in <code>region</code>.</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> Bitloader <span class="pl-k">=</span> <span class="pl-c1">require</span>(<span class="pl-s"><span class="pl-pds">"</span>bit-loader<span class="pl-pds">"</span></span>);
+<span class="pl-k">var</span> bitloader <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-en">Bitloader</span>();
+
+<span class="pl-smi">bitloader</span>.<span class="pl-en">plugin</span>({
+  match {
+    path<span class="pl-k">:</span><span class="pl-sr"> <span class="pl-pds">/</span>src<span class="pl-cce">\/</span>views<span class="pl-pds">/</span></span>
+  },
+  transform<span class="pl-k">:</span> [
+    {
+      match<span class="pl-k">:</span> {
+        name<span class="pl-k">:</span><span class="pl-sr"> <span class="pl-pds">/</span>region<span class="pl-k">$</span><span class="pl-pds">/</span></span>
+      },
+      <span class="pl-en">handler</span><span class="pl-k">:</span> <span class="pl-k">function</span>(<span class="pl-smi">meta</span>) {
+        <span class="pl-en">console</span>.<span class="pl-c1">log</span>(<span class="pl-smi">meta</span>.<span class="pl-c1">name</span>);
+      }
+    }
+  ]
+});</pre></div>
+
+<h3>
+<a id="ignore" class="anchor" href="#ignore" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ignore</h3>
+
+<blockquote>
+<p>ignore rules define which modules are <em>ignored</em> by bit-loader.</p>
+</blockquote>
+
+<p><code>ignore</code> rules are defined exactly the same way as <code>match</code> rules. You configure <code>ignore</code> rules if you want particular plugins and plugin handlers as well as <code>bit-loader</code> instances to ignore certain modules.</p>
+
+<p>The following example tells <code>bit-loader</code> to ignore modules with the name <code>react</code> and <code>jquery</code>.</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> Bitbundler <span class="pl-k">=</span> <span class="pl-c1">require</span>(<span class="pl-s"><span class="pl-pds">"</span>bit-bundler<span class="pl-pds">"</span></span>);
+<span class="pl-k">var</span> bitbundler <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-en">Bitbundler</span>({
+  ignore<span class="pl-k">:</span> {
+    name<span class="pl-k">:</span> [<span class="pl-s"><span class="pl-pds">"</span>react<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>jquery<span class="pl-pds">"</span></span>]
+  }
+});</pre></div>
+
+<blockquote>
+<p>You can alternatively use the short form <code>ignore: ["react", "jquery"]</code> when configuring ignore rules for bit-loader instances.</p>
+</blockquote>
+
+<p>By default, ignore rules in bit-loader instances will prevent the <code>transform</code> and <code>dependency</code> pipelines from processing modules. You can further customize which pipelines ignore which modules by specifying a <code>services</code> array with the names of the pipelines that ought to skip module processing. The valid pipelines are <code>resolve</code>, <code>fetch</code>, <code>transform</code>, <code>dependency</code>, and <code>precompile</code>.</p>
+
+<p>The following example illustrates how to configure a plugin so that it ignores all modules in <code>src/views</code></p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> Bitloader <span class="pl-k">=</span> <span class="pl-c1">require</span>(<span class="pl-s"><span class="pl-pds">"</span>bit-loader<span class="pl-pds">"</span></span>);
+<span class="pl-k">var</span> bitloader <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-en">Bitloader</span>();
+
+<span class="pl-smi">bitloader</span>.<span class="pl-en">plugin</span>({
+  ignore {
+    path<span class="pl-k">:</span><span class="pl-sr"> <span class="pl-pds">/</span>src<span class="pl-cce">\/</span>views<span class="pl-pds">/</span></span>
+  },
+  transform<span class="pl-k">:</span> [
+    <span class="pl-k">function</span>(<span class="pl-smi">meta</span>) {
+      <span class="pl-en">console</span>.<span class="pl-c1">log</span>(<span class="pl-smi">meta</span>.<span class="pl-c1">name</span>);
+    }
+  ]
+});</pre></div>
+
+<h3>
+<a id="extensions" class="anchor" href="#extensions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>extensions</h3>
+
+<blockquote>
+<p>extensions rules defines which modules with particular file extensions can be processed by <em>bit-loader</em></p>
+</blockquote>
+
+<p><code>extensions</code> rules are a shortcut for defining pattern matching rules for module meta paths with regular expressions to test for file extensions.  E.g. <code>match: { path: /\.(js|jsx)$/gmi }</code>.  But extension matching is such a common use case that making this simpler is very convenient.</p>
+
+<blockquote>
+<p><code>extensions</code> rules are case insensitive.</p>
+</blockquote>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> Bitloader <span class="pl-k">=</span> <span class="pl-c1">require</span>(<span class="pl-s"><span class="pl-pds">"</span>bit-loader<span class="pl-pds">"</span></span>);
+<span class="pl-k">var</span> bitloader <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-en">Bitloader</span>();
+
+<span class="pl-smi">bitloader</span>.<span class="pl-en">plugin</span>({
+  extensions<span class="pl-k">:</span> [<span class="pl-s"><span class="pl-pds">"</span>js<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>jsx<span class="pl-pds">"</span></span>],
+  transform<span class="pl-k">:</span> [
+    <span class="pl-k">function</span>(<span class="pl-smi">meta</span>) {
+      <span class="pl-en">console</span>.<span class="pl-c1">log</span>(<span class="pl-smi">meta</span>.<span class="pl-smi">path</span>);
+    }
+  ]
+});</pre></div>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>License</h2>
+
+<p>Licensed under MIT</p>
+
+
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/MiguelCastillo">MiguelCastillo</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
