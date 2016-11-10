@@ -59,5 +59,21 @@ describe("Plugin Registrar Test Suite", () => {
       });
     });
 
+    describe("and registering a transform plugin via a function and the plugin builder", () => {
+      beforeEach(() => {
+        registrarMock.configurePlugin(chance.string(), (builder) => builder.configure({
+          transform: transformPlugin
+        }));
+      });
+
+      it("then the transform service is called to register the plugin", () => {
+        sinon.assert.calledOnce(transformService);
+      });
+
+      it("then the trasform service is called to register a function", () => {
+        sinon.assert.calledWith(transformService, sinon.match.func);
+      });
+    });
+
   });
 });

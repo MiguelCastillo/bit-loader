@@ -1,12 +1,6 @@
 var utils = require("belty");
 
 var defaults = {
-  resolve: [],
-  fetch: [],
-  pretransform: [],
-  transform: [],
-  dependency: [],
-  precompile: [],
   extensions: []
 };
 
@@ -33,14 +27,7 @@ Builder.create = function(options) {
 
 function merge(pluginConfig, options) {
   options = options || {};
-
-  var updateKeys = Object
-    .keys(options)
-    .filter(function(option) {
-      return defaults.hasOwnProperty(option);
-    });
-
-  utils.extend(pluginConfig, mergeState(pluginConfig, utils.pick(options, updateKeys)));
+  utils.extend(pluginConfig, mergeState(pluginConfig, utils.omit(options, ["match", "matches", "ignore", "ignores"])));
 
   var matches = options.match || options.matches;
   if (matches) {
