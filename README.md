@@ -75,13 +75,12 @@ The module loading stage has 5 pipelines, which are described below.
 - **`dependency`** - responsible for parsing out dependencies from the loaded files and recursively feeding them to the module loading stage.
 - **`precompile`** - provides you with a hook for preemptively building modules in the fetch stage, which effectively prevents module processing in the build stage.
 
-These five pipelines are pluggable, which means that you can register handler functions to process module data in each one of them. These pipelines are executed sequentially in the order listed above, with each pipeline cascading data from one to the next. Furthermore, all these pipelines use Promises to orchestrate any asynchronous processing done by each configured handler.
+These five pipelines are pluggable, which means that you can register handler functions (plugins) to process module data in each one of them. These pipelines are executed sequentially in the order listed above with each pipeline cascading data from one to the next. Furthermore, all these pipelines use Promises to orchestrate any asynchronous processing done by each configured handler.
 
-Each one of these pipelines (with the exception of precompile) has a corresponding pre and post companion. That means that resolve really provides you with `preresolve`, `resolve`, and `postresolve`.
+Each one of these pipelines (with the exception of precompile) has a corresponding pre and post companion. That means that `resolve` really also provides you with `preresolve` and `postresolve`. The purpose for the pre and post handlers is to provide hooks to configure modules data to be used by the actual pipeline.
 
 More details on how to hook into these pipelines can be found in the [plugins](#plugins) section.
 
-> BTW - pipelines are internally known as `Services`
 
 ### The second stage - the module building stage
 
@@ -97,16 +96,16 @@ The combination of the first (*asynchronous*) stage with the second (*synchronou
 
 ## Plugins
 
-A plugin is a container with handler functions that hook into the pipelines in order to load and process modules.
+A plugin is a container with handler functions that hook into the loader's pipelines in order to customize loading and processing of modules.
 
-> A handler is fundamentally a `transform` as found in many other systems. However, it is called `handler` in `bit-loader` to prevent confusion with the `transform` pipeline.
+> A handler is fundamentally a `transform` or `reducer` function as found in many other systems. However, it is called `handler` in `bit-loader` to prevent confusion with the `transform` pipeline.
 
 Handler arguments and return values are:
 
 - *param* { object } **`meta`** - Object with information to be processed. See [module meta](#module-meta).
-- *param* { object } **`options`** - Configuration object for the particular handler.
-- *param* { function } **`cancel`** - Function to cancel the execution of the plugin handlers for the particular pipeline the handler is executing on.
-- *returns* { object | Promise } Object with properties to be merged into the module meta object. Plugin handlers can alternatively return promises to control asynchronous data processing.
+- *param* { Handler } **`handler`** - Handler instance object, which provides a couple of helper methods such as `getLogger`.
+- *param* { function } **`cancel`** - Function to cancel the execution of all plugin handlers for the particular pipeline the handler is executing on.
+- *returns* { object | Promise } Object with properties to be merged into the module meta object. Plugin handlers can alternatively return promises to control asynchronous workflows.
 
 The example below is a plugin with a handler that hooks into the fetch pipeline to load modules from storage, and another handler that hooks into the transform pipeline to add `'use strict;'` to loaded modules.
 
@@ -161,6 +160,24 @@ bitloader.plugin({
 });
 ```
 
+A plugin can alternatively define a function as a handler.
+
+``` javascript
+bitloader.plugin({
+  fetch: loadFile,
+  transform: {
+    handler: function(meta, handlerInstance, cancel) {
+      return {
+        source: "'use strict;'\n" + meta.source
+      };
+    },
+    options: {
+      inlineMap: true
+    }
+  }
+});
+```
+
 Plugins also provide a way to define the shape of the modules your plugins can process via pattern matching. For example, you can specify properties like the module path, module name, or even match content in the module source. Below is an example configuring a plugin to only process files with `js` and `es6` extensions:
 
 ``` javascript
@@ -192,6 +209,22 @@ var bitloader = new Bitloader({
   }]
 });
 ```
+
+Plugin registration can also take a function, which is called with a plugin builder that helps merge plugin configurations.  This is really useful if you are looking to author plugins and you need to merge in options from the users.
+
+``` javascript
+var bitloader = new Bitloader();
+
+bitloader.plugin(function(builder) {
+  return builder.configure({
+    extensions: ["js", "es6"],
+    fetch: loadFile,
+    transform: addStrict
+  });
+});
+```
+
+> Take a look a this [plugin](https://github.com/MiguelCastillo/bit-loader-js/blob/master/index.js) for a sample implementation using the plugin builder.
 
 
 ## Default providers
