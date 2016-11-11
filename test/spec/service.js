@@ -106,11 +106,15 @@ describe("Service Test Suite", () => {
           it("then the `posttupac` plugin is called", () => {
             sinon.assert.called(posttupacPlugin);
           });
+
+          it("then result is the object passed in", () => {
+            expect(result).to.equal(input);
+          });
         });
 
         describe("and running the tupac service sync", () => {
           beforeEach(() => {
-            services.tupac.runSync(input);
+            result = services.tupac.runSync(input);
           });
 
           it("then the `pretupac` plugin is called", () => {
@@ -119,6 +123,10 @@ describe("Service Test Suite", () => {
 
           it("then the `posttupac` plugin is called", () => {
             sinon.assert.called(posttupacPlugin);
+          });
+
+          it("then result is the object passed in", () => {
+            expect(result).to.equal(input);
           });
         });
       });
