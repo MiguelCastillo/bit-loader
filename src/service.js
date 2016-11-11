@@ -13,6 +13,18 @@ function Service(context) {
 }
 
 
+Service.prototype.withPre = function(service) {
+  this.pre = service;
+  return this;
+};
+
+
+Service.prototype.withPost = function(service) {
+  this.post = service;
+  return this;
+};
+
+
 Service.prototype.provider = function(provider) {
   this._provider = provider;
   return this;
@@ -53,7 +65,9 @@ Service.prototype.runAsync = function(moduleMeta) {
   }
 
   return Promise.resolve(moduleMeta)
+    .then(runPipelineAsync(this.pre))
     .then(runPipelineAsync(this))
+    .then(runPipelineAsync(this.post))
     .then(runProviderAsync(this))
     .then(logIt(this));
 };
@@ -65,7 +79,9 @@ Service.prototype.runSync = function(moduleMeta) {
   }
 
   return [
+    runPipelineSync(this.pre),
     runPipelineSync(this),
+    runPipelineSync(this.post),
     runProviderSync(this),
     logIt(this)
   ].reduce(function(data, handler) {
@@ -89,6 +105,10 @@ function logIt(service) {
 
 function runPipelineAsync(service) {
   return function runPipelineDelegate(moduleMeta) {
+    if (!service) {
+      return Promise.resolve(moduleMeta);
+    }
+
     return Pipeline
       .runAsync(moduleMeta, service.transforms)
       .then(processResult(service, moduleMeta));
@@ -111,6 +131,10 @@ function runProviderAsync(service) {
 
 function runPipelineSync(service) {
   return function runPipelineDelegate(moduleMeta) {
+    if (!service) {
+      return moduleMeta;
+    }
+
     return processResult(service, moduleMeta)(Pipeline.runSync(moduleMeta, service.transforms));
   };
 }
@@ -142,9 +166,14 @@ function canRunProvider(service, moduleMeta) {
 Service.create = function(context, services, prepostHooks) {
   if (prepostHooks) {
     return Object.keys(services).reduce(function(result, key) {
-      result["pre" + key] = new Service(context);
-      result[key] = new services[key](context);
-      result["post" + key] = new Service(context);
+      var service = new services[key](context)
+        .withPre(new Service(context))
+        .withPost(new Service(context));
+
+      result["pre" + key] = service.pre;
+      result["post" + key] = service.post;
+      result[key] = service;
+
       return result;
     }, {});
   }
