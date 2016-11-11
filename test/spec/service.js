@@ -5,7 +5,127 @@ import Service from "../../src/service";
 var chance = chanceFactory();
 
 describe("Service Test Suite", () => {
-  describe("When instantiating a Service with an empty context", () => {
+  describe("Given a Service created with the Service factory", () => {
+    var services, serviceConfig, serviceContext, createService, postpreHooks;
+
+    beforeEach(() => {
+      createService = () => services = Service.create(serviceContext, serviceConfig, postpreHooks);
+    });
+
+    describe("and an empty services config is provided", () => {
+      beforeEach(() => {
+        serviceContext = {};
+        serviceConfig = {};
+        createService();
+      });
+
+      it("then services is an object", () => {
+        expect(services).to.be.an("object");
+      });
+
+      it("then services is empty", () => {
+        expect(Object.keys(services)).to.have.lengthOf(0);
+      });
+    });
+
+    describe("and a service config with one service is provided and no preposthooks", () => {
+      beforeEach(() => {
+        serviceContext = {};
+        serviceConfig = {
+          tupac: Service
+        };
+
+        createService();
+      });
+
+      it("then services is an object", () => {
+        expect(services).to.be.an("object");
+      });
+
+      it("then one service is created", () => {
+        expect(Object.keys(services)).to.have.lengthOf(1);
+      });
+
+      it("then the service name is `tupac`", () => {
+        expect(services.tupac).to.be.instanceof(Service);
+      });
+    });
+
+    describe("and a service config with one service is provided and preposthooks", () => {
+      beforeEach(() => {
+        postpreHooks = true;
+        serviceContext = {};
+        serviceConfig = {
+          tupac: Service
+        };
+
+        createService();
+      });
+
+      it("then services is an object", () => {
+        expect(services).to.be.an("object");
+      });
+
+      it("then three services are created", () => {
+        expect(Object.keys(services)).to.have.lengthOf(3);
+      });
+
+      it("then one service name is `tupac`", () => {
+        expect(services.tupac).to.be.instanceof(Service);
+      });
+
+      it("then one service name is `pretupac`", () => {
+        expect(services.pretupac).to.be.instanceof(Service);
+      });
+
+      it("then one service name is `posttupac`", () => {
+        expect(services.posttupac).to.be.instanceof(Service);
+      });
+
+      describe("and registering a plugin in pretupac and posttupac service", () => {
+        var pretupacPlugin, posttupacPlugin, result, input;
+
+        beforeEach(() => {
+          input = {};
+          input.configure = sinon.stub();
+          pretupacPlugin = sinon.stub();
+          posttupacPlugin = sinon.stub();
+          services.pretupac.use(pretupacPlugin);
+          services.posttupac.use(posttupacPlugin);
+        });
+
+        describe("and running the tupac service async", () => {
+          beforeEach(() => {
+            return services.tupac.runAsync(input).then(re => result = re);
+          });
+
+          it("then the `pretupac` plugin is called", () => {
+            sinon.assert.called(pretupacPlugin);
+          });
+
+          it("then the `posttupac` plugin is called", () => {
+            sinon.assert.called(posttupacPlugin);
+          });
+        });
+
+        describe("and running the tupac service sync", () => {
+          beforeEach(() => {
+            services.tupac.runSync(input);
+          });
+
+          it("then the `pretupac` plugin is called", () => {
+            sinon.assert.called(pretupacPlugin);
+          });
+
+          it("then the `posttupac` plugin is called", () => {
+            sinon.assert.called(posttupacPlugin);
+          });
+        });
+      });
+    });
+  });
+
+  describe("Given a Service instance with an empty context", () => {
     var service;
 
     beforeEach(() => {

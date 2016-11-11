@@ -44,7 +44,7 @@ Registrar.prototype.configurePlugin = function(id, options) {
     var servicesMap = this
       .getServiceNames()
       .filter(function(name) {
-        return name !== "compile" && name !== "link"
+        return name !== "compile" && name !== "link";
       })
       .reduce(function(result, name) {
         result[name] = [];
