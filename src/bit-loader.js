@@ -508,7 +508,7 @@ Bitloader.prototype.ignore = function(rules) {
  * });
  */
 Bitloader.prototype.plugin = function(name, settings) {
-  if (types.isPlainObject(name)) {
+  if (types.isPlainObject(name) || types.isFunction(name)) {
     settings = name;
     name = settings.name;
   }
