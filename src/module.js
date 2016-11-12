@@ -58,12 +58,6 @@ var State = {
 
   /**
    * @type { string }
-   * @description Before the module goes through the transform pipeline
-   */
-  PRETRANSFORM: "pretransform",
-
-  /**
-   * @type { string }
    * @description When the module is going through the transform pipeline
    */
   TRANSFORM: "transform",

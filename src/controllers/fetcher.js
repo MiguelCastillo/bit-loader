@@ -14,7 +14,6 @@ function Fetcher(context) {
 
   this.pipeline = new Pipeline([
     fetch(context),
-    pretransform(context),
     transform(context),
     dependency(context),
     precompile(context)
@@ -159,13 +158,8 @@ function fetch(context) {
 }
 
 
-function pretransform(context) {
-  return helpers.serviceRunner(context, Module.State.FETCH, Module.State.PRETRANSFORM, context.services.pretransform);
-}
-
-
 function transform(context) {
-  return helpers.serviceRunner(context, Module.State.PRETRANSFORM, Module.State.TRANSFORM, context.services.transform);
+  return helpers.serviceRunner(context, Module.State.FETCH, Module.State.TRANSFORM, context.services.transform);
 }
 
 
