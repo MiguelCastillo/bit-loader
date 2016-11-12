@@ -167,8 +167,7 @@ Bitloader.prototype.fetch = function(names, referrer) {
 
 /**
  * Loads modules from storage. Unlike @see {@link fetch}, modules are only loaded from storage
- * and not processed by any of the fetch pipelines except for resolve, which is needed to
- * calculate the location of the module file.
+ * and processed by the resolve pipeline in order to figure out the localtion of the module file.
  *
  * @param {string|string[]} names - Names of modules to fetch.
  *
