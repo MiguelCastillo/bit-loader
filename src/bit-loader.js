@@ -35,7 +35,6 @@ var Plugins    = require("./plugin/registrar");
 function Bitloader(options) {
   options = utils.merge({}, options);
   this.settings = options;
-  this.excludes = [];
   this.ignores = [];
   this.providers = {};
   this.cache = {};
@@ -71,10 +70,6 @@ function Bitloader(options) {
  *
  * @param { Plugin[] } plugins - Array of plugin configurations
  *
- * @param { string[] } excludes - Module names to exclude from loading and processing.
- *  When a module being loaded is in this list, it will be simply be cached with an
- *  empty export.
- *
  * @param { object[] } ignores - Array of objects whose key/value pairs are matched against
  *  properties in modules. Those modules that match will skip the processing pipelines.
  *  Common values include `name` and `path`. String and regexp values are both valid.
@@ -95,8 +90,7 @@ Bitloader.prototype.configure = Bitloader.prototype.config = function(options) {
   var bitloader = new Bitloader()
     .merge({
       plugins: this.plugins.serialize(),
-      ignores: this.ignores,
-      excludes: this.excludes
+      ignores: this.ignores
     })
     .merge(this.providers)
     .merge(options);
@@ -107,7 +101,7 @@ Bitloader.prototype.configure = Bitloader.prototype.config = function(options) {
 
 /**
  * Merge in configuration settings into the bit-loader instance. You can merge
- * in plugins, excludes, and ignores. Please see @see {@link configure}
+ * in plugins and ignores. Please see @see {@link configure}
  *
  * @returns { Bitloader } bit-loader instance
  */
@@ -131,10 +125,6 @@ Bitloader.prototype.merge = function(options) {
       .forEach(function(plugin) {
         this.plugin(plugin);
       }.bind(this));
-  }
-
-  if (options.excludes) {
-    this.exclude(options.excludes);
   }
 
   if (options.ignores || options.ignore) {
@@ -257,18 +247,6 @@ Bitloader.prototype.load = function(names, referrer) {
 Bitloader.prototype.register = function(name, exports) {
   this.controllers.registry.register(name, exports);
   return this;
-};
-
-
-/**
- * Determines if a module name is registered as an exclusion.
- *
- * @param {string} name - Name of the module to test for exclusion.
- *
- * @returns {boolean}
- */
-Bitloader.prototype.isExcluded = function(name) {
-  return this.excludes.indexOf(name) !== -1;
 };
 
 
@@ -397,23 +375,6 @@ Bitloader.prototype.deleteModule = function(mod) {
   }
 
   return this.controllers.registry.deleteModule(mod.id);
-};
-
-
-/**
- * Add module names for exclusion. Modules in this list are not loaded from disk and instead
- * become cached entries with empty exports. This is useful when a module to be loaded isn't
- * found in storage or the module just isn't needed and a module with an empty export is
- * sufficient. The names provided will be set as the IDs for the modules.
- *
- * @param {string|string[]} name - Module name (or list of names) to exclude from loading
- *  and processing.
- *
- * @returns {Bitloader}
- */
-Bitloader.prototype.exclude = function(name) {
-  this.excludes = this.excludes.concat(utils.toArray(name));
-  return this;
 };
 
 
