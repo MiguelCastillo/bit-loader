@@ -85,21 +85,20 @@ function Bitloader(options) {
  * @param { string[] } ignores[].services - Array of service names that modules matching
  *  modules will skip. If a value is not specified, then the transform and the dependency
  *  pipelines are skipped. You can specify an array of strings for the name(s) of the services
- *  to be skipped. Possible values are `resolve`, `fetch`, `pretransform`, `transform`,
- *  `dependency`, `precompile`, `compile`, and `link`.  Alternatively, it can be a wild card
- *  to skip *all* the pipelines just listed.
+ *  to be skipped. Possible values are `resolve`, `fetch`, `transform`, `dependency`,
+ * `precompile`, `compile`, and `link`.  Alternatively, it can be a wild card to skip
+ * *all* the pipelines just listed.
  *
  * @returns {Bitloader} New bit loader instance
  */
 Bitloader.prototype.configure = Bitloader.prototype.config = function(options) {
-  //
-  // TODO: Clone services.
-  //
-
   var bitloader = new Bitloader()
-    .merge(utils.pick(this, ["ignores", "excludes"]))
+    .merge({
+      plugins: this.plugins.serialize(),
+      ignores: this.ignores,
+      excludes: this.excludes
+    })
     .merge(this.providers)
-    .merge({ plugins: this.plugins.serialize() })
     .merge(options);
 
   return bitloader;
@@ -441,7 +440,7 @@ Bitloader.prototype.ignore = function(rules) {
   }
 
   var services = this.services;
-  var serviceName = Object.keys(this.services);
+  var serviceNames = Object.keys(this.services);
   rules = utils.toArray(rules);
 
   rules
@@ -466,7 +465,7 @@ Bitloader.prototype.ignore = function(rules) {
       rule.services = ["transform", "dependency"];
     }
     else if (rule.services === "*") {
-      rule.services = serviceName;
+      rule.services = serviceNames;
     }
     else {
       rule.services = utils.toArray(rule.services);
