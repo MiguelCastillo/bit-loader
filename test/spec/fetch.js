@@ -166,11 +166,7 @@ describe("Fetch Test Suite", function() {
         id: "like-id",
         name: "like",
         path: "this is the real path to like/like-name",
-        referrer: {
-          id: undefined,
-          name: undefined,
-          path: undefined
-        },
+        referrer: {},
         state: "resolve",
         type: "UNKNOWN"
       }));
@@ -269,13 +265,26 @@ describe("Fetch Test Suite", function() {
     });
   });
 
-  describe("When fetching a module that is excluded", function() {
+  describe("When registering a preresolve plugin to exclude modules", function() {
     var excludeName, result;
 
     beforeEach(function() {
       excludeName = chance().string();
+
       return loader
-        .exclude(excludeName).controllers.fetcher
+        .plugin({
+          preresolve: function(data) {
+            if (data.name === excludeName) {
+              return {
+                id: data.name,
+                path: null,
+                source: "",
+                state: "loaded"
+              };
+            }
+          }
+        })
+        .controllers.fetcher
         .fetch(excludeName)
         .then(function(r) {
           result = r;
