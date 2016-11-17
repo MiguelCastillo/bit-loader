@@ -145,14 +145,17 @@ Module.prototype.merge = Module.prototype.configure = function(options) {
   var target = Object.create(Object.getPrototypeOf(this));
   utils.merge(target, utils.omit(this, ["exports"]), utils.omit(options, ["exports"]));
 
-  if (options.path) {
+  var filepath = options.filepath || options.path;
+  if (filepath) {
+    target.filepath = filepath;
+
     if (!options.hasOwnProperty("directory")) {
-      target.directory = parseDirectoryFromPath(options.path);
+      target.directory = parseDirectoryFromPath(filepath);
     }
 
-    if (!options.hasOwnProperty("fileName")) {
-      target.fileName = parseFileNameFromPath(options.path);
-    }
+    var filename = options.filename || options.fileName || parseFileNameFromPath(filepath);
+    target.filename = filename;
+    target.fileName = filename;
   }
 
   if (this.hasOwnProperty("exports")) {
@@ -179,7 +182,7 @@ Module.prototype.getDirectory = function() {
  * Returns the file name of the file path.
  */
 Module.prototype.getFileName = function() {
-  return this.fileName || "";
+  return this.filename || "";
 };
 
 
@@ -187,7 +190,7 @@ Module.prototype.getFileName = function() {
  * Returns the file path, which is the full path for the file in storage.
  */
 Module.prototype.getFilePath = function() {
-  return this.path || "";
+  return this.filepath || "";
 };
 
 
@@ -272,8 +275,8 @@ function parseDirectoryFromPath(path) {
 
 
 function parseFileNameFromPath(path) {
-  var fileName = /[^/\\]+$/gmi.exec(path || "");
-  return fileName ? fileName[0] : "";
+  var filename = /[^/\\]+$/gmi.exec(path || "");
+  return filename ? filename[0] : "";
 }
 
 
