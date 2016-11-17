@@ -125,7 +125,7 @@ function Module(options) {
 
   this.deps = options.deps ? options.deps.slice(0) : [];
   this.type = options.type || Type.UNKNOWN;
-  return this.merge(utils.omit(options, ["deps", "type"]));
+  return this.merge(options);
 }
 
 
