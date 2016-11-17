@@ -173,19 +173,19 @@ describe("Matches Test Suite", function() {
       });
 
       it("then matching the configured extension passes validation", function() {
-        expect(matches.runMatch( { path: "c:\\path\some.js" } )).to.equal(true);
+        expect(matches.runMatch( { filepath: "c:\\path\some.js" } )).to.equal(true);
       });
 
       it("then matching the configured extension (with different casing) passes validation", function() {
-        expect(matches.runMatch( { path: "c:\\path\some.Js" } )).to.equal(true);
+        expect(matches.runMatch( { filepath: "c:\\path\some.Js" } )).to.equal(true);
       });
 
       it("then matching a file name that is the dotted extension (.js) validation fails", function() {
-        expect(matches.runMatch( { path: "/.js" } )).to.equal(false);
+        expect(matches.runMatch( { filepath: "/.js" } )).to.equal(false);
       });
 
       it("then matching an invalid extension fails validation", function() {
-        expect(matches.runMatch( { path: "c:\\path\some.xjs" } )).to.equal(false);
+        expect(matches.runMatch( { filepath: "c:\\path\some.xjs" } )).to.equal(false);
       });
     });
 
@@ -203,15 +203,15 @@ describe("Matches Test Suite", function() {
       });
 
       it("then matching the configured extension passes validation", function() {
-        expect(matches.runMatch( { path: "c:\\path\some.js" } )).to.equal(true);
+        expect(matches.runMatch( { filepath: "c:\\path\some.js" } )).to.equal(true);
       });
 
       it("then matching the configured extension (with different casing) passes validation", function() {
-        expect(matches.runMatch( { path: "c:\\path\some.JSON" } )).to.equal(true);
+        expect(matches.runMatch( { filepath: "c:\\path\some.JSON" } )).to.equal(true);
       });
 
       it("then matching an invalid extension fails validation", function() {
-        expect(matches.runMatch( { path: "c:\\path\some.xjs" } )).to.equal(false);
+        expect(matches.runMatch( { filepath: "c:\\path\some.xjs" } )).to.equal(false);
       });
     });
   });
