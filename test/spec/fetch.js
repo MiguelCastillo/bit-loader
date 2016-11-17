@@ -162,10 +162,10 @@ describe("Fetch Test Suite", function() {
       expect(result).to.eql(new Module({
         deps: [],
         directory: "this is the real path to like/",
-        fileName: "like-name",
+        filename: "like-name",
         id: "like-id",
         name: "like",
-        path: "this is the real path to like/like-name",
+        filepath: "this is the real path to like/like-name",
         referrer: {},
         state: "resolve",
         type: "UNKNOWN"
@@ -191,7 +191,9 @@ describe("Fetch Test Suite", function() {
         expect(loadedModule.deps[0].referrer).to.eql({
           id: "like-id",
           name: "like",
-          path: "this is the real path to like/like-name"
+          path: "this is the real path to like/like-name",
+          filename: "like-name",
+          filepath: "this is the real path to like/like-name"
         });
       });
 
@@ -203,7 +205,9 @@ describe("Fetch Test Suite", function() {
         expect(loadedModule.deps[1].referrer).to.eql({
           id: "like-id",
           name: "like",
-          path: "this is the real path to like/like-name"
+          path: "this is the real path to like/like-name",
+          filepath: "this is the real path to like/like-name",
+          filename: "like-name"
         });
       });
 
@@ -231,7 +235,8 @@ describe("Fetch Test Suite", function() {
         expect(loadedModule.deps[0].referrer).to.eql({
           id: "dep1-id",
           name: "dep1",
-          path: "real path to dep1"
+          path: "real path to dep1",
+          filepath: "real path to dep1"
         });
       });
 
@@ -255,7 +260,9 @@ describe("Fetch Test Suite", function() {
         expect(loadedModule.referrer).to.eql({
           id: "like-id",
           name: "like",
-          path: "this is the real path to like/like-name"
+          path: "this is the real path to like/like-name",
+          filepath: "this is the real path to like/like-name",
+          filename: "like-name"
         });
       });
 
@@ -277,7 +284,7 @@ describe("Fetch Test Suite", function() {
             if (data.name === excludeName) {
               return {
                 id: data.name,
-                path: null,
+                filepath: null,
                 source: "",
                 state: "loaded"
               };
@@ -300,7 +307,7 @@ describe("Fetch Test Suite", function() {
     });
 
     it("then module meta path is `null`", function() {
-      expect(result.path).to.equal(null);
+      expect(result.filepath).to.equal(null);
     });
 
     it("then module meta name is properly set", function() {

@@ -60,7 +60,7 @@ This stage is responsible for loading files from storage and processing them in 
 
 This stage is composed of several pluggable pipelines that cascade *information* from one pipeline to the next. This *information* is encapsulated in an object we refer to as *module meta*. More information on the module meta objects can be found [here](#module-meta). The flow that module meta objects go through is described below:
 
-First, we need to convert module names to file paths in order to load modules from storage. This conversion is called *module name resolution*, which is done in the `resolve` pipeline. The `path` generated in the `resolve` pipeline is then used by the `fetch` pipeline to load module files from storage. These files are subsequently processed by the `transform` pipeline, which is generally where all transpilation/transformation is done. The result of the `transform` pipeline is pushed through the `dependency` pipeline, which pulls out dependencies and recursively feeds them through the first stage (module loading stage) until no more modules are left to load into the module graph. And finally, a helper pipeline called `precompile` that allows you to preemptively set the module `exports`, which effectively prevents modules from being processed in the build stage.
+First, we need to convert module names to file paths in order to load modules from storage. This conversion is called *module name resolution*, which is done in the `resolve` pipeline. The `filepath` generated in the `resolve` pipeline is then used by the `fetch` pipeline to load module files from storage. These files are subsequently processed by the `transform` pipeline, which is generally where all transpilation/transformation is done. The result of the `transform` pipeline is pushed through the `dependency` pipeline, which pulls out dependencies and recursively feeds them through the first stage (module loading stage) until no more modules are left to load into the module graph. And finally, a helper pipeline called `precompile` that allows you to preemptively set the module `exports`, which effectively prevents modules from being processed in the build stage.
 
 > This stage is entirely asynchronous, and the output is a module graph.
 
@@ -69,7 +69,7 @@ First, we need to convert module names to file paths in order to load modules fr
 
 The module loading stage has 5 pipelines, which are described below.
 
-- **`resolve`** - responsible for generating paths to read module files from storage.
+- **`resolve`** - responsible for generating file paths to read module files from storage.
 - **`fetch`** - responsible for loading files from storage.
 - **`transform`** - responsible for processing and transforming loaded files.  E.g. ES2015 to ES5 via babeljs. Or CoffeeScript to JavaScript.
 - **`dependency`** - responsible for parsing out dependencies from the loaded files and recursively feeding them to the module loading stage.
@@ -113,7 +113,7 @@ The example below is a plugin with a handler that hooks into the fetch pipeline 
 // Plugin handler to load file from storage using the fetch API.
 function loadFile(meta, options, cancel) {
   return window
-    .fetch(meta.path)
+    .fetch(meta.filepath)
     .then(function(response) {
       return {
         source: response.text();
@@ -178,7 +178,7 @@ bitloader.plugin({
 });
 ```
 
-Plugins also provide a way to define the shape of the modules your plugins can process via pattern matching. For example, you can specify properties like the module path, module name, or even match content in the module source. Below is an example configuring a plugin to only process files with `js` and `es6` extensions:
+Plugins also provide a way to define the shape of the modules your plugins can process via pattern matching. For example, you can specify properties like the module `filepath`, module `filename`, module `name`, or even match content in the module source. Below is an example configuring a plugin to only process files with `js` and `es6` extensions:
 
 ``` javascript
 bitloader.plugin({
@@ -237,13 +237,13 @@ All pluggable pipelines have an optional default provider, which is just a defau
 ``` javascript
 function resolvePath(meta) {
   return {
-    path: "path/to/module/" + meta.name
+    filepath: "path/to/module/" + meta.name
   };
 }
 
 function loadFile(meta) {
   return window
-    .fetch(meta.path)
+    .fetch(meta.filepath)
     .then(function(response) {
       return {
         source: response.text();
@@ -280,18 +280,19 @@ The basic shape looks like this, but plugin handlers are free to add more data t
 
 - **`deps`** { Array[ string ] } - Collection of module names a particular module depends on. Used by the `dependency` stage.
 - **`name`** { string } - Name of the module to load. Used by `resolve` to figure out the `path`.
-- **`path`** { string } - Path for the module file. Used by `fetch` to load the module file.
+- **`filepath`** { string } - Path for the module file. Used by `fetch` to load the module file.
+- **`filename`** { string } - Name of the file calculated from the `filename`.
 - **`source`** { string } - File content of the module.  Use by `transform` to transpile the module content.
-- **`referrer`** { { string: path, string: name } } - Information about the module requesting to load the current module.
+- **`referrer`** { { string: name, string: filepath, string: filename } } - Information about the module requesting to load the current module.
 
 #### Pipeline Flow of the first and second stage
 
 * first stage (fetch stage) *async*
   * create moduleMeta
   * resolve (moduleMeta)
-    * calculate module path from moduleMeta.name and set moduleMeta.path
+    * calculate module file path from moduleMeta.name and set moduleMeta.filepath
   * fetch (moduleMeta)
-    * read module file using moduleMeta.path and set moduleMeta.source
+    * read module file using moduleMeta.filepath and set moduleMeta.source
   * transform (moduleMeta)
     * run custom transforms and set moduleMeta.source
   * dependency (moduleMeta)
@@ -314,7 +315,7 @@ The basic shape looks like this, but plugin handlers are free to add more data t
 
 Pattern matching rules allow you to define which modules are processed by `bit-loader`. This is accomplished by defining `match`, `ignore`, and `extensions` rules, which can be defined in plugins and in plugin handlers. You can also specify `ignore` rules in `bit-loader` instances. This combination gives you lots of control over what parts of your setup can process particular modules.
 
-- `match` and `ignore` rules are objects whose properties are matched against properties in module meta objects. For example, if you have a `match` rule object with a property called `path`, then the `path` in module meta will be tested to determine if the particular module meta can be processed.
+- `match` and `ignore` rules are objects whose properties are matched against properties in module meta objects. For example, if you have a `match` rule object with a property called `filepath`, then the `filepath` in module meta will be tested to determine if the particular module meta can be processed.
 
 - `extensions` rules is a strings or array of strings to match the file extension of the module being loaded.
 
@@ -324,7 +325,7 @@ Pattern matching rules allow you to define which modules are processed by `bit-l
 
 > match rules define which modules are *processed* by bit-loader.
 
-The following example sets a `match` rule in a plugin to only process modules that have `src/views` in the path.  All other modules are ignored by this plugin.
+The following example sets a `match` rule in a plugin to only process modules that have `src/views` in the filepath.  All other modules are ignored by this plugin.
 
 ``` javascript
 var Bitloader = require("bit-loader");
@@ -332,7 +333,7 @@ var bitloader = new Bitloader();
 
 bitloader.plugin({
   match {
-    path: /src\/views/
+    filepath: /src\/views/
   },
   transform: [
     function(meta) {
@@ -350,7 +351,7 @@ var bitloader = new Bitloader();
 
 bitloader.plugin({
   match {
-    path: /src\/views/
+    filepath: /src\/views/
   },
   transform: [
     {
@@ -394,7 +395,7 @@ var bitloader = new Bitloader();
 
 bitloader.plugin({
   ignore {
-    path: /src\/views/
+    filepath: /src\/views/
   },
   transform: [
     function(meta) {
@@ -408,7 +409,7 @@ bitloader.plugin({
 
 > extensions rules defines which modules with particular file extensions can be processed by *bit-loader*
 
-`extensions` rules are a shortcut for defining pattern matching rules for module meta paths with regular expressions to test for file extensions.  E.g. `match: { path: /\.(js|jsx)$/gmi }`.  But extension matching is such a common use case that making this simpler is very convenient.
+`extensions` rules are a shortcut for defining pattern matching rules for module meta file paths with regular expressions to test for file extensions.  E.g. `match: { filepath: /\.(js|jsx)$/gmi }`.  But extension matching is such a common use case that making this simpler is very convenient.
 
 > `extensions` rules are case insensitive.
 
@@ -420,7 +421,7 @@ bitloader.plugin({
   extensions: ["js", "jsx"],
   transform: [
     function(meta) {
-      console.log(meta.path);
+      console.log(meta.filepath);
     }
   ]
 });

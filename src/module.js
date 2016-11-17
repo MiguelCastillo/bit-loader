@@ -147,6 +147,7 @@ Module.prototype.merge = Module.prototype.configure = function(options) {
 
   var filepath = options.filepath || options.path;
   if (filepath) {
+    target.path = filepath;
     target.filepath = filepath;
 
     if (!options.hasOwnProperty("directory")) {
@@ -154,8 +155,11 @@ Module.prototype.merge = Module.prototype.configure = function(options) {
     }
 
     var filename = options.filename || options.fileName || parseFileNameFromPath(filepath);
-    target.filename = filename;
-    target.fileName = filename;
+
+    if (filename) {
+      target.filename = filename;
+      target.fileName = filename;
+    }
   }
 
   return target;
@@ -261,14 +265,13 @@ Module.canCompile = function(moduleMeta) {
 };
 
 
-function parseDirectoryFromPath(path) {
-  return (path || "").replace(/([^/\\]+)$/gmi, "");
+function parseDirectoryFromPath(filepath) {
+  return (filepath || "").replace(/([^/\\]+)$/gmi, "");
 }
 
 
-function parseFileNameFromPath(path) {
-  var filename = /[^/\\]+$/gmi.exec(path || "");
-  return filename ? filename[0] : "";
+function parseFileNameFromPath(filepath) {
+  return filepath && /[/\\]/.test(filepath) ? /[^/\\]+$/gmi.exec(filepath)[0] : "";
 }
 
 
