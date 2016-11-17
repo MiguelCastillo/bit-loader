@@ -143,7 +143,7 @@ Module.prototype.merge = Module.prototype.configure = function(options) {
   }
 
   var target = Object.create(Object.getPrototypeOf(this));
-  utils.merge(target, utils.omit(this, ["exports"]), utils.omit(options, ["exports"]));
+  utils.merge(target, this, options);
 
   var filepath = options.filepath || options.path;
   if (filepath) {
@@ -156,14 +156,6 @@ Module.prototype.merge = Module.prototype.configure = function(options) {
     var filename = options.filename || options.fileName || parseFileNameFromPath(filepath);
     target.filename = filename;
     target.fileName = filename;
-  }
-
-  if (this.hasOwnProperty("exports")) {
-    target.exports = this.exports;
-  }
-
-  if (options.hasOwnProperty("exports")) {
-    target.exports = options.exports;
   }
 
   return target;
