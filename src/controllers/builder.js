@@ -75,9 +75,9 @@ function link(context) {
  * @returns {string} The proper source url to be inserted in the module source
  */
 function getSourceUrl(moduleMeta) {
-  return !moduleMeta.filepath || hasSourceURL(moduleMeta) ?
+  return !moduleMeta.path || hasSourceURL(moduleMeta) ?
     "" :
-    "\n//# sourceURL=" + moduleMeta.filepath.replace(/^(https?):\/\/\/?[^\/]*/, "");
+    "\n//# sourceURL=" + moduleMeta.path.replace(/^(https?):\/\/\/?[^\/]*/, "");
 }
 
 

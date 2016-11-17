@@ -165,7 +165,7 @@ describe("Fetch Test Suite", function() {
         filename: "like-name",
         id: "like-id",
         name: "like",
-        filepath: "this is the real path to like/like-name",
+        path: "this is the real path to like/like-name",
         referrer: {},
         state: "resolve",
         type: "UNKNOWN"
@@ -192,8 +192,7 @@ describe("Fetch Test Suite", function() {
           id: "like-id",
           name: "like",
           path: "this is the real path to like/like-name",
-          filename: "like-name",
-          filepath: "this is the real path to like/like-name"
+          filename: "like-name"
         });
       });
 
@@ -206,7 +205,6 @@ describe("Fetch Test Suite", function() {
           id: "like-id",
           name: "like",
           path: "this is the real path to like/like-name",
-          filepath: "this is the real path to like/like-name",
           filename: "like-name"
         });
       });
@@ -236,7 +234,7 @@ describe("Fetch Test Suite", function() {
           id: "dep1-id",
           name: "dep1",
           path: "real path to dep1",
-          filepath: "real path to dep1"
+          filename: ""
         });
       });
 
@@ -261,7 +259,6 @@ describe("Fetch Test Suite", function() {
           id: "like-id",
           name: "like",
           path: "this is the real path to like/like-name",
-          filepath: "this is the real path to like/like-name",
           filename: "like-name"
         });
       });
@@ -284,7 +281,7 @@ describe("Fetch Test Suite", function() {
             if (data.name === excludeName) {
               return {
                 id: data.name,
-                filepath: null,
+                path: null,
                 source: "",
                 state: "loaded"
               };
@@ -307,7 +304,7 @@ describe("Fetch Test Suite", function() {
     });
 
     it("then module meta path is `null`", function() {
-      expect(result.filepath).to.equal(null);
+      expect(result.path).to.equal(null);
     });
 
     it("then module meta name is properly set", function() {
