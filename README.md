@@ -243,7 +243,7 @@ function resolvePath(meta) {
 
 function loadFile(meta) {
   return window
-    .fetch(meta.path)
+    .fetch(meta.filepath)
     .then(function(response) {
       return {
         source: response.text();
@@ -280,9 +280,10 @@ The basic shape looks like this, but plugin handlers are free to add more data t
 
 - **`deps`** { Array[ string ] } - Collection of module names a particular module depends on. Used by the `dependency` stage.
 - **`name`** { string } - Name of the module to load. Used by `resolve` to figure out the `path`.
-- **`path`** { string } - Path for the module file. Used by `fetch` to load the module file.
+- **`filepath`** { string } - Path for the module file. Used by `fetch` to load the module file.
+- **`filename`** { string } - Name of the file calculated from the `filename`.
 - **`source`** { string } - File content of the module.  Use by `transform` to transpile the module content.
-- **`referrer`** { { string: path, string: name } } - Information about the module requesting to load the current module.
+- **`referrer`** { { string: filepath, string: filename } } - Information about the module requesting to load the current module.
 
 #### Pipeline Flow of the first and second stage
 

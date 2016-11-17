@@ -147,6 +147,7 @@ Module.prototype.merge = Module.prototype.configure = function(options) {
 
   var filepath = options.filepath || options.path;
   if (filepath) {
+    target.path = filepath;
     target.filepath = filepath;
 
     if (!options.hasOwnProperty("directory")) {
