@@ -41,12 +41,12 @@ describe("Module Test Suite", function() {
     });
 
     describe("and the module meta has a path", function() {
-      var path, directory, fileName;
+      var path, directory, filename;
 
       beforeEach(function() {
         directory = chance().string() + "/";
-        fileName = "." + chance().string() + ".js"; // edge case with files with dots on them
-        path = directory + fileName;
+        filename = "." + chance().string() + ".js"; // edge case with files with dots on them
+        path = directory + filename;
 
         act({
           name: chance().string(),
@@ -55,33 +55,25 @@ describe("Module Test Suite", function() {
       });
 
       it("then the path is properly set", function() {
-        expect(meta.getFilePath()).to.equal(path);
-      });
-
-      it("then the directory is properly calculated from the the path", function() {
-        expect(meta.getDirectory()).to.equal(directory);
+        expect(meta.path).to.equal(path);
       });
 
       it("then the directory property is properly set", function() {
         expect(meta.directory).to.equal(directory);
       });
 
-      it("then the file name is properly calculated from the path", function() {
-        expect(meta.getFileName()).to.equal(fileName);
-      });
-
       it("then the file name property is properly set", function() {
-        expect(meta.fileName).to.equal(fileName);
+        expect(meta.filename).to.equal(filename);
       });
     });
 
     describe("and a file path is merged into the module meta instance", function() {
-      var path, directory, fileName, mergedMeta;
+      var path, directory, filename, mergedMeta;
 
       beforeEach(function() {
         directory = chance().string() + "/";
-        fileName = "." + chance().string() + ".js"; // edge case with files with dots on them
-        path = directory + fileName;
+        filename = "." + chance().string() + ".js"; // edge case with files with dots on them
+        path = directory + filename;
 
         act({
           name: chance().string()
@@ -97,37 +89,37 @@ describe("Module Test Suite", function() {
       });
 
       it("then the path is properly set", function() {
-        expect(mergedMeta.getFilePath()).to.equal(path);
+        expect(mergedMeta.path).to.equal(path);
       });
 
       it("then the directory is properly calculated from the the path", function() {
-        expect(mergedMeta.getDirectory()).to.equal(directory);
+        expect(mergedMeta.directory).to.equal(directory);
       });
 
       it("then the file name is properly calculated from the path", function() {
-        expect(mergedMeta.getFileName()).to.equal(fileName);
+        expect(mergedMeta.filename).to.equal(filename);
       });
 
       it("then the path is unchanged in the old module meta instance", function() {
-        expect(meta.getFilePath()).to.equal("");
+        expect(meta.path).to.equal(undefined);
       });
 
       it("then the directory is unchanged in the old module meta instance", function() {
-        expect(meta.getDirectory()).to.equal("");
+        expect(meta.directory).to.equal(undefined);
       });
 
       it("then the file name is unchanged in the old module meta instance", function() {
-        expect(meta.getFileName()).to.equal("");
+        expect(meta.filename).to.equal(undefined);
       });
     });
 
     describe("and a Windows file path is merged into the module meta instance", function() {
-      var path, directory, fileName, mergedMeta;
+      var path, directory, filename, mergedMeta;
 
       beforeEach(function() {
         directory = "C:\\" + chance().string() + "\\\\";
-        fileName = "." + chance().string() + ".js"; // edge case with files with dots on them
-        path = directory + fileName;
+        filename = "." + chance().string() + ".js"; // edge case with files with dots on them
+        path = directory + filename;
 
         act({
           name: chance().string()
@@ -143,15 +135,15 @@ describe("Module Test Suite", function() {
       });
 
       it("then the path is properly set", function() {
-        expect(mergedMeta.getFilePath()).to.equal(path);
+        expect(mergedMeta.path).to.equal(path);
       });
 
       it("then the directory is properly calculated from the the path", function() {
-        expect(mergedMeta.getDirectory()).to.equal(directory);
+        expect(mergedMeta.directory).to.equal(directory);
       });
 
       it("then the file name is properly calculated from the path", function() {
-        expect(mergedMeta.getFileName()).to.equal(fileName);
+        expect(mergedMeta.filename).to.equal(filename);
       });
     });
 

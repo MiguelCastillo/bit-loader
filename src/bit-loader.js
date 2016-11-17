@@ -201,7 +201,7 @@ Bitloader.prototype.resolve = function(name, referrer) {
   return this.services.resolver
     .resolve(new Module(name), referrer)
     .then(function(moduleMeta) {
-      return moduleMeta.filepath;
+      return moduleMeta.path;
     });
 };
 

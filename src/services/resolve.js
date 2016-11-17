@@ -14,7 +14,7 @@ inherit.base(Resolve).extends(Service);
 
 
 Resolve.prototype.canProcess = function(moduleMeta) {
-  return !moduleMeta.hasOwnProperty("filepath");
+  return !moduleMeta.hasOwnProperty("path");
 };
 
 

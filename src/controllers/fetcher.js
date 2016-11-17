@@ -73,7 +73,7 @@ function configureModuleMeta(fetcher, referrer) {
     }
 
     return new Module(utils.merge({}, config, {
-      referrer: utils.pick(referrer, ["name", "path", "filename", "filepath", "id"])
+      referrer: utils.pick(referrer, ["name", "path", "filename", "id"])
     }));
   };
 }
@@ -107,12 +107,12 @@ function runFetchPipeline(fetcher) {
 function configureModuleId(moduleMeta) {
   var result = {};
 
-  if (!moduleMeta.filepath && moduleMeta.url) {
-    result.filepath = moduleMeta.url && moduleMeta.url.href;
+  if (!moduleMeta.path && moduleMeta.url) {
+    result.path = moduleMeta.url && moduleMeta.url.href;
   }
 
-  if (!moduleMeta.hasOwnProperty("id") && moduleMeta.filepath) {
-    result.id = moduleMeta.filepath;
+  if (!moduleMeta.hasOwnProperty("id") && moduleMeta.path) {
+    result.id = moduleMeta.path;
   }
 
   return moduleMeta.configure(result);

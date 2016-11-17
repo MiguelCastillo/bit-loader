@@ -110,7 +110,7 @@ Matches.mergeExtensions = function(target, extensions) {
   }
 
   return Matches.mergeMatcher(target, {
-    filepath: new RegExp("[\\w]+\\.(" + extensions + ")$", "mi")
+    path: new RegExp("[\\w]+\\.(" + extensions + ")$", "mi")
   });
 };
 
