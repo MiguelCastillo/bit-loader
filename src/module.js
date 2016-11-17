@@ -125,7 +125,7 @@ function Module(options) {
 
   this.deps = options.deps ? options.deps.slice(0) : [];
   this.type = options.type || Type.UNKNOWN;
-  return this.merge(utils.omit(options, ["deps", "type"]));
+  return this.merge(options);
 }
 
 
@@ -143,24 +143,19 @@ Module.prototype.merge = Module.prototype.configure = function(options) {
   }
 
   var target = Object.create(Object.getPrototypeOf(this));
-  utils.merge(target, utils.omit(this, ["exports"]), utils.omit(options, ["exports"]));
+  utils.merge(target, this, options);
 
-  if (options.path) {
+  var filepath = options.filepath || options.path;
+  if (filepath) {
+    target.filepath = filepath;
+
     if (!options.hasOwnProperty("directory")) {
-      target.directory = parseDirectoryFromPath(options.path);
+      target.directory = parseDirectoryFromPath(filepath);
     }
 
-    if (!options.hasOwnProperty("fileName")) {
-      target.fileName = parseFileNameFromPath(options.path);
-    }
-  }
-
-  if (this.hasOwnProperty("exports")) {
-    target.exports = this.exports;
-  }
-
-  if (options.hasOwnProperty("exports")) {
-    target.exports = options.exports;
+    var filename = options.filename || options.fileName || parseFileNameFromPath(filepath);
+    target.filename = filename;
+    target.fileName = filename;
   }
 
   return target;
@@ -179,7 +174,7 @@ Module.prototype.getDirectory = function() {
  * Returns the file name of the file path.
  */
 Module.prototype.getFileName = function() {
-  return this.fileName || "";
+  return this.filename || "";
 };
 
 
@@ -187,7 +182,7 @@ Module.prototype.getFileName = function() {
  * Returns the file path, which is the full path for the file in storage.
  */
 Module.prototype.getFilePath = function() {
-  return this.path || "";
+  return this.filepath || "";
 };
 
 
@@ -272,8 +267,8 @@ function parseDirectoryFromPath(path) {
 
 
 function parseFileNameFromPath(path) {
-  var fileName = /[^/\\]+$/gmi.exec(path || "");
-  return fileName ? fileName[0] : "";
+  var filename = /[^/\\]+$/gmi.exec(path || "");
+  return filename ? filename[0] : "";
 }
 
 
