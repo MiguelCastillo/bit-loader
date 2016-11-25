@@ -28,7 +28,7 @@
   "homepage": "https://github.com/MiguelCastillo/bit-loader",
   "devDependencies": {
     "babel-bits": "^1.0.1",
-    "bit-imports": "^2.0.6",
+    "bit-imports": "^3.0.0",
     "browserify": "~13.1.0",
     "chai": "~3.5.0",
     "chance": "^1.0.4",
