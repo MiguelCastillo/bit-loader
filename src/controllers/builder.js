@@ -45,13 +45,15 @@ function build(builder, moduleMeta) {
 
 function getDependencyExportsByName(builder, moduleMeta) {
   return function getDependency(name) {
-    return moduleMeta.deps
-      .filter(function(dep) {
-        return dep.name === name;
-      })
-      .map(function(dep) {
-        return builder.build(dep.id).exports;
-      })[0]; // Sneaky... Always return the first item in the array...
+    var deps = moduleMeta.deps.filter(function(dep) {
+      return dep.name === name;
+    });
+
+    if (!deps.length || !moduleMeta.deps.length) {
+      throw new TypeError("Module '" + name + "' not found. Referrer: " + moduleMeta.path);
+    }
+
+    return builder.build(deps[0].id).exports;
   };
 }
 
