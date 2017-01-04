@@ -29,7 +29,7 @@
   "devDependencies": {
     "babel-bits": "^1.0.1",
     "bit-imports": "^3.0.1",
-    "browserify": "~13.1.1",
+    "browserify": "~13.2.0",
     "chai": "~3.5.0",
     "chance": "^1.0.4",
     "config-grunt-tasks": "^1.0.3",
