@@ -151,6 +151,11 @@ Module.prototype.merge = Module.prototype.configure = function(options) {
     target.directory = parseDirectoryFromPath(path);
   }
 
+  // override deps.
+  if (options.deps) {
+    target.deps = options.deps;
+  }
+
   return target;
 };
 
