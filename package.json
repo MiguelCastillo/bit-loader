@@ -28,8 +28,8 @@
   "homepage": "https://github.com/MiguelCastillo/bit-loader",
   "devDependencies": {
     "babel-bits": "^1.0.1",
-    "bit-imports": "^3.0.1",
-    "browserify": "~13.2.0",
+    "bit-imports": "^3.0.2",
+    "browserify": "~13.3.0",
     "chai": "~3.5.0",
     "chance": "^1.0.4",
     "config-grunt-tasks": "^1.0.3",
@@ -49,7 +49,7 @@
     "jshint-stylish": "~2.2.1",
     "load-grunt-tasks": "^3.5.2",
     "mocha": "~3.2.0",
-    "sinon": "~1.17.6"
+    "sinon": "~1.17.7"
   },
   "dependencies": {
     "belty": "^4.0.3",
