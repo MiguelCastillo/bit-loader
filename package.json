@@ -52,7 +52,7 @@
     "sinon": "~1.17.7"
   },
   "dependencies": {
-    "belty": "^4.0.3",
+    "belty": "^5.0.1",
     "dis-isa": "^1.2.3",
     "loggero": "~2.0.1",
     "roolio": "~0.1.1",
