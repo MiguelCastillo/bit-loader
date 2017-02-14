@@ -6,7 +6,7 @@ module.exports = function(grunt) {
 
   grunt.initConfig(taskConfig);
 
-  grunt.registerTask("build", ["eslint:all", "browserify:build", "uglify:build"]);
+  grunt.registerTask("build", ["pakit:build"]);
   grunt.registerTask("serve", ["build", "concurrent:build"]);
   grunt.registerTask("test", ["connect:test", "mocha:test"]);
   grunt.registerTask("server", ["connect:keepalive"]);
