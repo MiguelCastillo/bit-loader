@@ -12,6 +12,7 @@ var Dependency   = require("./services/dependency");
 var PreCompile   = require("./services/precompile");
 var Compile      = require("./services/compile");
 
+var Controller = require("./controller");
 var Fetcher    = require("./controllers/fetcher");
 var Importer   = require("./controllers/importer");
 var Loader     = require("./controllers/loader");
@@ -40,21 +41,15 @@ function Bitloader(options) {
   this.cache = {};
 
   // Services! Components that process modules.
-  this.services = utils.merge({},
+  this.services = utils.extend({},
     Service.create(this, { resolve: Resolve, fetch: Fetch, transform: Transform, dependency: Dependency }, true),
     Service.create(this, { precompile: PreCompile, compile: Compile, link: Link })
   );
 
-  // Controllers!  These guys make use of the services to build pipelines
-  // that build modules. Controllers use services, but services only use
-  // services, not controllers.
-  this.controllers = {
-    fetcher  : new Fetcher(this),
-    loader   : new Loader(this),
-    importer : new Importer(this),
-    registry : new Registry(this),
-    builder  : new Builder(this)
-  };
+  // Controllers! These guys make use of the services to build pipelines
+  // that build modules. Controllers use services in order to orchestrate
+  // workflows.
+  this.controllers = Controller.create(this, { fetcher: Fetcher, loader: Loader, importer: Importer, registry: Registry, builder: Builder });
 
   this.plugins = new Plugins(this, utils.omit(this.services, ["compile", "link"]));
   this.merge(options);
