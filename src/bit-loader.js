@@ -56,7 +56,7 @@ function Bitloader(options) {
     builder  : new Builder(this)
   };
 
-  this.plugins = new Plugins(this, this.services);
+  this.plugins = new Plugins(this, utils.omit(this.services, ["compile", "link"]));
   this.merge(options);
 }
 
