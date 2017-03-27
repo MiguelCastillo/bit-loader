@@ -262,13 +262,9 @@ Bitloader.prototype.getSource = function(names, referrer) {
   return this.controllers.fetcher
     .fetch(names, referrer)
     .then(function(moduleMetas) {
-      if (types.isString(names)) {
-        return loader.getModule(moduleMetas.id).source;
-      }
-
-      return moduleMetas.map(function(moduleMeta) {
-        return loader.getModule(moduleMeta.id).source;
-      });
+      return types.isArray(moduleMetas) ?
+        moduleMetas.map(function(moduleMeta) { return loader.getModule(moduleMeta.id).source; }) :
+        loader.getModule(moduleMetas.id).source;
     });
 };
 
@@ -461,13 +457,17 @@ Bitloader.prototype.ignore = function(rules) {
  *   }
  * });
  */
-Bitloader.prototype.plugin = function(name, settings) {
-  if (types.isPlainObject(name) || types.isFunction(name)) {
-    settings = name;
-    name = settings.name;
+Bitloader.prototype.plugin = function(id, settings) {
+  if (types.isPlainObject(id)) {
+    settings = id;
+    id = settings.name;
+  }
+  else if (types.isFunction(id)) {
+    settings = id;
+    id = null;
   }
 
-  this.plugins.configurePlugin(name, settings);
+  this.plugins.configurePlugin(id, settings);
   return this;
 };
 
