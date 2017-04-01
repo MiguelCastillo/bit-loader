@@ -30,8 +30,7 @@ inherit.base(Plugin).extends(PluginBlueprint);
 
 Plugin.prototype.configure = function(options) {
   var plugin = this;
-  var configuration = configurePlugin(options);
-  var services = utils.pick(configuration, this.context.getServiceNames());
+  var services = utils.pick(options, this.context.services);
 
   var handlers = Object
     .keys(services)
@@ -63,7 +62,7 @@ Plugin.prototype.configure = function(options) {
 
   return this
     .merge({ handlers: handlers })
-    .merge({ matchers: this.matchers.configure(configuration.matchers || configuration) });
+    .merge({ matchers: this.matchers.configure(options.matchers || options) });
 };
 
 
@@ -132,19 +131,6 @@ Plugin.prototype.serialize = function() {
 
   return utils.merge(utils.pick(this, ["id"]), handlers);
 };
-
-
-function configurePlugin(options) {
-  if (types.isFunction(options)) {
-    options = options(new Builder());
-
-    if (options instanceof Builder) {
-      options = options.build();
-    }
-  }
-
-  return options;
-}
 
 
 function configureHandler(options) {

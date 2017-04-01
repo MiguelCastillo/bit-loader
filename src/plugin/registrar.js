@@ -41,8 +41,7 @@ Registrar.prototype._items = function(ids, container) {
 
 Registrar.prototype.configurePlugin = function(id, options) {
   if (types.isFunction(options)) {
-    var servicesMap = this
-      .getServiceNames()
+    var servicesMap = Object.keys(this.services)
       .reduce(function(result, name) {
         result[name] = [];
         return result;
@@ -55,19 +54,9 @@ Registrar.prototype.configurePlugin = function(id, options) {
     }
   }
 
-  id = id || options.id;
-
-  if (!id) {
-    id = "plugin-" + _pluginId++;
-  }
-
+  id = id || options.id || "plugin-" + _pluginId++;
   this.plugins[id] = this._configure(id, options, this.plugins, Plugin);
   return this.plugins[id];
-};
-
-
-Registrar.prototype.getServiceNames = function() {
-  return Object.keys(this.services);
 };
 
 
@@ -87,10 +76,7 @@ Registrar.prototype.getPlugins = function(ids) {
 
 
 Registrar.prototype.configureHandler = function(id, options) {
-  if (!id) {
-    id = "handler-" + _handlerId++;
-  }
-
+  id = id || options.id || "handler-" + _handlerId++;
   this.handlers[id] = this._configure(id, options, this.handlers, Handler);
   return this.handlers[id];
 };

@@ -45,7 +45,7 @@ describe("Plugin Test Suite", function() {
       serviceName = chance.word();
       configurePlugin = () => plugin = plugin.configure(pluginOptions);
       registrarMock = new Registrar();
-      registrarMock.getServiceNames = sinon.stub().returns([serviceName]);
+      registrarMock.services = [serviceName];
       registrarMock.registerPluginWithService = sinon.stub();
       createPlugin();
     });
@@ -201,7 +201,7 @@ describe("Plugin Test Suite", function() {
         handlerResult = { "source": chance.string() };
         handler = sinon.stub().returns(handlerResult);
         registrarMock = new Registrar();
-        registrarMock.getServiceNames = sinon.stub().returns(["transform"]);
+        registrarMock.services = ["transform"];
         registrarMock.registerPluginWithService = sinon.stub();
 
         createPlugin();
@@ -258,7 +258,7 @@ describe("Plugin Test Suite", function() {
         loader.import = importStub;
         loader.config = sinon.stub().returns(loader);
         registrarMock = new Registrar(loader);
-        registrarMock.getServiceNames = sinon.stub().returns(["transform"]);
+        registrarMock.services = ["transform"];
         registrarMock.registerPluginWithService = sinon.stub();
 
         createPlugin();
@@ -312,7 +312,7 @@ describe("Plugin Test Suite", function() {
         loader.import = importStub;
         loader.config = sinon.stub().returns(loader);
         registrarMock = new Registrar(loader);
-        registrarMock.getServiceNames = sinon.stub().returns(["transform"]);
+        registrarMock.services = ["transform"];
         registrarMock.registerPluginWithService = sinon.stub();
 
         createPlugin();
@@ -371,7 +371,7 @@ describe("Plugin Test Suite", function() {
         loader.import = importStub;
         loader.config = sinon.stub().returns(loader);
         registrarMock = new Registrar(loader);
-        registrarMock.getServiceNames = sinon.stub().returns(["transform"]);
+        registrarMock.services = ["transform"];
         registrarMock.registerPluginWithService = sinon.stub();
 
         createPlugin();
@@ -428,7 +428,7 @@ describe("Plugin Test Suite", function() {
         loader.import = importStub;
         loader.config = sinon.stub().returns(loader);
         registrarMock = new Registrar(loader);
-        registrarMock.getServiceNames = sinon.stub().returns(["transform"]);
+        registrarMock.services = ["transform"];
         registrarMock.registerPluginWithService = sinon.stub();
 
         createPlugin();
