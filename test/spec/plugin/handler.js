@@ -139,10 +139,6 @@ describe("Plugin Handler suite", () => {
       expect(handler.handler).to.equal(handlerString);
     });
 
-    it("then handler.handler is dynamic", () => {
-      expect(handler.isDynamic()).to.be.true;
-    });
-
     it("then handler.matches is an instance of Matches", () => {
       expect(handler.matchers).to.be.instanceof(Matches);
     });
@@ -180,10 +176,6 @@ describe("Plugin Handler suite", () => {
 
     it("then handler.handler is properly set to the input function", () => {
       expect(handler.handler).to.equal(handlerFunction);
-    });
-
-    it("then handler.handler is NOT dynamic", () => {
-      expect(handler.isDynamic()).to.be.false;
     });
 
     it("then handler.matches is an instance of Matches", () => {
@@ -233,10 +225,6 @@ describe("Plugin Handler suite", () => {
 
     it("then handler.handler is properly set to the input function", () => {
       expect(handler.handler).to.equal(handlerFunction);
-    });
-
-    it("then handler.handler is NOT dynamic", () => {
-      expect(handler.isDynamic()).to.be.false;
     });
 
     it("then handler.matches is an instance of Matches", () => {

@@ -33,11 +33,6 @@ function Handler(options) {
 inherit.base(Handler).extends(HandlerBlueprint);
 
 
-Handler.prototype.isDynamic = function() {
-  return types.isString(this.handler);
-};
-
-
 /**
  * Configures handler with the provided options.
  */

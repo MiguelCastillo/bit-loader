@@ -1,6 +1,7 @@
 var utils = require("belty");
 var types = require("dis-isa");
 var Builder = require("./builder");
+var Handler = require("./handler");
 var Matches = require("../matches");
 var inherit = require("../inherit");
 var blueprint = require("../blueprint");
@@ -30,40 +31,18 @@ inherit.base(Plugin).extends(PluginBlueprint);
 
 Plugin.prototype.configure = function(options) {
   var plugin = this;
-  var configuration = configurePlugin(options);
-  var services = utils.pick(configuration, this.context.getServiceNames());
+  var services = utils.pick(options, this.context.services);
+  var handlers = {};
 
-  var handlers = Object
-    .keys(services)
-    .map(function(serviceName) {
-      return {
-        serviceName: serviceName,
-        handlers: plugin.handlers[serviceName]
-      };
-    })
-    .reduce(function(result, handlersConfig) {
-      var serviceName = handlersConfig.serviceName;
-      var handlers = handlersConfig.handlers;
+  Object.keys(services).forEach(function(serviceName) {
+    var pluginHandlers = plugin.handlers[serviceName] || [];
+    handlers[serviceName] = pluginHandlers.concat(configureHandler(services[serviceName]));
+  });
 
-      if (!handlers) {
-        handlers = [];
-        plugin.context.registerPluginWithService(serviceName, plugin.id);
-      }
-
-      var handlerIds = utils
-        .toArray(services[serviceName])
-        .map(function(config) {
-          var handler = plugin.context.configureHandler(config.id, configureHandler(config));
-          return handler.id;
-        });
-
-      result[serviceName] = handlers.concat(handlerIds);
-      return result;
-    }, {});
-
-  return this
-    .merge({ handlers: handlers })
-    .merge({ matchers: this.matchers.configure(configuration.matchers || configuration) });
+  return this.merge({
+    handlers: handlers,
+    matchers: this.matchers.configure(options.matchers || options)
+  });
 };
 
 
@@ -84,7 +63,7 @@ Plugin.prototype.run = function(serviceName, data) {
   }
 
   if (!handlers) {
-    throw new Error("Service '" + serviceName + "' has no registered handlers unknown");
+    throw new Error("Service '" + serviceName + "' has no registered handlers");
   }
 
   function cancel() {
@@ -97,66 +76,39 @@ Plugin.prototype.run = function(serviceName, data) {
     }
   }
 
-  return plugin.context.loadHandlers().then(function() {
-    return handlers
-      .map(function(id) {
-        return plugin.context.getHandler(id);
-      })
-      .reduce(function(current, handler) {
-        return current
-          .then(canRun)
-          .then(runHandler(handler, cancel));
-      }, Promise.resolve(data));
-  });
+  return handlers.reduce(function(current, handler) {
+    return current
+      .then(canRun)
+      .then(runHandler(handler, cancel));
+  }, Promise.resolve(data));
 };
 
 
 Plugin.prototype.serialize = function() {
   var plugin = this;
+  var handlers = {};
 
-  var handlers = Object
-    .keys(plugin.handlers)
-    .map(function(serviceName) {
-      return {
-        serviceName: serviceName,
-        handlers: plugin.handlers[serviceName]
-      };
-    })
-    .reduce(function(result, handlersConfig) {
-      result[handlersConfig.serviceName] = handlersConfig.handlers.map(function(handlerId) {
-        return plugin.context.getHandler(handlerId).serialize();
-      });
+  Object.keys(plugin.handlers).forEach(function(serviceName) {
+    handlers[serviceName] = plugin.handlers[serviceName].map(function(handler) {
+      return handler.serialize();
+    });
+  });
 
-      return result;
-    }, {});
-
-  return utils.merge(utils.pick(this, ["id"]), handlers);
+  return utils.merge({id: plugin.id}, handlers);
 };
 
 
-function configurePlugin(options) {
-  if (types.isFunction(options)) {
-    options = options(new Builder());
-
-    if (options instanceof Builder) {
-      options = options.build();
-    }
-  }
-
-  return options;
-}
-
-
 function configureHandler(options) {
-  if (types.isFunction(options) || types.isString(options)) {
-    options = {
-      handler: options
-    };
-  }
+  return [].concat(options).map(function(opt) {
+    if (types.isFunction(opt) || types.isString(opt)) {
+      opt = {
+        handler: opt
+      };
+    }
 
-  return options;
+    return new Handler(opt);
+  });
 }
-
 
 
 /**

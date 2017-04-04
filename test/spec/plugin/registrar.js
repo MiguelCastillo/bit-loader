@@ -10,7 +10,6 @@ describe("Plugin Registrar Test Suite", () => {
   describe("Given a Plugin Registrar with no options", () => {
     beforeEach(() => {
       registrarMock = new Registrar();
-      registrarMock.getServiceNames = sinon.stub().returns([serviceName]);
     });
 
     describe("and configuring a plugin", () => {
@@ -41,6 +40,8 @@ describe("Plugin Registrar Test Suite", () => {
           use: transformService
         }
       });
+
+      sinon.spy(registrarMock, "registerPluginWithService");
     });
 
     describe("and registering a transform plugin", () => {
@@ -57,13 +58,27 @@ describe("Plugin Registrar Test Suite", () => {
       it("then the trasform service is called to register a function", () => {
         sinon.assert.calledWith(transformService, sinon.match.func);
       });
+
+      it("then the transform plugin is NOT called", () => {
+        sinon.assert.notCalled(transformPlugin);
+      });
+
+      it("then the registrar should register the plugin with the service", () => {
+        sinon.assert.calledOnce(registrarMock.registerPluginWithService)
+      });
     });
 
-    describe("and registering a transform plugin via a function and the plugin builder", () => {
+    describe("and registering two separate transform plugins", () => {
       beforeEach(() => {
-        registrarMock.configurePlugin(chance.string(), (builder) => builder.configure({
+        var pluginName = chance.string();
+
+        registrarMock.configurePlugin(pluginName, {
           transform: transformPlugin
-        }));
+        });
+
+        registrarMock.configurePlugin(pluginName, {
+          transform: sinon.spy()
+        });
       });
 
       it("then the transform service is called to register the plugin", () => {
@@ -73,7 +88,38 @@ describe("Plugin Registrar Test Suite", () => {
       it("then the trasform service is called to register a function", () => {
         sinon.assert.calledWith(transformService, sinon.match.func);
       });
+
+      it("then there are two registered transforms", () => {
+        expect(registrarMock.getPlugins()[0].handlers["transform"]).to.have.lengthOf(2);
+      });
+
+      it("then the registrar should register the plugin with the service", () => {
+        sinon.assert.calledOnce(registrarMock.registerPluginWithService)
+      });
     });
 
+    describe("and registering a transform plugin via a function and the plugin builder", () => {
+      var pluginCallback;
+
+      beforeEach(() => {
+        pluginCallback = sinon.spy((builder) => builder.configure({
+          transform: transformPlugin
+        }));
+
+        registrarMock.configurePlugin(chance.string(), pluginCallback);
+      });
+
+      it("then the transform service is called to register the plugin", () => {
+        sinon.assert.calledOnce(transformService);
+      });
+
+      it("then the trasform service is called to register a function", () => {
+        sinon.assert.calledWith(transformService, sinon.match.func);
+      });
+
+      it("then the plugin callback function is called", () => {
+        sinon.assert.calledOnce(pluginCallback);
+      })
+    });
   });
 });
