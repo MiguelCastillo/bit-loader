@@ -46,7 +46,6 @@ describe("Plugin Test Suite", function() {
       configurePlugin = () => plugin = plugin.configure(pluginOptions);
       registrarMock = new Registrar();
       registrarMock.services = [serviceName];
-      registrarMock.registerPluginWithService = sinon.stub();
       createPlugin();
     });
 
@@ -176,7 +175,6 @@ describe("Plugin Test Suite", function() {
         data = chance.string();
 
         registrarMock = new Registrar();
-        registrarMock.loadHandlers = sinon.stub().returns(Promise.resolve());
 
         createPlugin();
 
@@ -202,7 +200,6 @@ describe("Plugin Test Suite", function() {
         handler = sinon.stub().returns(handlerResult);
         registrarMock = new Registrar();
         registrarMock.services = ["transform"];
-        registrarMock.registerPluginWithService = sinon.stub();
 
         createPlugin();
 
@@ -227,241 +224,6 @@ describe("Plugin Test Suite", function() {
 
       it("then result is returned from the handler", () => {
         expect(result).to.include(handlerResult);
-      });
-    });
-  });
-
-  describe("Given a plugin with a module loader", () => {
-    var runPlugin, result, data;
-
-    beforeEach(() => {
-      runPlugin = () => {
-        return plugin.run("transform", data).then((r) => {
-          result = r;
-          return result;
-        });
-      };
-    });
-
-    describe("and running the plugin with one registered handler string", () => {
-      var handler, handlerResult, handlerName, importStub, loader;
-
-      beforeEach(() => {
-        handlerName = chance.string();
-        data = new Module("modulename").configure({ "source": chance.string() });
-        handlerResult = { "source": chance.string() };
-        handler = sinon.stub().returns(handlerResult);
-        importStub = sinon.stub();
-        importStub.withArgs([handlerName]).returns(Promise.all([handler]));
-
-        loader = {};
-        loader.import = importStub;
-        loader.config = sinon.stub().returns(loader);
-        registrarMock = new Registrar(loader);
-        registrarMock.services = ["transform"];
-        registrarMock.registerPluginWithService = sinon.stub();
-
-        createPlugin();
-
-        plugin = plugin.configure({
-          transform: handlerName
-        });
-
-        return runPlugin();
-      });
-
-      it("then module is imported via the module loader", () => {
-        sinon.assert.calledOnce(loader.import);
-      });
-
-      it("then module loader is called with the plugin name", () => {
-        sinon.assert.calledWithExactly(loader.import, [handlerName]);
-      });
-
-      it("then handler is called once", () => {
-        sinon.assert.calledOnce(handler);
-      });
-
-      it("then handler is called with the input data", () => {
-        sinon.assert.calledWith(handler, data);
-      });
-
-      it("then the final result is not the same reference as the input", () => {
-        expect(result).to.not.equal(handlerResult);
-      });
-
-      it("then the final result is returned from the handler", () => {
-        expect(result).to.include(handlerResult);
-      });
-    });
-
-    describe("with two registered handlers and the first handler is a dynamically loaded", () => {
-      var handler1, handler2, handlerResult1, handlerResult2, handlerName, importStub, loader;
-
-      beforeEach(() => {
-        data = new Module("modulename").configure({ "source": chance.string() });
-        handlerResult1 = { "source": chance.string() };
-        handlerResult2 = { "source": chance.string() };
-        handler1 = sinon.stub().returns(handlerResult1);
-        handler2 = sinon.stub().returns(handlerResult2);
-        handlerName = chance.string();
-        importStub = sinon.stub();
-        importStub.withArgs([handlerName]).returns(Promise.all([handler1]));
-
-        loader = {};
-        loader.import = importStub;
-        loader.config = sinon.stub().returns(loader);
-        registrarMock = new Registrar(loader);
-        registrarMock.services = ["transform"];
-        registrarMock.registerPluginWithService = sinon.stub();
-
-        createPlugin();
-
-        plugin = plugin.configure({
-          transform: [handlerName, handler2]
-        });
-
-        return runPlugin();
-      });
-
-      it("then module loader is only called once", () => {
-        sinon.assert.calledOnce(loader.import);
-      });
-
-      it("then first handler is imported", () => {
-        sinon.assert.calledWithExactly(loader.import, [handlerName]);
-      });
-
-      it("then first handler is called once", () => {
-        sinon.assert.calledOnce(handler1);
-      });
-
-      it("then first handler is called with initial data", () => {
-        sinon.assert.calledWith(handler1, data);
-      });
-
-      it("then second handler is called once", () => {
-        sinon.assert.calledOnce(handler2);
-      });
-
-      it("then second handler is called with the result from first handler", () => {
-        sinon.assert.calledWith(handler2, sinon.match(handlerResult1));
-      });
-
-      it("then the final result is the output from the second handler", () => {
-        expect(result).to.include(handlerResult2);
-      });
-    });
-
-    describe("with two registered handlers and the first handler with dynamically loaded and has an ignore rule", () => {
-      var handler1, handler2, handlerResult1, handlerResult2, handlerName, moduleName, importStub, loader;
-
-      beforeEach(() => {
-        moduleName = chance.string();
-        data = new Module(moduleName).configure({ "source": chance.string() });
-        handlerResult1 = { "source": chance.string() };
-        handlerResult2 = { "source": chance.string() };
-        handler1 = sinon.stub().returns(handlerResult1);
-        handler2 = sinon.stub().returns(handlerResult2);
-        handlerName = chance.string();
-        importStub = sinon.stub();
-        importStub.withArgs([handlerName]).returns(Promise.all([handler1]));
-
-        loader = {};
-        loader.import = importStub;
-        loader.config = sinon.stub().returns(loader);
-        registrarMock = new Registrar(loader);
-        registrarMock.services = ["transform"];
-        registrarMock.registerPluginWithService = sinon.stub();
-
-        createPlugin();
-
-        plugin = plugin.configure({
-          transform: [{
-            handler: handlerName,
-            ignores: {
-              name: moduleName
-            }
-          }, handler2]
-        });
-
-        return runPlugin();
-      });
-
-      it("then the first handler is never called", () => {
-        sinon.assert.notCalled(handler1);
-      });
-
-      it("then then first handler is loaded", () => {
-        sinon.assert.calledWithExactly(loader.import, [handlerName]);
-      });
-
-      it("then second handler is called once", () => {
-        sinon.assert.calledOnce(handler2);
-      });
-
-      it("then second handler is called with the initial data", () => {
-        sinon.assert.calledWith(handler2, sinon.match(data));
-      });
-
-      it("then the final result is the output from the second handler", () => {
-        expect(result).to.include(handlerResult2);
-      });
-    });
-
-    describe("with two registered dynamically loading plugin handlers", () => {
-      var handler1, handler2, handlerResult1, handlerResult2, handler1Name, handler2Name, moduleName, importStub, loader;
-
-      beforeEach(() => {
-        moduleName = chance.string();
-        data = new Module(moduleName).configure({ "source": chance.string() });
-        handlerResult1 = { "source": chance.string() };
-        handlerResult2 = { "source": chance.string() };
-        handler1 = sinon.stub().returns(handlerResult1);
-        handler2 = sinon.stub().returns(handlerResult2);
-        handler1Name = chance.string();
-        handler2Name = chance.string();
-        importStub = sinon.stub();
-        importStub.withArgs([handler1Name, handler2Name]).returns(Promise.all([handler1, handler2]));
-
-        loader = {};
-        loader.import = importStub;
-        loader.config = sinon.stub().returns(loader);
-        registrarMock = new Registrar(loader);
-        registrarMock.services = ["transform"];
-        registrarMock.registerPluginWithService = sinon.stub();
-
-        createPlugin();
-
-        plugin = plugin.configure({
-          transform: [handler1Name, handler2Name]
-        });
-
-        return runPlugin();
-      });
-
-      it("then then first and second handlers are loaded", () => {
-        sinon.assert.calledWithExactly(loader.import, [handler1Name, handler2Name]);
-      });
-
-      it("then the first handler is called once", () => {
-        sinon.assert.calledOnce(handler1);
-      });
-
-      it("then the first handler is called", () => {
-        sinon.assert.calledWith(handler1, sinon.match(data));
-      });
-
-      it("then second handler is called once", () => {
-        sinon.assert.calledOnce(handler2);
-      });
-
-      it("then second handler is called with output from the previous handler", () => {
-        sinon.assert.calledWith(handler2, sinon.match(handlerResult1));
-      });
-
-      it("then the final result is the output from the last handler", () => {
-        expect(result).to.include(handlerResult2);
       });
     });
   });
