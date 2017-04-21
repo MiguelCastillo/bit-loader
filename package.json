@@ -39,7 +39,6 @@
     "grunt-concurrent": "~2.3.1",
     "grunt-contrib-connect": "~1.0.2",
     "grunt-contrib-watch": "^1.0.0",
-    "grunt-eslint": "^19.0.0",
     "grunt-mocha": "^1.0.2",
     "grunt-pakit": "^0.2.2",
     "grunt-release": "~0.14.0",
