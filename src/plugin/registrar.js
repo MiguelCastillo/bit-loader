@@ -1,4 +1,3 @@
-var logger = require("loggero").create("plugin/registrar");
 var Plugin = require("./plugin");
 var Builder = require("./builder");
 var utils = require("belty");

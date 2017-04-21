@@ -1,6 +1,5 @@
 var utils = require("belty");
 var types = require("dis-isa");
-var Builder = require("./builder");
 var Handler = require("./handler");
 var Matches = require("../matches");
 var inherit = require("../inherit");
@@ -50,7 +49,6 @@ Plugin.prototype.configure = function(options) {
  * Runs all plugin handlers to process the data.
  */
 Plugin.prototype.run = function(serviceName, data) {
-  var plugin = this;
   var handlers = this.handlers[serviceName];
   var cancelled = false;
 
