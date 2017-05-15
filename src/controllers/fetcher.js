@@ -69,7 +69,9 @@ function configureModuleMeta(fetcher, referrer) {
       };
     }
     else if (config instanceof Module) {
-      return config.merge({ referrer: referrer });
+      return config.merge({
+        referrer: utils.pick(referrer, ["name", "path", "filename", "id"])
+      });
     }
 
     return new Module(utils.merge({}, config, {
