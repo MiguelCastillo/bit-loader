@@ -151,19 +151,7 @@ function fetchDependencies(fetcher) {
       .then(function(result) {
         return Promise
           .all(result.map(function(dependency) {
-            if (fetcher.inProgress.hasOwnProperty(dependency.id)) {
-              return fetcher.inProgress[dependency.id].then(function() { return dependency; });
-            }
-
-            if (fetcher.context.controllers.registry.hasModule(dependency.id)) {
-              var state = fetcher.context.controllers.registry.getModuleState(dependency.id);
-
-              if (state !== Module.State.RESOLVE) {
-                return dependency;
-              }
-            }
-
-            return runFetchPipeline(fetcher)(dependency);
+            return getInProgress(fetcher, dependency) || runFetchPipeline(fetcher)(dependency);
           }))
           .then(function(dependencies) {
             fetcher.context.controllers.registry.updateModule(mod.configure({ deps: dependencies }));
@@ -176,7 +164,11 @@ function fetchDependencies(fetcher) {
 
 function fetchPipeline(fetcher, moduleMeta) {
   logger.info(moduleMeta.name, moduleMeta);
+  return getInProgress(fetcher, moduleMeta) || runPipeline(fetcher, moduleMeta).then(function() { return moduleMeta; });
+}
 
+
+function getInProgress(fetcher, moduleMeta) {
   if (fetcher.inProgress.hasOwnProperty(moduleMeta.id)) {
     return fetcher.inProgress[moduleMeta.id].then(function() { return moduleMeta; });
   }
@@ -188,8 +180,6 @@ function fetchPipeline(fetcher, moduleMeta) {
       return Promise.resolve(moduleMeta);
     }
   }
-
-  return runPipeline(fetcher, moduleMeta).then(function() { return moduleMeta; });
 }
 
 
