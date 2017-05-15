@@ -44,7 +44,7 @@
     "grunt-release": "~0.14.0",
     "load-grunt-tasks": "^3.5.2",
     "mocha": "~3.4.1",
-    "pakit": "^0.3.5",
+    "pakit": "^0.4.0",
     "sinon": "~2.2.0"
   },
   "dependencies": {
