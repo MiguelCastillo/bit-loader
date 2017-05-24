@@ -30,7 +30,7 @@
     "babel-bits": "^1.0.1",
     "bit-imports": "^3.0.2",
     "chai": "~3.5.0",
-    "chance": "^1.0.4",
+    "chance": "^1.0.9",
     "config-grunt-tasks": "^1.0.3",
     "connect-livereload": "^0.6.0",
     "eslint-tap": "^2.0.0",
