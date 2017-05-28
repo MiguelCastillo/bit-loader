@@ -135,8 +135,7 @@ Bitloader.prototype.merge = function(options) {
 
 
 /**
- * Load modules from storage and processes them with the fetch stage pipelines. The
- * result is not compiled into a module until they are imported.
+ * Load modules from storage and processes them with the fetch stage pipelines.
  *
  * @param {string|string[]} names - Names of modules to fetch.
  *
@@ -146,7 +145,23 @@ Bitloader.prototype.merge = function(options) {
  * @returns {Promise} That when resolved it returns the loaded module meta objects
  */
 Bitloader.prototype.fetch = function(names, referrer) {
-  return this.controllers.fetcher.fetch(names, referrer);
+  return this.controllers.fetcher.fetch(names, referrer, true);
+};
+
+
+/**
+ * Load modules from storage and processes them with the fetch stage pipelines. Just
+ * like @see {@link fetch}. Except that fetchShallow will not process any dependencies.
+ *
+ * @param {string|string[]} names - Names of modules to fetch.
+ *
+ * @param {{path: string, name: string}} referrer - Module requesting the module. Usually
+ *  needed for processing relative paths.
+ *
+ * @returns {Promise} That when resolved it returns the loaded module meta objects
+ */
+Bitloader.prototype.fetchShallow = function(names, referrer) {
+  return this.controllers.fetcher.fetch(names, referrer, false);
 };
 
 
