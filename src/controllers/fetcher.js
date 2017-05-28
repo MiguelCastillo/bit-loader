@@ -32,7 +32,12 @@ Fetcher.prototype.fetch = function(names, referrer) {
       return Promise.all(moduleMetas.map(runFetchPipeline(fetcher)));
     })
     .then(function(moduleMetas) {
-      return types.isArray(names) ? moduleMetas : moduleMetas[0];
+      return moduleMetas.map(function(moduleMeta) {
+        return fetcher.context.controllers.registry.getModule(moduleMeta.id);
+      })
+    })
+    .then(function(modules) {
+      return types.isArray(names) ? modules : modules[0];
     });
 };
 
@@ -45,7 +50,12 @@ Fetcher.prototype.fetchOnly = function(names, referrer) {
       return Promise.all(moduleMetas.map(fetchService(fetcher.context)));
     })
     .then(function(moduleMetas) {
-      return types.isArray(names) ? moduleMetas : moduleMetas[0];
+      return moduleMetas.map(function(moduleMeta) {
+        return fetcher.context.controllers.registry.getModule(moduleMeta.id);
+      })
+    })
+    .then(function(modules) {
+      return types.isArray(names) ? modules : modules[0];
     });
 };
 

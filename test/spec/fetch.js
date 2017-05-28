@@ -158,18 +158,33 @@ describe("Fetch Test Suite", function() {
       sinon.assert.calledWith(precompileStub, sinon.match(transformCommonData));
     });
 
+    it("then the module contains the expected referrer", function() {
+      expect(result.referrer).to.eql({});
+    });
+
+    it("then the module has two dependencies", function() {
+      expect(result.deps).to.have.lengthOf(2)
+    });
+
+    it("then one of the dependencies is dep1", function() {
+      expect(result.deps[0]).to.deep.include({ name: "dep1" });
+    });
+
+    it("then one of the dependencies is common-dep", function() {
+      expect(result.deps[1]).to.deep.include({ name: "common-dep" });
+    });
+
     it("then the result will have all the aggregated data", function() {
-      expect(result).to.eql(new Module({
-        deps: [],
+      expect(result).to.include({
         directory: "this is the real path to like/",
         filename: "like-name",
         id: "like-id",
         name: "like",
         path: "this is the real path to like/like-name",
-        referrer: {},
-        state: "resolve",
+        state: "loaded",
+        source: "precompiled source",
         type: "UNKNOWN"
-      }));
+      });
     });
 
     describe("and reading the loaded `like` module", function() {
