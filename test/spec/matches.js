@@ -1,7 +1,8 @@
 import { expect } from "chai";
-import chance from "chance";
+import chanceFactory from "chance";
 import Matches from "../../src/matches";
 
+var chance = chanceFactory();
 
 describe("Matches Test Suite", function() {
   var matches;
@@ -39,7 +40,7 @@ describe("Matches Test Suite", function() {
       beforeEach(function() {
         act();
 
-        ruleValue = chance().string();
+        ruleValue = chance.string();
 
         matches = matches.configure({
           matches: {
@@ -57,11 +58,11 @@ describe("Matches Test Suite", function() {
       });
 
       it("then running matches against a non-matching value fails validation", function() {
-        expect(matches.runMatch( { name: chance().string() } )).to.equal(false);
+        expect(matches.runMatch( { name: chance.string() } )).to.equal(false);
       });
 
       it("then running ignore against any value passes validation", function() {
-        expect(matches.runIgnore( { name: chance().string() } )).to.equal(false);
+        expect(matches.runIgnore( { name: chance.string() } )).to.equal(false);
       });
     });
 
@@ -71,8 +72,8 @@ describe("Matches Test Suite", function() {
       beforeEach(function() {
         act();
 
-        ruleValue1 = chance().string();
-        ruleValue2 = chance().string();
+        ruleValue1 = chance.string();
+        ruleValue2 = chance.string();
 
         matches = matches.configure({
           matches: {
@@ -94,11 +95,11 @@ describe("Matches Test Suite", function() {
       });
 
       it("then running matches against a non-matching value fails validation", function() {
-        expect(matches.runMatch( { name: chance().string() } )).to.equal(false);
+        expect(matches.runMatch( { name: chance.string() } )).to.equal(false);
       });
 
       it("then running ignore against any value passes validation", function() {
-        expect(matches.runIgnore( { name: chance().string() } )).to.equal(false);
+        expect(matches.runIgnore( { name: chance.string() } )).to.equal(false);
       });
     });
 
@@ -108,7 +109,7 @@ describe("Matches Test Suite", function() {
       beforeEach(function() {
         act();
 
-        ruleValue = chance().string();
+        ruleValue = chance.string();
 
         var matches1 = matches.configure({
           ignores: {
@@ -124,7 +125,7 @@ describe("Matches Test Suite", function() {
       });
 
       it("then running ignore against a random value fails validation", function() {
-        expect(matches.runIgnore({ name: chance().string() })).to.equal(false);
+        expect(matches.runIgnore({ name: chance.string() })).to.equal(false);
       });
     });
 
@@ -134,8 +135,8 @@ describe("Matches Test Suite", function() {
       beforeEach(function() {
         act();
 
-        ruleValue1 = chance().string();
-        ruleValue2 = chance().string();
+        ruleValue1 = chance.string();
+        ruleValue2 = chance.string();
 
         var matches1 = matches.configure({
           ignores: {
@@ -155,7 +156,7 @@ describe("Matches Test Suite", function() {
       });
 
       it("then running ignore against a random value fails validation", function() {
-        expect(matches.runIgnore({ name: chance().string() })).to.equal(false);
+        expect(matches.runIgnore({ name: chance.string() })).to.equal(false);
       });
     });
 
