@@ -24,17 +24,17 @@ function Fetcher(context) {
 inherit.base(Fetcher).extends(Controller);
 
 
-Fetcher.prototype.fetch = function(names, referrer) {
+Fetcher.prototype.fetch = function(names, referrer, deep) {
   var fetcher = this;
 
   return resolveNames(this, utils.toArray(names), referrer)
     .then(function(moduleMetas) {
-      return Promise.all(moduleMetas.map(runFetchPipeline(fetcher)));
+      return Promise.all(moduleMetas.map(runFetchPipeline(fetcher, deep)));
     })
     .then(function(moduleMetas) {
       return moduleMetas.map(function(moduleMeta) {
         return fetcher.context.controllers.registry.getModule(moduleMeta.id);
-      })
+      });
     })
     .then(function(modules) {
       return types.isArray(names) ? modules : modules[0];
@@ -52,7 +52,7 @@ Fetcher.prototype.fetchOnly = function(names, referrer) {
     .then(function(moduleMetas) {
       return moduleMetas.map(function(moduleMeta) {
         return fetcher.context.controllers.registry.getModule(moduleMeta.id);
-      })
+      });
     })
     .then(function(modules) {
       return types.isArray(names) ? modules : modules[0];
@@ -109,9 +109,11 @@ function resolveMetaModule(fetcher) {
 }
 
 
-function runFetchPipeline(fetcher) {
+function runFetchPipeline(fetcher, deep) {
   return function runFetchPipelineDelegate(moduleMeta) {
-    return fetchPipeline(fetcher, moduleMeta).then(fetchDependencies(fetcher));
+    return deep === false ?
+      fetchPipeline(fetcher, moduleMeta) :
+      fetchPipeline(fetcher, moduleMeta).then(fetchDependencies(fetcher));
   };
 }
 
