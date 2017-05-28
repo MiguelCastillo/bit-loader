@@ -193,8 +193,11 @@ Bitloader.prototype.import = function(names, referrer) {
  *  the module.
  */
 Bitloader.prototype.resolve = function(name, referrer) {
-  return this.services.resolver
-    .resolve(new Module(name), referrer)
+  return this.services.resolve
+    .runAsync(new Module({
+      name: name,
+      referrer: referrer
+    }))
     .then(function(moduleMeta) {
       return moduleMeta.path;
     });
