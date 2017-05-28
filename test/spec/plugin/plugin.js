@@ -77,23 +77,23 @@ describe("Plugin Test Suite", function() {
         });
 
         it("then the handler is the configured string", () => {
-          expect(result).to.have.deep.property(`${serviceName}[0].handler`, pluginOptions[serviceName].handler);
+          expect(result).to.have.nested.property(`${serviceName}[0].handler`, pluginOptions[serviceName].handler);
         });
 
         it("then the id is the configured string", () => {
-          expect(result).to.have.deep.property(`${serviceName}[0].id`, pluginOptions[serviceName].id);
+          expect(result).to.have.nested.property(`${serviceName}[0].id`, pluginOptions[serviceName].id);
         });
 
         it("then options is null", () => {
-          expect(result).to.have.deep.property(`${serviceName}[0].options`, null);
+          expect(result).to.have.nested.property(`${serviceName}[0].options`, null);
         });
 
         it("then matchers has undefined ignore rules", () => {
-          expect(result).to.have.deep.property(`${serviceName}[0].matchers.ignores`, undefined);
+          expect(result).to.have.nested.property(`${serviceName}[0].matchers.ignores`, undefined);
         });
 
         it("then matchers has undefined match rules", () => {
-          expect(result).to.have.deep.property(`${serviceName}[0].matchers.matches`, undefined);
+          expect(result).to.have.nested.property(`${serviceName}[0].matchers.matches`, undefined);
         });
       });
     });
