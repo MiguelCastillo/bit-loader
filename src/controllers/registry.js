@@ -23,6 +23,11 @@ Registry.prototype.register = function(name, exports) {
 };
 
 
+Registry.prototype.clear = function() {
+  this.context.cache = {};
+};
+
+
 Registry.prototype.hasModule = function(id) {
   return Repository.hasItem(this.context.cache, id);
 };
