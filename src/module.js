@@ -146,7 +146,7 @@ Module.prototype.merge = Module.prototype.configure = function(options) {
   var path = options.path;
 
   if (path) {
-    target.path = path;
+    target.filepath = target.path = path;
     target.filename = target.fileName = parseFileNameFromPath(path);
     target.directory = parseDirectoryFromPath(path);
   }
