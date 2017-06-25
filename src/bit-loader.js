@@ -53,6 +53,7 @@ function Bitloader(options) {
 
   this.plugins = new Plugins(this, utils.omit(this.services, ["compile", "link"]));
   this.merge(options);
+  configureLogger(options.log);
 }
 
 
@@ -488,6 +489,27 @@ Bitloader.prototype.plugin = function(id, settings) {
   this.plugins.configurePlugin(id, settings);
   return this;
 };
+
+
+function configureLogger(options) {
+  if (options) {
+    if (options === true) {
+      options = {
+        level: logger.levels.warn
+      };
+    }
+
+    logger.enableAll();
+
+    if (options.hasOwnProperty("stream")) {
+      logger.pipe(options.stream);
+    }
+
+    if (options.hasOwnProperty("level")) {
+      logger.level(logger.levels[options.level]);
+    }
+  }
+}
 
 
 // Expose constructors and utilities
