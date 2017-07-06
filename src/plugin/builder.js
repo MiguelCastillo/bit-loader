@@ -9,48 +9,36 @@ function Builder(options) {
     return new Builder(options);
   }
 
-  this._configuration = merge(utils.merge({}, defaults), options);
+  this.settings = utils.merge({}, defaults);
+  this.merge(options);
 }
 
-Builder.prototype.configure = function(options) {
-  merge(this._configuration, options);
+Builder.prototype.merge = Builder.prototype.configure = function(options) {
+  options = options || {};
+  var settings = utils.assign(this.settings, utils.omit(options, ["match", "matches", "ignore", "ignores"]), arrayMergeTransform);
+
+  if (options.match || options.matches) {
+    settings.matches = utils.assign(settings.matches, options.match, options.matches, arrayMergeTransform);
+  }
+
+  if (options.ignore || options.ignores) {
+    settings.ignores =  utils.assign(settings.ignores, options.ignore, options.ignores, arrayMergeTransform);
+  }
+
+  this.settings = settings;
   return this;
 };
 
 Builder.prototype.build = function() {
-  return utils.merge({}, this._configuration);
+  return utils.merge({}, this.settings);
 };
 
 Builder.create = function(options) {
   return new Builder(options);
 };
 
-function merge(pluginConfig, options) {
-  options = options || {};
-  utils.extend(pluginConfig, mergeState(pluginConfig, utils.omit(options, ["match", "matches", "ignore", "ignores"])));
-
-  var matches = options.match || options.matches;
-  if (matches) {
-    pluginConfig.matches = mergeState(pluginConfig.matches, matches);
-  }
-
-  var ignores = options.ignore || options.ignores;
-  if (ignores) {
-    pluginConfig.ignores = mergeState(pluginConfig.ignores, ignores);
-  }
-
-  return pluginConfig;
-};
-
-function mergeState(currentState, newState) {
-  currentState = currentState || {};
-
-  return Object
-    .keys(newState)
-    .reduce(function(result, key) {
-      result[key] = (currentState[key] || []).concat(utils.toArray(newState[key]));
-      return result;
-    }, {});
+function arrayMergeTransform(target, source) {
+ return (target || []).concat(utils.toArray(source));
 }
 
 module.exports = Builder;
