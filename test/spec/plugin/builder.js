@@ -7,7 +7,7 @@ describe("bit-plugin-builder test suite", function() {
 
     beforeEach(() => act = () => result = PluginBuilder(config).build());
 
-    describe("and the configuration is empty", () => {
+    describe("and the configuration is null", () => {
       beforeEach(() => {
         config = null;
         act();
