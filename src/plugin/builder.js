@@ -1,8 +1,6 @@
 var utils = require("belty");
 
-var defaults = {
-  extensions: []
-};
+var defaults = {};
 
 function Builder(options) {
   if (!(this instanceof Builder)) {
