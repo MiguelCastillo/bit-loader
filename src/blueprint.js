@@ -27,25 +27,21 @@ BaseImmutable.prototype.merge = function(value, updater) {
 };
 
 function buildImmutable(target, configuration) {
-  if (target === configuration && Object.isFrozen(target)) {
-    return configuration;
-  }
-  else if (types.isBuffer(configuration)) {
+  if (types.isBuffer(configuration) && !Object.isFrozen(target)) {
     return Object.freeze(configuration);
   }
-  if (configuration && configuration.constructor === Object) {
+  else if (configuration && configuration.constructor === Object && !Object.isFrozen(target)) {
     return Object.freeze(immutableObject(target, configuration));
   }
-  else if (types.isArray(configuration)) {
+  else if (types.isArray(configuration) && !Object.isFrozen(target)) {
     return Object.freeze(immutableArray(target, configuration));
   }
-  else {
-    return configuration;
-  }
+
+  return configuration;
 }
 
 function immutableObject(target, configuration) {
-  var proto = Object
+  return Object.defineProperties(target, Object
     .keys(configuration)
     .reduce(function(container, item) {
       container[item] = {
@@ -55,10 +51,7 @@ function immutableObject(target, configuration) {
       };
 
       return container;
-    }, {});
-
-  Object.defineProperties(target, proto);
-  return target;
+    }, {}));
 }
 
 function immutableArray(target, configuration) {
@@ -87,7 +80,7 @@ function protectedSet(prop) {
 }
 
 function buildUpdateTree(target, value, updater) {
-  if (!target || (!(value && value.constructor === Object) && !types.isArray(value))) {
+  if (!target || !value || (value.constructor !== Object && !types.isArray(value))) {
     return value;
   }
 
@@ -113,7 +106,7 @@ function getAllKeys(target, value) {
 }
 
 function isFrozen(value) {
-  if (value && (value.constructor === Object || types.isArray(value))) {
+  if (value && (value.constructor === Object || types.isArray(value) || types.isBuffer(value))) {
     return Object.isFrozen(value);
   }
 
