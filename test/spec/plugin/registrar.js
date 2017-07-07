@@ -90,7 +90,9 @@ describe("Plugin Registrar Test Suite", () => {
       });
 
       it("then there are two registered transforms", () => {
-        expect(registrarMock.getPlugins()[0].handlers["transform"]).to.have.lengthOf(2);
+        var plugins = registrarMock.getPlugins();
+        var plugin = plugins[0];
+        expect(plugin.handlers["transform"]).to.have.lengthOf(2);
       });
 
       it("then the registrar should register the plugin with the service", () => {
