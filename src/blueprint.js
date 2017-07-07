@@ -27,7 +27,10 @@ BaseImmutable.prototype.merge = function(value, updater) {
 };
 
 function buildImmutable(target, configuration) {
-  if (types.isBuffer(configuration)) {
+  if (target === configuration && Object.isFrozen(target)) {
+    return configuration;
+  }
+  else if (types.isBuffer(configuration)) {
     return Object.freeze(configuration);
   }
   if (configuration && configuration.constructor === Object) {
