@@ -53,7 +53,7 @@ describe("Plugin Test Suite", function() {
       beforeEach(() => {
         pluginOptions = {
           [serviceName]: {
-            handler: chance.string(),
+            handler: sinon.stub(),
             id: chance.string()
           }
         };
@@ -61,7 +61,7 @@ describe("Plugin Test Suite", function() {
         configurePlugin();
       });
 
-      describe("and serializing it", () => {
+      describe("and serializing the plugin", () => {
         var result;
 
         beforeEach(() => {
@@ -83,18 +83,6 @@ describe("Plugin Test Suite", function() {
         it("then the id is the configured string", () => {
           expect(result).to.have.nested.property(`${serviceName}[0].id`, pluginOptions[serviceName].id);
         });
-
-        it("then options is null", () => {
-          expect(result).to.have.nested.property(`${serviceName}[0].options`, null);
-        });
-
-        it("then matchers has undefined ignore rules", () => {
-          expect(result).to.have.nested.property(`${serviceName}[0].matchers.ignores`, undefined);
-        });
-
-        it("then matchers has undefined match rules", () => {
-          expect(result).to.have.nested.property(`${serviceName}[0].matchers.matches`, undefined);
-        });
       });
     });
 
@@ -106,18 +94,10 @@ describe("Plugin Test Suite", function() {
 
         pluginOptions = {
           [serviceName]: {
+            id: chance.string(),
             handler: () => {},
             options: {
               rounders: handlerOption
-            },
-            id: chance.string(),
-            matchers: {
-              ignores: {
-                corner: chance.string()
-              },
-              matches: {
-                round: chance.string()
-              }
             }
           }
         };
@@ -136,18 +116,10 @@ describe("Plugin Test Suite", function() {
           expect(result).to.deep.equal({
             id: null,
             [serviceName]: [{
-              handler: pluginOptions[serviceName].handler,
               id: pluginOptions[serviceName].id,
+              handler: pluginOptions[serviceName].handler,
               options: {
                 rounders: handlerOption
-              },
-              matchers: {
-                ignores: {
-                  corner: [pluginOptions[serviceName].matchers.ignores.corner]
-                },
-                matches: {
-                  round: [pluginOptions[serviceName].matchers.matches.round]
-                }
               }
             }]
           });

@@ -1,9 +1,9 @@
 var utils = require("belty");
 var types = require("dis-isa");
-var Handler = require("./handler");
 var Matches = require("../matches");
 var inherit = require("../inherit");
 var blueprint = require("../blueprint");
+var loggerFactory = require("loggero");
 
 
 var PluginBlueprint = blueprint({
@@ -34,8 +34,7 @@ Plugin.prototype.configure = function(options) {
   var handlers = {};
 
   Object.keys(services).forEach(function(serviceName) {
-    var pluginHandlers = plugin.handlers[serviceName] || [];
-    handlers[serviceName] = pluginHandlers.concat(configureHandler(services[serviceName]));
+    handlers[serviceName] = (plugin.handlers[serviceName] || []).concat(configureHandler(services[serviceName]));
   });
 
   return this.merge({
@@ -49,6 +48,7 @@ Plugin.prototype.configure = function(options) {
  * Runs all plugin handlers to process the data.
  */
 Plugin.prototype.run = function(serviceName, data) {
+  var plugin = this;
   var handlers = this.handlers[serviceName];
   var cancelled = false;
 
@@ -77,34 +77,30 @@ Plugin.prototype.run = function(serviceName, data) {
   return handlers.reduce(function(current, handler) {
     return current
       .then(canRun)
-      .then(runHandler(handler, cancel));
+      .then(runHandler(plugin, handler, cancel));
   }, Promise.resolve(data));
 };
 
 
+Plugin.prototype.getLogger = function(name) {
+  return loggerFactory.create(name || this.id);
+};
+
+
 Plugin.prototype.serialize = function() {
-  var plugin = this;
-  var handlers = {};
-
-  Object.keys(plugin.handlers).forEach(function(serviceName) {
-    handlers[serviceName] = plugin.handlers[serviceName].map(function(handler) {
-      return handler.serialize();
-    });
-  });
-
-  return utils.merge({id: plugin.id}, handlers);
+  return utils.merge({id: this.id}, this.handlers);
 };
 
 
 function configureHandler(options) {
-  return [].concat(options).map(function(opt) {
-    if (types.isFunction(opt) || types.isString(opt)) {
-      opt = {
-        handler: opt
-      };
+  return [].concat(options).map(function(handlerOptions) {
+    var settings = types.isFunction(handlerOptions) ? { handler: handlerOptions } : handlerOptions;
+
+    if (!types.isFunction(settings.handler)) {
+      throw new TypeError("Plugin handler must be a function");
     }
 
-    return new Handler(opt);
+    return settings;
   });
 }
 
@@ -112,17 +108,14 @@ function configureHandler(options) {
 /**
  * Method that return a function that executes a plugin handler.
  */
-function runHandler(handler, cancel) {
+function runHandler(plugin, handler, cancel) {
   return function runHandlerDelegate(data) {
     if (!data) {
       return Promise.resolve();
     }
 
     return Promise
-      .resolve(handler)
-      .then(function(handler) {
-        return handler.run(data, cancel);
-      })
+      .resolve(handler.handler(data, plugin, cancel))
       .then(function(result) {
         return data.configure(result);
       });
