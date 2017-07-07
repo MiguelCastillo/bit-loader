@@ -68,7 +68,7 @@ describe("Plugin Registrar Test Suite", () => {
       });
     });
 
-    describe("and registering two separate transform plugins", function() {
+    describe("and registering two separate transform plugins", () => {
       beforeEach(() => {
         var pluginName = chance.string();
 
