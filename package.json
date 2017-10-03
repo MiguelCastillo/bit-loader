@@ -43,7 +43,7 @@
     "grunt-pakit": "^0.2.2",
     "grunt-release": "~0.14.0",
     "load-grunt-tasks": "^3.5.2",
-    "mocha": "~3.5.0",
+    "mocha": "~4.0.0",
     "pakit": "^0.4.0",
     "sinon": "~4.0.0"
   },
