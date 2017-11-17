@@ -163,26 +163,18 @@ function canRunProvider(service, moduleMeta) {
 }
 
 
-Service.create = function(context, services, prepostHooks) {
-  if (prepostHooks) {
-    return Object.keys(services).reduce(function(result, key) {
-      var service = new services[key](context)
-        .withPre(new Service(context))
-        .withPost(new Service(context));
+Service.create = function(context, services) {
+  return Object.keys(services).reduce(function(result, key) {
+    var service = new services[key](context)
+      .withPre(new Service(context))
+      .withPost(new Service(context));
 
-      result["pre" + key] = service.pre;
-      result["post" + key] = service.post;
-      result[key] = service;
+    result["pre" + key] = service.pre;
+    result["post" + key] = service.post;
+    result[key] = service;
 
-      return result;
-    }, {});
-  }
-  else {
-    return Object.keys(services).reduce(function(result, key) {
-      result[key] = new services[key](context);
-      return result;
-    }, {});
-  }
+    return result;
+  }, {});
 };
 
 

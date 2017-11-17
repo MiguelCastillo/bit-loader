@@ -28,30 +28,7 @@ describe("Service Test Suite", () => {
       });
     });
 
-    describe("and a service config with one service is provided and no preposthooks", () => {
-      beforeEach(() => {
-        serviceContext = {};
-        serviceConfig = {
-          tupac: Service
-        };
-
-        createService();
-      });
-
-      it("then services is an object", () => {
-        expect(services).to.be.an("object");
-      });
-
-      it("then one service is created", () => {
-        expect(Object.keys(services)).to.have.lengthOf(1);
-      });
-
-      it("then the service name is `tupac`", () => {
-        expect(services.tupac).to.be.instanceof(Service);
-      });
-    });
-
-    describe("and a service config with one service is provided and preposthooks", () => {
+    describe("and a service config with one service is provided", () => {
       beforeEach(() => {
         postpreHooks = true;
         serviceContext = {};

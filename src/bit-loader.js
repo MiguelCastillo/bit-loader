@@ -9,7 +9,6 @@ var Resolve      = require("./services/resolve");
 var Fetch        = require("./services/fetch");
 var Transform    = require("./services/transform");
 var Dependency   = require("./services/dependency");
-var PreCompile   = require("./services/precompile");
 var Compile      = require("./services/compile");
 
 var Controller = require("./controller");
@@ -34,24 +33,22 @@ var Plugins    = require("./plugin/registrar");
  * @class
  */
 function Bitloader(options) {
-  options = utils.merge({}, options);
-  this.settings = options;
+  this.settings = options = utils.merge({}, options);
   this.ignores = [];
   this.providers = {};
   this.cache = {};
 
   // Services! Components that process modules.
-  this.services = utils.extend({},
-    Service.create(this, { resolve: Resolve, fetch: Fetch, transform: Transform, dependency: Dependency }, true),
-    Service.create(this, { precompile: PreCompile, compile: Compile, link: Link })
-  );
+  this.services = Service.create(this, { resolve: Resolve, fetch: Fetch, transform: Transform, dependency: Dependency, compile: Compile, link: Link });
 
   // Controllers! These guys make use of the services to build pipelines
   // that build modules. Controllers use services in order to orchestrate
   // workflows.
   this.controllers = Controller.create(this, { fetcher: Fetcher, loader: Loader, importer: Importer, registry: Registry, builder: Builder });
 
-  this.plugins = new Plugins(this, utils.omit(this.services, ["compile", "link"]));
+  // Create the plugin manager
+  this.plugins = Plugins.create(this, utils.omit(this.services, ["compile", "link"]));
+
   this.merge(options);
   configureLogger(options.log);
 }
