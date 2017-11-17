@@ -39,12 +39,24 @@ function Bitloader(options) {
   this.cache = {};
 
   // Services! Components that process modules.
-  this.services = Service.create(this, { resolve: Resolve, fetch: Fetch, transform: Transform, dependency: Dependency, compile: Compile, link: Link });
+  this.services = Service.create(this, {
+    resolve: Resolve,
+    fetch: Fetch,
+    transform: Transform,
+    dependency: Dependency,
+    compile: Compile,
+    link: Link
+  });
 
   // Controllers! These guys make use of the services to build pipelines
-  // that build modules. Controllers use services in order to orchestrate
-  // workflows.
-  this.controllers = Controller.create(this, { fetcher: Fetcher, loader: Loader, importer: Importer, registry: Registry, builder: Builder });
+  // that build modules.
+  this.controllers = Controller.create(this, {
+    fetcher: Fetcher,
+    loader: Loader,
+    importer: Importer,
+    registry: Registry,
+    builder: Builder
+  });
 
   // Create the plugin manager
   this.plugins = Plugins.create(this, utils.omit(this.services, ["compile", "link"]));
