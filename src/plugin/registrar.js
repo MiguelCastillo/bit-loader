@@ -17,6 +17,11 @@ function Registrar(context, services) {
 }
 
 
+Registrar.create = function(context, services) {
+  return new Registrar(context, services);
+};
+
+
 Registrar.prototype.configure = function(options) {
   return utils.merge(this, utils.pick(options, ["plugins"]));
 };
