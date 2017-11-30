@@ -31,6 +31,8 @@
 
 ## Introduction
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/MiguelCastillo/bit-loader.svg)](https://greenkeeper.io/)
+
 > Framework for building module loaders. This is the core library for [bit-imports](https://github.com/MiguelCastillo/bit-imports) and [bit-bundler](https://github.com/MiguelCastillo/bit-bundler).
 
 
