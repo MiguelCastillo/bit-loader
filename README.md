@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/MiguelCastillo/bit-loader/master/img/bit-loader_white.png" width="100%"></img>
 
-[![Build Status](https://travis-ci.org/MiguelCastillo/bit-loader.svg?branch=master)](https://travis-ci.org/MiguelCastillo/bit-loader) [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/MiguelCastillo/bit-loader?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Build Status](https://travis-ci.org/MiguelCastillo/bit-loader.svg?branch=master)](https://travis-ci.org/MiguelCastillo/bit-loader) [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/MiguelCastillo/bit-loader?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Greenkeeper badge](https://badges.greenkeeper.io/MiguelCastillo/bit-loader.svg)](https://greenkeeper.io/)
 
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -30,8 +30,6 @@
 
 
 ## Introduction
-
-[![Greenkeeper badge](https://badges.greenkeeper.io/MiguelCastillo/bit-loader.svg)](https://greenkeeper.io/)
 
 > Framework for building module loaders. This is the core library for [bit-imports](https://github.com/MiguelCastillo/bit-imports) and [bit-bundler](https://github.com/MiguelCastillo/bit-bundler).
 
