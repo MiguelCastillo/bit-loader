@@ -17,7 +17,8 @@
   ],
   "scripts": {
     "prepublish": "grunt build",
-    "test": "grunt test"
+    "test": "grunt test",
+    "build": "grunt build"
   },
   "repository": {
     "type": "git",
