@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import blueprint from "../../../src/blueprint";
+import blueprint from "../../src/blueprint";
 
 describe("blueprint test suite", function() {
   describe("when setting up an empty blueprint", () => {

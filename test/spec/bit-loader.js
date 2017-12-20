@@ -1,4 +1,5 @@
 import { expect } from "chai";
+import sinon from "sinon";
 import Bitloader from "../../src/bit-loader";
 
 describe("Bitloader Test Suite", function() {
@@ -74,16 +75,16 @@ describe("Bitloader Test Suite", function() {
         return bitloader.import("js");
       });
 
+      it("then default `resolve` is NOT called", function() {
+        sinon.assert.notCalled(defaultResolveStub);
+      });
+
       it("then default 'fetch' is NOT called", function() {
         sinon.assert.notCalled(defaultFetchStub);
       });
 
       it("then default 'compile' is NOT called", function() {
         sinon.assert.notCalled(defaultCompileStub);
-      });
-
-      it("then default `resolve` is NOT called", function() {
-        sinon.assert.notCalled(defaultResolveStub);
       });
 
       it("then `resolve` plugin is called once", function() {

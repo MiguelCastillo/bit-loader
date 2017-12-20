@@ -9,7 +9,8 @@ var System = (function() {
       "belty": "node_modules/belty/dist/index",
       "then-pipeline": "node_modules/then-pipeline/dist/index",
       "chai": "node_modules/chai/chai",
-      "chance": "node_modules/chance/chance"
+      "chance": "node_modules/chance/chance",
+      "sinon": "node_modules/sinon/pkg/sinon"
     },
     "plugins": [{
       "transform": {

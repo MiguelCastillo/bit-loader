@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import chance from "chance";
-import Module from "src/module";
+import Module from "../../src/module";
 
 describe("Module Test Suite", function() {
   describe("When creating a module meta", function() {

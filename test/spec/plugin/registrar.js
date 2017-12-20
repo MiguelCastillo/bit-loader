@@ -1,6 +1,7 @@
 import { expect } from "chai";
 import chanceFactory from "chance";
-import Registrar from "src/plugin/registrar";
+import sinon from "sinon";
+import Registrar from "../../../src/plugin/registrar";
 
 var chance = chanceFactory();
 

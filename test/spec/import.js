@@ -1,4 +1,5 @@
-import Bitloader from "src/bit-loader";
+import Bitloader from "../../src/bit-loader";
+import sinon from "sinon";
 
 describe("Import Test Suite", function() {
   describe("When importing a module with source that exports a string", function() {
