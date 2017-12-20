@@ -32,6 +32,8 @@
   "homepage": "https://github.com/MiguelCastillo/bit-loader",
   "devDependencies": {
     "babel-bits": "^1.0.1",
+    "babel-preset-env": "^1.6.1",
+    "babel-register": "^6.26.0",
     "bit-imports": "^3.0.2",
     "chai": "~4.1.0",
     "chance": "^1.0.4",
