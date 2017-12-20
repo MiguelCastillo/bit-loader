@@ -1,6 +1,7 @@
 import { expect } from "chai";
-import Bitloader from "src/bit-loader";
-import Module from "src/module";
+import sinon from "sinon";
+import Bitloader from "../../src/bit-loader";
+import Module from "../../src/module";
 
 describe("Build Test Suite", function() {
   var loader, moduleMeta, result;

@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import chanceFactory from "chance";
+import sinon from "sinon";
 import Service from "../../src/service";
 
 var chance = chanceFactory();

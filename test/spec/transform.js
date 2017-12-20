@@ -1,4 +1,5 @@
-import Bitloader from "src/bit-loader";
+import Bitloader from "../../src/bit-loader";
+import sinon from "sinon";
 
 describe("Transform Test Suite", function() {
 

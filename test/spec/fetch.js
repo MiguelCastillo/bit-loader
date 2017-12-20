@@ -1,7 +1,8 @@
 import chance from "chance";
 import { expect } from "chai";
-import Bitloader from "src/bit-loader";
-import Module from "src/module";
+import sinon from "sinon";
+import Bitloader from "../../src/bit-loader";
+import Module from "../../src/module";
 
 describe("Fetch Test Suite", function() {
   var loader, fetchStub, resolveStub, transformStub, dependencyStub, precompileStub;

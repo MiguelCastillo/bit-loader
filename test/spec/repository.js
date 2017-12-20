@@ -1,9 +1,9 @@
-import Repository from "src/repository";
+import Repository from "../../src/repository";
 import { expect } from "chai";
 import chanceFactory from "chance";
 import utils from "belty";
 
-chance = chanceFactory();
+const chance = chanceFactory();
 
 describe("Repository Suite", function() {
   describe("When creating a repository", () => {
