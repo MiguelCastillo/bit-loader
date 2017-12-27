@@ -4,7 +4,6 @@ var inherit    = require("../inherit");
 var helpers    = require("./helpers");
 var Module     = require("../module");
 var Controller = require("../controller");
-var Pipeline   = require("then-pipeline");
 var utils      = require("belty");
 
 var id = 0;
@@ -49,11 +48,11 @@ Fetcher.prototype._buildTree = function(modules, referrer, services) {
             return this
               ._buildTree(mod1.deps, mod1, services)
               .then(deps => this.context.controllers.registry.updateModule(mod1.configure({ deps: deps })))
-              .then(() => mod)
+              .then(() => mod);
           }))
         )
         .then(() => modules)
-    )
+    );
 };
 
 
