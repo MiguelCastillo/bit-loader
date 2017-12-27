@@ -24,14 +24,28 @@ inherit.base(Import).extends(Controller);
  *
  * @returns {Promise}
  */
-Import.prototype.import = function(names, options) {
-  logger.info(names, options);
+Import.prototype.importNames = function(names, referrer) {
+  logger.info(names, referrer);
 
   return (
     types.isArray(names) ?
-    Promise.all(names.map((name) => this._importModule(name))) :
-    this._importModule(names)
+    Promise.all(names.map((name) => this._importModule(name, referrer))) :
+    this._importModule(names, referrer)
   );
+};
+
+
+Import.prototype.importSource = function(source, referrer) {
+  function moduleError(error) {
+    logger.error(error);
+    throw error;
+  }
+
+  function getModuleExports(mod) {
+    return context.controllers.registry.getModule(mod.id).exports;
+  }
+
+  return context.controllers.loader.loadSource(source, referrer).then(getModuleExports, moduleError);
 };
 
 
@@ -42,7 +56,7 @@ Import.prototype.import = function(names, options) {
  * @param {Array<string>} names - Array of module names
  * @param {Object} options
  */
-Import.prototype._importModule = function(name) {
+Import.prototype._importModule = function(name, referrer) {
   var context = this.context;
   var registry = context.controllers.registry;
 
@@ -59,7 +73,7 @@ Import.prototype._importModule = function(name) {
     return context.controllers.registry.getModule(mod.id).exports;
   }
 
-  return context.controllers.loader.fromName(name).then(getModuleExports, moduleError);
+  return context.controllers.loader.loadNames(name, referrer).then(getModuleExports, moduleError);
 };
 
 

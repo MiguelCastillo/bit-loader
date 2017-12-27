@@ -155,7 +155,14 @@ Bitloader.prototype.merge = function(options) {
  * @returns {Promise} That when resolved it returns the loaded module meta objects
  */
 Bitloader.prototype.fetch = function(names, referrer) {
-  return this.controllers.fetcher.fetch(names, referrer, true);
+  const file = configureFile(names);
+
+  if (file.paths) {
+    return this.controllers.fetcher.loadNames(file.paths, referrer, true);
+  }
+  else if (file.content) {
+    return this.controllers.fetcher.loadSource(file.content, referrer, true);
+  }
 };
 
 
@@ -171,7 +178,14 @@ Bitloader.prototype.fetch = function(names, referrer) {
  * @returns {Promise} That when resolved it returns the loaded module meta objects
  */
 Bitloader.prototype.fetchShallow = function(names, referrer) {
-  return this.controllers.fetcher.fetch(names, referrer, false);
+  const file = configureFile(names);
+
+  if (file.paths) {
+    return this.controllers.fetcher.loadNames(file.paths, referrer, false);
+  }
+  else if (file.content) {
+    return this.controllers.fetcher.loadSource(file.content, referrer, false);
+  }
 };
 
 
@@ -187,12 +201,11 @@ Bitloader.prototype.fetchShallow = function(names, referrer) {
  * @returns {Promise} That when resolved it returns the loaded module meta objects
  */
 Bitloader.prototype.fetchOnly = function(names, referrer) {
-  return this.controllers.fetcher.fetchOnly(names, referrer);
-};
+  const file = configureFile(names);
 
-
-Bitloader.prototype.fetchFromSource = function(source, referrer) {
-  return this.controllers.fetcher.fromSource(source, referrer);
+  if (file.paths) {
+    return this.controllers.fetcher.fetchOnly(file.paths, referrer);
+  }
 };
 
 
@@ -207,7 +220,14 @@ Bitloader.prototype.fetchFromSource = function(source, referrer) {
  * @returns {Promise} That when resolved it returns the modules' exports.
  */
 Bitloader.prototype.import = function(names, referrer) {
-  return this.controllers.importer.import(names, referrer);
+  const file = configureFile(names);
+
+  if (file.paths) {
+    return this.controllers.importer.importNames(file.paths, referrer);
+  }
+  else if (file.content) {
+    return this.controllers.importer.importSource(file.content, referrer);
+  }
 };
 
 
@@ -246,7 +266,14 @@ Bitloader.prototype.resolve = function(name, referrer) {
  * @returns {Pormise} When resolved it returns the full module instances.
  */
 Bitloader.prototype.load = function(names, referrer) {
-  return this.controllers.loader.load(names, referrer);
+  const file = configureFile(names);
+
+  if (file.paths) {
+    return this.controllers.loader.loadNames(file.paths, referrer);
+  }
+  else if (file.content) {
+    return this.controllers.loader.loadSource(file.content, referrer);
+  }
 };
 
 
@@ -299,12 +326,6 @@ Bitloader.prototype.getSource = function(names, referrer) {
         moduleMetas.map(function(moduleMeta) { return loader.getModule(moduleMeta.id).source; }) :
         loader.getModule(moduleMetas.id).source;
     });
-};
-
-
-/** Method to initiate the process of loading a module from a content string rather than a module name */
-Bitloader.prototype.loadFromSource = function(source, referrer) {
-  return this.controllers.loader.fromSource(source, referrer);
 };
 
 
@@ -528,6 +549,26 @@ function configureLogger(options) {
     if (options.hasOwnProperty("level")) {
       logger.level(logger.levels[options.level]);
     }
+  }
+}
+
+
+function configureFile(file) {
+  if (!file) {
+    throw new TypeError("Must provide a valid input. String, Array<String>, { src: Array<String> }, { content: String | Buffer }")
+  }
+
+  if (types.isString(file) || types.isArray(file)) {
+    return { paths: file };
+  }
+  else if (types.isArray(file.src) && file.src.length) {
+    return { paths: file.src };
+  }
+  else if (types.isString(file.content) || types.isBuffer(file.content)) {
+    return { content: file.content.toString() };
+  }
+  else if (types.isString(file.source) || types.isBuffer(file.source)) {
+    return { content: file.source.toString() };
   }
 }
 

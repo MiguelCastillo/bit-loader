@@ -33,7 +33,7 @@ inherit.base(Loader).extends(Controller);
  *
  * @returns {Promise} - Promise that will resolve to a Module instance
  */
-Loader.prototype.fromName = function fromName(names, referrer) {
+Loader.prototype.loadNames = Loader.prototype.load = function(names, referrer) {
   return (
     types.isArray(names) ?
     Promise.all(names.map((name) => this._loadName(name, referrer))) :
@@ -41,11 +41,8 @@ Loader.prototype.fromName = function fromName(names, referrer) {
   );
 };
 
-// same thing.
-Loader.prototype.load = Loader.prototype.fromName;
 
-
-Loader.prototype.fromSource = function fromSource(source, referrer) {
+Loader.prototype.loadSource = function fromSource(source, referrer) {
   if (!source) {
     return Promise.reject("Must provide a string source to load");
   }
@@ -61,7 +58,7 @@ Loader.prototype._loadName = function(name, referrer) {
   }
 
   const controllers = this.context.controllers;
-  return controllers.fetcher.fetch(name, referrer).then((mod) => controllers.builder.build(mod.id));
+  return controllers.fetcher.loadNames(name, referrer).then((mod) => controllers.builder.build(mod.id));
 };
 
 

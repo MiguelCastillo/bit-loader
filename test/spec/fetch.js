@@ -29,7 +29,7 @@ describe("Fetch Test Suite", function() {
     describe("and the module source is a hello world", function() {
       var result = null;
       beforeEach(function() {
-        return loader.fetchFromSource("console.log('hello world')").then(mod => result = mod);
+        return loader.fetch({ source: "console.log('hello world')" }).then(mod => result = mod);
       });
 
       it("then the module source has the expected data", function() {
@@ -44,7 +44,7 @@ describe("Fetch Test Suite", function() {
     describe("and the module source has one depdnency", function() {
       var result = null;
       beforeEach(function() {
-        return loader.fetchFromSource("require('path');console.log('hello world')").then(mod => result = mod);
+        return loader.fetch({ source: "require('path');console.log('hello world')" }).then(mod => result = mod);
       });
 
       it("then the module source has the expected data", function() {

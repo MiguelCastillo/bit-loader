@@ -17,7 +17,7 @@ function Fetcher(context) {
 inherit.base(Fetcher).extends(Controller);
 
 
-Fetcher.prototype.fetch = function(names, referrer, deep) {
+Fetcher.prototype.loadNames = Fetcher.prototype.fetch = function(names, referrer, deep) {
   return this._loadModules(names, referrer, deep, [fetchService, transformService, dependencyService, precompileService]);
 };
 
@@ -27,8 +27,8 @@ Fetcher.prototype.fetchOnly = function(names, referrer, deep) {
 };
 
 
-Fetcher.prototype.fromSource = function(source, referrer) {
-  return this._loadModules({ source: source, id: id++ }, referrer, true, [fetchService, transformService, dependencyService, precompileService]);
+Fetcher.prototype.loadSource = function(source, referrer, deep) {
+  return this._loadModules({ source: source, id: id++ }, referrer, deep, [fetchService, transformService, dependencyService, precompileService]);
 };
 
 
