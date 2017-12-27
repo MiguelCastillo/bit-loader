@@ -28,7 +28,7 @@ Fetcher.prototype.fetchOnly = function(names, referrer, deep) {
 
 
 Fetcher.prototype.loadSource = function(source, referrer, deep) {
-  return this._loadModules({ source: source, id: id++ }, referrer, deep, [fetchService, transformService, dependencyService, precompileService]);
+  return this._loadModules({ source: source, id: "@anonymous-" + id++ }, referrer, deep, [fetchService, transformService, dependencyService, precompileService]);
 };
 
 
@@ -180,7 +180,7 @@ function getIfReady(fetcher, mod) {
 
 
 function runPipeline(fetcher, mod, services) {
-  logger.info(mod.name, mod);
+  logger.info(mod.name || mod.id, mod);
 
   function deleteInProgress() {
     delete fetcher.inProgress[mod.id];
