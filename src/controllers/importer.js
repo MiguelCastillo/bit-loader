@@ -26,11 +26,12 @@ inherit.base(Import).extends(Controller);
  */
 Import.prototype.import = function(names, options) {
   logger.info(names, options);
-  if (types.isArray(names)) {
-    return Promise.all(names.map(getModuleByName(this, options)));
-  }
 
-  return getModuleByName(this, options)(names);
+  return (
+    types.isArray(names) ?
+    Promise.all(names.map((name) => this._importModule(name))) :
+    this._importModule(names)
+  );
 };
 
 
@@ -41,7 +42,7 @@ Import.prototype.import = function(names, options) {
  * @param {Array<string>} names - Array of module names
  * @param {Object} options
  */
-Import.prototype._getModule = function(name) {
+Import.prototype._importModule = function(name) {
   var context = this.context;
   var registry = context.controllers.registry;
 
@@ -49,30 +50,17 @@ Import.prototype._getModule = function(name) {
     return Promise.resolve(registry.getModule(name).exports);
   }
 
-  // Wrap in a separate promise to handle this:
-  // https://github.com/MiguelCastillo/spromise/issues/35
-  return new Promise(function resolver(resolve, reject) {
-    function moduleError(error) {
-      logger.error(error);
-      reject(error);
-    }
+  function moduleError(error) {
+    logger.error(error);
+    throw error;
+  }
 
-    function getModuleExports(mod) {
-      resolve(context.controllers.registry.getModule(mod.id).exports);
-    }
+  function getModuleExports(mod) {
+    return context.controllers.registry.getModule(mod.id).exports;
+  }
 
-    context.controllers.loader
-      .load(name)
-      .then(getModuleExports, moduleError);
-  });
+  return context.controllers.loader.fromName(name).then(getModuleExports, moduleError);
 };
-
-
-function getModuleByName(importer, options) {
-  return function getModuleByNameDelegate(name) {
-    return importer._getModule(name, options);
-  };
-}
 
 
 module.exports = Import;

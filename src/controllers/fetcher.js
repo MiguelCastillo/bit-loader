@@ -7,6 +7,8 @@ var Controller = require("../controller");
 var Pipeline   = require("then-pipeline");
 var utils      = require("belty");
 
+var id = 0;
+
 function Fetcher(context) {
   Controller.call(this, context);
   this.inProgress = {};
@@ -23,6 +25,11 @@ Fetcher.prototype.fetch = function(names, referrer, deep) {
 
 Fetcher.prototype.fetchOnly = function(names, referrer, deep) {
   return this._loadModules(names, referrer, deep, [fetchService]);
+};
+
+
+Fetcher.prototype.fromSource = function(source, referrer) {
+  return this._loadModules({ source: source, id: id++ }, referrer, true, [fetchService, transformService, dependencyService, precompileService]);
 };
 
 

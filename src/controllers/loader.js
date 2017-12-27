@@ -33,36 +33,36 @@ inherit.base(Loader).extends(Controller);
  *
  * @returns {Promise} - Promise that will resolve to a Module instance
  */
-Loader.prototype.load = function(names, referrer) {
-  if (types.isString(names)) {
-    return load(this, referrer)(names);
+Loader.prototype.fromName = function fromName(names, referrer) {
+  return (
+    types.isArray(names) ?
+    Promise.all(names.map((name) => this._loadName(name, referrer))) :
+    this._loadName(names, referrer)
+  );
+};
+
+// same thing.
+Loader.prototype.load = Loader.prototype.fromName;
+
+
+Loader.prototype.fromSource = function fromSource(source, referrer) {
+  if (!source) {
+    return Promise.reject("Must provide a string source to load");
   }
 
-  return Promise.all(names.map(load(this, referrer)));
+  const controllers = this.context.controllers;
+  return controllers.fetcher.fromSource(source, referrer).then((mod) => controllers.builder.build(mod.id));
 };
 
 
-function load(loader, referrer) {
-  return function(name) {
-    if (!name) {
-      return Promise.reject("Must provide the name of the module to load");
-    }
+Loader.prototype._loadName = function(name, referrer) {
+  if (!name) {
+    return Promise.reject("Must provide the name of the module to load");
+  }
 
-    return fetch(loader, name, referrer).then(build(loader));
-  };
-}
-
-
-function fetch(loader, name, referrer) {
-  return loader.context.controllers.fetcher.fetch(name, referrer);
-}
-
-
-function build(loader) {
-  return function(moduleMeta) {
-    return loader.context.controllers.builder.build(moduleMeta.id);
-  };
-}
+  const controllers = this.context.controllers;
+  return controllers.fetcher.fetch(name, referrer).then((mod) => controllers.builder.build(mod.id));
+};
 
 
 module.exports = Loader;

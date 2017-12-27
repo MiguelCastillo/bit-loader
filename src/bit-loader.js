@@ -191,6 +191,11 @@ Bitloader.prototype.fetchOnly = function(names, referrer) {
 };
 
 
+Bitloader.prototype.fetchFromSource = function(source, referrer) {
+  return this.controllers.fetcher.fromSource(source, referrer);
+};
+
+
 /**
  * Method for importing modules.
  *
@@ -294,6 +299,12 @@ Bitloader.prototype.getSource = function(names, referrer) {
         moduleMetas.map(function(moduleMeta) { return loader.getModule(moduleMeta.id).source; }) :
         loader.getModule(moduleMetas.id).source;
     });
+};
+
+
+/** Method to initiate the process of loading a module from a content string rather than a module name */
+Bitloader.prototype.loadFromSource = function(source, referrer) {
+  return this.controllers.loader.fromSource(source, referrer);
 };
 
 
