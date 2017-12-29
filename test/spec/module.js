@@ -1,6 +1,8 @@
 import { expect } from "chai";
-import chance from "chance";
+import chanceFactory from "chance";
 import Module from "../../src/module";
+
+const chance = chanceFactory();
 
 describe("Module Test Suite", function() {
   describe("When creating a module meta", function() {
@@ -20,7 +22,7 @@ describe("Module Test Suite", function() {
       var name;
 
       beforeEach(function() {
-        name = chance().string();
+        name = chance.word({syllables: 3});
 
         act({
           name: name
@@ -41,15 +43,45 @@ describe("Module Test Suite", function() {
     });
 
     describe("and the module meta has a path", function() {
-      var path, directory, filename;
+      var name, path, directory, filename;
 
       beforeEach(function() {
-        directory = chance().string() + "/";
-        filename = "." + chance().string() + ".js"; // edge case with files with dots on them
+        name = chance.word({syllables: 3});
+        directory = chance.word({syllables: 3}) + "/";
+        filename = "." + chance.word({syllables: 3}) + ".js"; // edge case with files with dots on them
         path = directory + filename;
 
         act({
-          name: chance().string(),
+          name: name,
+          path: path
+        });
+      });
+
+      it("then the path is properly set", function() {
+        expect(meta.path).to.equal(path);
+      });
+
+      it("then the directory property is properly set", function() {
+        expect(meta.directory).to.equal(directory);
+      });
+
+      it("then the file name property is properly set", function() {
+        expect(meta.filename).to.equal(filename);
+      });
+    });
+
+    describe("and the module meta has a path with url hash and url params", function() {
+      var name, path, directory, filename, urlExtras;
+
+      beforeEach(function() {
+        urlExtras = "?sweet=param#{'hash-isnt-cool-anymore': 1}/";
+        name = chance.word({syllables: 3});
+        directory = chance.word({syllables: 3}) + "/";
+        filename = chance.word({syllables: 3}) + ".js"; // edge case with files with dots on them
+        path = directory + filename + urlExtras;
+
+        act({
+          name: name,
           path: path
         });
       });
@@ -68,15 +100,16 @@ describe("Module Test Suite", function() {
     });
 
     describe("and a file path is merged into the module meta instance", function() {
-      var path, directory, filename, mergedMeta;
+      var name, path, directory, filename, mergedMeta;
 
       beforeEach(function() {
-        directory = chance().string() + "/";
-        filename = "." + chance().string() + ".js"; // edge case with files with dots on them
+        name = chance.word({syllables: 3});
+        directory = chance.word({syllables: 3}) + "/";
+        filename = "." + chance.word({syllables: 3}) + ".js"; // edge case with files with dots on them
         path = directory + filename;
 
         act({
-          name: chance().string()
+          name: name
         });
 
         mergedMeta = meta.configure({
@@ -114,15 +147,16 @@ describe("Module Test Suite", function() {
     });
 
     describe("and a Windows file path is merged into the module meta instance", function() {
-      var path, directory, filename, mergedMeta;
+      var name, path, directory, filename, mergedMeta;
 
       beforeEach(function() {
-        directory = "C:\\" + chance().string() + "\\\\";
-        filename = "." + chance().string() + ".js"; // edge case with files with dots on them
+        name = chance.word({syllables: 3});
+        directory = "C:\\" + chance.word({syllables: 3}) + "\\\\";
+        filename = "." + chance.word({syllables: 3}) + ".js"; // edge case with files with dots on them
         path = directory + filename;
 
         act({
-          name: chance().string()
+          name: name
         });
 
         mergedMeta = meta.configure({
