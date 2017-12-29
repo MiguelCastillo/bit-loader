@@ -236,12 +236,18 @@ Module.canCompile = function(moduleMeta) {
 
 
 function parseDirectoryFromPath(path) {
-  return (path || "").replace(/([^/\\]+)$/gmi, "");
+  var directory = path && path.split("#")[0];
+  directory = directory && directory.split("?")[0];
+  directory = (directory || "").replace(/[^/\\]+$/, "");
+  return directory;
 }
 
 
 function parseFileNameFromPath(path) {
-  return path && /[/\\]/.test(path) ? /[^/\\]+$/gmi.exec(path)[0] : "";
+  var filePath = path && path.split("#")[0];
+  filePath = filePath && filePath.split("?")[0];
+  filePath = filePath && /[/\\]/.test(filePath) && /[^/\\]+$/gmi.exec(filePath);
+  return filePath ? filePath[0] : "";
 }
 
 
