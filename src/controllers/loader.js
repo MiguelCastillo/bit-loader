@@ -1,7 +1,8 @@
 //var logger = require("loggero").create("controllers/loader");
-var types  = require("dis-isa");
-var inherit = require("../inherit");
-var Controller = require("../controller");
+const types  = require("dis-isa");
+const inherit = require("../inherit");
+const Controller = require("../controller");
+const File = require("../file");
 
 
 /**
@@ -33,33 +34,37 @@ inherit.base(Loader).extends(Controller);
  *
  * @returns {Promise} - Promise that will resolve to a Module instance
  */
-Loader.prototype.loadNames = Loader.prototype.load = function(names, referrer) {
+Loader.prototype.load = function(data, referrer) {
+  const file = new File(data);
+
   return (
-    types.isArray(names) ?
-    Promise.all(names.map((name) => this._loadName(name, referrer))) :
-    this._loadName(names, referrer)
+    file.names ? this._loadNames(file, referrer) :
+    file.contents ? this._loadSource(file, referrer) :
+    null
   );
 };
 
 
-Loader.prototype.loadSource = function fromSource(source, referrer) {
-  if (!source) {
-    return Promise.reject("Must provide a string source to load");
-  }
-
-  const controllers = this.context.controllers;
-  return controllers.fetcher.fromSource(source, referrer).then((mod) => controllers.builder.build(mod.id));
+Loader.prototype._loadSource = function fromSource(file, referrer) {
+  const fetcher = this.context.controllers.fetcher;
+  const builder = this.context.controllers.builder;
+  return fetcher.fetch(file, referrer).then(buildModules(builder));
 };
 
 
-Loader.prototype._loadName = function(name, referrer) {
-  if (!name) {
-    return Promise.reject("Must provide the name of the module to load");
-  }
-
-  const controllers = this.context.controllers;
-  return controllers.fetcher.loadNames(name, referrer).then((mod) => controllers.builder.build(mod.id));
+Loader.prototype._loadNames = function(file, referrer) {
+  const fetcher = this.context.controllers.fetcher;
+  const builder = this.context.controllers.builder;
+  return fetcher.fetch(file, referrer).then(buildModules(builder));
 };
 
+
+function buildModules(builder) {
+  return (modules) => (
+    types.isArray(modules) ?
+    modules.map(mod => builder.build(mod.id)) :
+    builder.build(modules.id)
+  );
+}
 
 module.exports = Loader;

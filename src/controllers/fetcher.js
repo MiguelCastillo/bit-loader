@@ -1,10 +1,11 @@
-var logger     = require("loggero").create("controllers/fetcher");
-var types      = require("dis-isa");
-var inherit    = require("../inherit");
-var helpers    = require("./helpers");
-var Module     = require("../module");
-var Controller = require("../controller");
-var utils      = require("belty");
+const logger = require("loggero").create("controllers/fetcher");
+const types = require("dis-isa");
+const inherit = require("../inherit");
+const helpers = require("./helpers");
+const Module = require("../module");
+const Controller = require("../controller");
+const utils = require("belty");
+const File = require("../file");
 
 var id = 0;
 
@@ -17,18 +18,20 @@ function Fetcher(context) {
 inherit.base(Fetcher).extends(Controller);
 
 
-Fetcher.prototype.loadNames = Fetcher.prototype.fetch = function(names, referrer, deep) {
-  return this._loadModules(names, referrer, deep, [fetchService, transformService, dependencyService, precompileService]);
+Fetcher.prototype.fetch = function(data, referrer, deep) {
+  const file = new File(data);
+  const services = [fetchService, transformService, dependencyService, precompileService];
+
+  return (
+    file.names ? this._loadModules(file.names, referrer, deep, services) :
+    file.contents ? this._loadModules({ id: "@anonymous-" + id++, source: file.contents, path: file.path }, referrer, deep, services) :
+    null
+  );
 };
 
 
 Fetcher.prototype.fetchOnly = function(names, referrer, deep) {
   return this._loadModules(names, referrer, deep, [fetchService]);
-};
-
-
-Fetcher.prototype.loadSource = function(source, referrer, deep) {
-  return this._loadModules({ source: source, id: "@anonymous-" + id++ }, referrer, deep, [fetchService, transformService, dependencyService, precompileService]);
 };
 
 
@@ -43,7 +46,7 @@ Fetcher.prototype._buildTree = function(modules, referrer, services) {
         )
         .then(modules => Promise.all(
           modules.map(mod => {
-            var mod1 = this.context.controllers.registry.getModule(mod.id);
+            const mod1 = this.context.controllers.registry.getModule(mod.id);
   
             return this
               ._buildTree(mod1.deps, mod1, services)
@@ -65,10 +68,10 @@ Fetcher.prototype._buildNodes = function(modules, referrer, services) {
 };
 
 
-Fetcher.prototype._loadModules = function(modules, referrer, deep, services) {
+Fetcher.prototype._loadModules = function(names, referrer, deep, services) {
   services = services.map(service => service(this.context));
-  const deferred = deep === false ? this._buildNodes([].concat(modules), referrer, services) : this._buildTree([].concat(modules), referrer, services);
-  return deferred.then((result) => buildResult(this, modules, result));
+  const deferred = deep === false ? this._buildNodes([].concat(names), referrer, services) : this._buildTree([].concat(names), referrer, services);
+  return deferred.then((result) => buildResult(this, names, result));
 };
 
 
@@ -121,7 +124,7 @@ function resolveMetaModule(fetcher) {
 
 
 function configureModuleId(mod) {
-  var result = {};
+  const result = {};
 
   if (!mod.path && mod.url) {
     result.path = mod.url && mod.url.href;
@@ -161,7 +164,7 @@ function getInProgress(fetcher, mod) {
   }
 
   if (fetcher.context.controllers.registry.hasModule(mod.id)) {
-    var state = fetcher.context.controllers.registry.getModuleState(mod.id);
+    const state = fetcher.context.controllers.registry.getModuleState(mod.id);
 
     if (state !== Module.State.RESOLVE) {
       return Promise.resolve(mod);
@@ -171,7 +174,7 @@ function getInProgress(fetcher, mod) {
 
 
 function getIfReady(fetcher, mod) {
-  var state = fetcher.context.controllers.registry.getModuleState(mod.id);
+  const state = fetcher.context.controllers.registry.getModuleState(mod.id);
 
   if (state === Module.State.LOADED || state === Module.State.READY) {
     return Promise.resolve(mod);
