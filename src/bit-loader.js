@@ -154,8 +154,8 @@ Bitloader.prototype.merge = function(options) {
  *
  * @returns {Promise} That when resolved it returns the loaded module meta objects
  */
-Bitloader.prototype.fetch = function(names, referrer) {
-  return this.controllers.fetcher.fetch(names, referrer, true);
+Bitloader.prototype.fetch = function(file, referrer) {
+  return this.controllers.fetcher.fetch(file, referrer, true);
 };
 
 
@@ -170,8 +170,8 @@ Bitloader.prototype.fetch = function(names, referrer) {
  *
  * @returns {Promise} That when resolved it returns the loaded module meta objects
  */
-Bitloader.prototype.fetchShallow = function(names, referrer) {
-  return this.controllers.fetcher.fetch(names, referrer, false);
+Bitloader.prototype.fetchShallow = function(file, referrer) {
+  return this.controllers.fetcher.fetch(file, referrer, false);
 };
 
 
@@ -201,8 +201,24 @@ Bitloader.prototype.fetchOnly = function(names, referrer) {
  *
  * @returns {Promise} That when resolved it returns the modules' exports.
  */
-Bitloader.prototype.import = function(names, referrer) {
-  return this.controllers.importer.import(names, referrer);
+Bitloader.prototype.import = function(file, referrer) {
+  return this.controllers.importer.import(file, referrer);
+};
+
+
+/**
+ * Method for importing modules. Unlike @see {@link import}, this method returns the module
+ * instance instead of the module's exports.
+ *
+ * @param {string|string[]} names - Names of the modules to import.
+ *
+ * @param {{path: string, name: string}} referrer - Module requesting the module. Usually
+ *  needed for processing relative paths.
+ *
+ * @returns {Pormise} When resolved it returns the full module instances.
+ */
+Bitloader.prototype.load = function(file, referrer) {
+  return this.controllers.loader.load(file, referrer);
 };
 
 
@@ -226,22 +242,6 @@ Bitloader.prototype.resolve = function(name, referrer) {
     .then(function(moduleMeta) {
       return moduleMeta.path;
     });
-};
-
-
-/**
- * Method for importing modules. Unlike @see {@link import}, this method returns the module
- * instance instead of the module's exports.
- *
- * @param {string|string[]} names - Names of the modules to import.
- *
- * @param {{path: string, name: string}} referrer - Module requesting the module. Usually
- *  needed for processing relative paths.
- *
- * @returns {Pormise} When resolved it returns the full module instances.
- */
-Bitloader.prototype.load = function(names, referrer) {
-  return this.controllers.loader.load(names, referrer);
 };
 
 

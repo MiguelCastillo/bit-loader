@@ -1,8 +1,8 @@
-var logger     = require("loggero").create("controllers/importer");
-var types      = require("dis-isa");
-var inherit    = require("../inherit");
-var Module     = require("../module");
-var Controller = require("../controller");
+const logger = require("loggero").create("controllers/importer");
+const types = require("dis-isa");
+const inherit = require("../inherit");
+const Controller = require("../controller");
+const File = require("../file");
 
 
 /**
@@ -24,54 +24,47 @@ inherit.base(Import).extends(Controller);
  *
  * @returns {Promise}
  */
-Import.prototype.import = function(names, options) {
-  logger.info(names, options);
-  if (types.isArray(names)) {
-    return Promise.all(names.map(getModuleByName(this, options)));
+Import.prototype.import = function(data, referrer) {
+  const file = new File(data);
+
+  if (file.name || file.id || file.path) {
+    logger.info(file.name || file.id || file.path, referrer);
   }
 
-  return getModuleByName(this, options)(names);
+  return (
+    file.names ? this._importNames(file, referrer) :
+    file.contents ? this._importSource(file, referrer) :
+    null
+  );
 };
 
 
-/**
- * Gets the module by name.  If the module has not been loaded before, then
- * it is loaded via the module loader
- *
- * @param {Array<string>} names - Array of module names
- * @param {Object} options
- */
-Import.prototype._getModule = function(name) {
-  var context = this.context;
-  var registry = context.controllers.registry;
-
-  if (registry.hasModule(name) && registry.getModuleState(name) === Module.State.READY) {
-    return Promise.resolve(registry.getModule(name).exports);
-  }
-
-  // Wrap in a separate promise to handle this:
-  // https://github.com/MiguelCastillo/spromise/issues/35
-  return new Promise(function resolver(resolve, reject) {
-    function moduleError(error) {
-      logger.error(error);
-      reject(error);
-    }
-
-    function getModuleExports(mod) {
-      resolve(context.controllers.registry.getModule(mod.id).exports);
-    }
-
-    context.controllers.loader
-      .load(name)
-      .then(getModuleExports, moduleError);
-  });
+Import.prototype._importSource = function(file, referrer) {
+  const registry = this.context.controllers.registry;
+  const loader = this.context.controllers.loader;
+  return loader.load(file, referrer).then(getModuleExports(registry), moduleError);
 };
 
 
-function getModuleByName(importer, options) {
-  return function getModuleByNameDelegate(name) {
-    return importer._getModule(name, options);
-  };
+Import.prototype._importNames = function(file, referrer) {
+  const registry = this.context.controllers.registry;
+  const loader = this.context.controllers.loader;
+  return loader.load(file, referrer).then(getModuleExports(registry), moduleError);
+};
+
+
+function moduleError(error) {
+  logger.error(error);
+  throw error;
+}
+
+
+function getModuleExports(registry) {
+  return (modules) => (
+    types.isArray(modules) ?
+    modules.map(mod => registry.getModule(mod.id).exports) :
+    registry.getModule(modules.id).exports
+  );
 }
 
 

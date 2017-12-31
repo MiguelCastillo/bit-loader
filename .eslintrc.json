@@ -1,6 +1,10 @@
 {
+  "parserOptions": {
+    "sourceType": "module"
+  },
   "env": {
-    "browser": true
+    "browser": true,
+    "commonjs": true
   },
   "rules": {
     "curly": 2,

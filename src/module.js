@@ -119,8 +119,8 @@ function Module(options) {
     };
   }
 
-  if (!types.isString(options.name)) {
-    throw new TypeError("Must provide a name, which is used by the resolver to resolve the path for the resource");
+  if (!types.isString(options.name) && !types.isString(options.source)) {
+    throw new TypeError("Must provide a name or source for the module");
   }
 
   this.deps = options.deps ? options.deps.slice(0) : [];

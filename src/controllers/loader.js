@@ -1,7 +1,8 @@
 //var logger = require("loggero").create("controllers/loader");
-var types  = require("dis-isa");
-var inherit = require("../inherit");
-var Controller = require("../controller");
+const types  = require("dis-isa");
+const inherit = require("../inherit");
+const Controller = require("../controller");
+const File = require("../file");
 
 
 /**
@@ -33,36 +34,37 @@ inherit.base(Loader).extends(Controller);
  *
  * @returns {Promise} - Promise that will resolve to a Module instance
  */
-Loader.prototype.load = function(names, referrer) {
-  if (types.isString(names)) {
-    return load(this, referrer)(names);
-  }
+Loader.prototype.load = function(data, referrer) {
+  const file = new File(data);
 
-  return Promise.all(names.map(load(this, referrer)));
+  return (
+    file.names ? this._loadNames(file, referrer) :
+    file.contents ? this._loadSource(file, referrer) :
+    null
+  );
 };
 
 
-function load(loader, referrer) {
-  return function(name) {
-    if (!name) {
-      return Promise.reject("Must provide the name of the module to load");
-    }
+Loader.prototype._loadSource = function fromSource(file, referrer) {
+  const fetcher = this.context.controllers.fetcher;
+  const builder = this.context.controllers.builder;
+  return fetcher.fetch(file, referrer).then(buildModules(builder));
+};
 
-    return fetch(loader, name, referrer).then(build(loader));
-  };
+
+Loader.prototype._loadNames = function(file, referrer) {
+  const fetcher = this.context.controllers.fetcher;
+  const builder = this.context.controllers.builder;
+  return fetcher.fetch(file, referrer).then(buildModules(builder));
+};
+
+
+function buildModules(builder) {
+  return (modules) => (
+    types.isArray(modules) ?
+    modules.map(mod => builder.build(mod.id)) :
+    builder.build(modules.id)
+  );
 }
-
-
-function fetch(loader, name, referrer) {
-  return loader.context.controllers.fetcher.fetch(name, referrer);
-}
-
-
-function build(loader) {
-  return function(moduleMeta) {
-    return loader.context.controllers.builder.build(moduleMeta.id);
-  };
-}
-
 
 module.exports = Loader;

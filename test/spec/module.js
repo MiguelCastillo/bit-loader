@@ -14,7 +14,7 @@ describe("Module Test Suite", function() {
 
     describe("and the module meta is empty - no name", function() {
       it("then an exception is thrown because a name must be provided", function() {
-        expect(act).to.throw(TypeError, "Must provide a name, which is used by the resolver to resolve the path for the resource");
+        expect(act).to.throw(TypeError, "Must provide a name or source for the module");
       });
     });
 
