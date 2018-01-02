@@ -26,29 +26,13 @@ inherit.base(Import).extends(Controller);
  */
 Import.prototype.import = function(data, referrer) {
   const file = new File(data);
+  const registry = this.context.controllers.registry;
+  const loader = this.context.controllers.loader;
 
   if (file.name || file.id || file.path) {
     logger.info(file.name || file.id || file.path, referrer);
   }
 
-  return (
-    file.names ? this._importNames(file, referrer) :
-    file.contents ? this._importSource(file, referrer) :
-    null
-  );
-};
-
-
-Import.prototype._importSource = function(file, referrer) {
-  const registry = this.context.controllers.registry;
-  const loader = this.context.controllers.loader;
-  return loader.load(file, referrer).then(getModuleExports(registry), moduleError);
-};
-
-
-Import.prototype._importNames = function(file, referrer) {
-  const registry = this.context.controllers.registry;
-  const loader = this.context.controllers.loader;
   return loader.load(file, referrer).then(getModuleExports(registry), moduleError);
 };
 

@@ -36,23 +36,6 @@ inherit.base(Loader).extends(Controller);
  */
 Loader.prototype.load = function(data, referrer) {
   const file = new File(data);
-
-  return (
-    file.names ? this._loadNames(file, referrer) :
-    file.contents ? this._loadSource(file, referrer) :
-    null
-  );
-};
-
-
-Loader.prototype._loadSource = function fromSource(file, referrer) {
-  const fetcher = this.context.controllers.fetcher;
-  const builder = this.context.controllers.builder;
-  return fetcher.fetch(file, referrer).then(buildModules(builder));
-};
-
-
-Loader.prototype._loadNames = function(file, referrer) {
   const fetcher = this.context.controllers.fetcher;
   const builder = this.context.controllers.builder;
   return fetcher.fetch(file, referrer).then(buildModules(builder));
