@@ -147,7 +147,7 @@ Bitloader.prototype.merge = function(options) {
 /**
  * Load modules from storage and processes them with the fetch stage pipelines.
  *
- * @param {string|string[]} names - Names of modules to fetch.
+ * @param {string|string[]} file - modules to fetch.
  *
  * @param {{path: string, name: string}} referrer - Module requesting the module. Usually
  *  needed for processing relative paths.
@@ -163,7 +163,7 @@ Bitloader.prototype.fetch = function(file, referrer) {
  * Load modules from storage and processes them with the fetch stage pipelines. Just
  * like @see {@link fetch}. Except that fetchShallow will not process any dependencies.
  *
- * @param {string|string[]} names - Names of modules to fetch.
+ * @param {string|string[]|{contents: string, path: string}} file - modules to fetch.
  *
  * @param {{path: string, name: string}} referrer - Module requesting the module. Usually
  *  needed for processing relative paths.
@@ -179,7 +179,7 @@ Bitloader.prototype.fetchShallow = function(file, referrer) {
  * Loads modules from storage. Unlike @see {@link fetch}, modules are only loaded from storage
  * and processed by the resolve pipeline in order to figure out the localtion of the module file.
  *
- * @param {string|string[]} names - Names of modules to fetch.
+ * @param {string|string[]} name - modules to fetch.
  *
  * @param {{path: string, name: string}} referrer - Module requesting the module. Usually
  *  needed for processing relative paths.
@@ -194,7 +194,7 @@ Bitloader.prototype.fetchOnly = function(names, referrer) {
 /**
  * Method for importing modules.
  *
- * @param {string|string[]} names - Names of the modules to import.
+ * @param {string|string[]|{contents: string, path: string}} file - modules to import.
  *
  * @param {{path: string, name: string}} referrer - Module requesting the module. Usually
  *  needed for processing relative paths.
@@ -210,7 +210,7 @@ Bitloader.prototype.import = function(file, referrer) {
  * Method for importing modules. Unlike @see {@link import}, this method returns the module
  * instance instead of the module's exports.
  *
- * @param {string|string[]} names - Names of the modules to import.
+ * @param {string|string[]|{contents: string, path: string}} file - modules to load.
  *
  * @param {{path: string, name: string}} referrer - Module requesting the module. Usually
  *  needed for processing relative paths.
