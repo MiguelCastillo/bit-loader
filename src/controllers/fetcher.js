@@ -21,7 +21,8 @@ inherit.base(Fetcher).extends(Controller);
 Fetcher.prototype.fetch = function(data, referrer, deep) {
   const file = new File(data);
   const services = [fetchService, transformService, dependencyService, precompileService];
-  const fetchFile = file.contents ? { id: "@anonymous-" + id++, source: file.contents, path: file.path } : file.path;
+  const filePath = file.contents && types.isArray(file.path) ? file.path[0] : file.path;
+  const fetchFile = file.contents ? { id: "@anonymous-" + id++, source: file.contents, path: filePath } : filePath;
 
   if (fetchFile) {
     return this._loadModules(fetchFile, referrer, deep, services);
