@@ -26,7 +26,7 @@ function configureFile(file) {
     const path = file.path || file.src;
 
     if (types.isString(contents) || types.isBuffer(contents)) {
-      return { contents: contents.toString(), path: types.isArray(path) ? path[0] : path };
+      return { contents: contents.toString(), path: path };
     }
     else if (path) {
       return { path: path };

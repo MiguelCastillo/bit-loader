@@ -143,13 +143,45 @@ describe("Fetch Test Suite", function() {
     });
 
 
-    describe("When fetching a module called `like`", function() {
+    describe("When fetching a single module", function() {
       var result;
 
       beforeEach(function() {
         return loader.controllers.fetcher.fetch("like").then(function(r) {
           result = r;
         });
+      });
+
+      it("then then result is an object", function() {
+        expect(result).to.be.a("object");
+      });
+    });
+
+    describe("When fetching an array of modules", function() {
+      var result;
+
+      beforeEach(function() {
+        return loader.controllers.fetcher.fetch(["like"]).then(function(r) {
+          result = r;
+        });
+      });
+
+      it("then then result is an array", function() {
+        expect(result).to.be.a("array");
+      });
+    });
+
+    describe("When fetching a single module called `like`", function() {
+      var result;
+
+      beforeEach(function() {
+        return loader.controllers.fetcher.fetch("like").then(function(r) {
+          result = r;
+        });
+      });
+
+      it("then then result is an object", function() {
+        expect(result).to.be.a("object");
       });
 
       it("then `resolve` is called with `like` name data", function() {
