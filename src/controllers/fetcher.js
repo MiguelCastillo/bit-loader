@@ -21,14 +21,14 @@ inherit.base(Fetcher).extends(Controller);
 Fetcher.prototype.fetch = function(data, referrer, deep) {
   const file = new File(data);
   const services = [fetchService, transformService, dependencyService, precompileService];
-  const filePath = file.contents && types.isArray(file.path) ? file.path[0] : file.path;
-  const fetchFile = file.contents ? { id: "@anonymous-" + id++, source: file.contents, path: filePath } : filePath;
+  const filePath = file.content && types.isArray(file.path) ? file.path[0] : file.path;
+  const fetchFile = file.content ? { id: "@anonymous-" + id++, source: file.content, path: filePath } : filePath;
 
   if (fetchFile) {
     return this._loadModules(fetchFile, referrer, deep, services);
   }
   else {
-    throw new Error("Must provide file path(s) and or contents for the fetcher to load");
+    throw new Error("Must provide file path(s) and or content for the fetcher to load");
   }
 };
 
