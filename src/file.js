@@ -22,11 +22,11 @@ function configureFile(file) {
     return { path: file };
   }
   else {
-    const contents = file.contents || file.source;
+    const content = file.content || file.source;
     const path = file.path || file.src;
 
-    if (types.isString(contents) || types.isBuffer(contents)) {
-      return { contents: contents.toString(), path: path };
+    if (types.isString(content) || types.isBuffer(content)) {
+      return { content: content.toString(), path: path };
     }
     else if (path) {
       return { path: path };
