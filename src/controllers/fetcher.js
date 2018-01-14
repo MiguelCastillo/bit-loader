@@ -20,7 +20,7 @@ inherit.base(Fetcher).extends(Controller);
 
 Fetcher.prototype.fetch = function(data, referrer, deep) {
   const file = new File(data);
-  const services = [fetchService, transformService, dependencyService, precompileService];
+  const services = [fetchService, transformService, dependencyService];
   const filePath = file.content && types.isArray(file.path) ? file.path[0] : file.path;
   const fetchFile = file.content ? { id: "@anonymous-" + id++, source: file.content, path: filePath } : filePath;
 
@@ -152,12 +152,7 @@ function transformService(context) {
 
 
 function dependencyService(context) {
-  return helpers.serviceRunner(context, Module.State.TRANSFORM, Module.State.DEPENDENCY, context.services.dependency);
-}
-
-
-function precompileService(context) {
-  return helpers.serviceRunner(context, Module.State.DEPENDENCY, Module.State.LOADED, context.services.precompile);
+  return helpers.serviceRunner(context, Module.State.TRANSFORM, Module.State.LOADED, context.services.dependency);
 }
 
 

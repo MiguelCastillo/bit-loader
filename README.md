@@ -12,7 +12,7 @@
 - [Install npm dependencies, build, and test](#install-npm-dependencies-build-and-test)
 - [Architecture Overview](#architecture-overview)
   - [The first stage - the module loading stage](#the-first-stage---the-module-loading-stage)
-    - [5 pipelines](#5-pipelines)
+    - [4 pipelines](#4-pipelines)
   - [The second stage - the module building stage](#the-second-stage---the-module-building-stage)
 - [Plugins](#plugins)
 - [Default providers](#default-providers)
@@ -60,24 +60,23 @@ This stage is responsible for loading files from storage and processing them in 
 
 This stage is composed of several pluggable pipelines that cascade *information* from one pipeline to the next. This *information* is encapsulated in an object we refer to as *module meta*. More information on the module meta objects can be found [here](#module-meta). The flow that module meta objects go through is described below:
 
-First, we need to convert module names to file paths in order to load modules from storage. This conversion is called *module name resolution*, which is done in the `resolve` pipeline. The `path` generated in the `resolve` pipeline is then used by the `fetch` pipeline to load module files from storage. These files are subsequently processed by the `transform` pipeline, which is generally where all transpilation/transformation is done. The result of the `transform` pipeline is pushed through the `dependency` pipeline, which pulls out dependencies and recursively feeds them through the first stage (module loading stage) until no more modules are left to load into the module graph. And finally, a helper pipeline called `precompile` that allows you to preemptively set the module `exports`, which effectively prevents modules from being processed in the build stage.
+First, we need to convert module names to file paths in order to load modules from storage. This conversion is called *module name resolution*, which is done in the `resolve` pipeline. The `path` generated in the `resolve` pipeline is then used by the `fetch` pipeline to load module files from storage. These files are subsequently processed by the `transform` pipeline, which is generally where all transpilation/transformation is done. The result of the `transform` pipeline is pushed through the `dependency` pipeline, which pulls out dependencies and recursively feeds them through the first stage (module loading stage) until no more modules are left to load into the module graph.
 
 > This stage is entirely asynchronous, and the output is a module graph.
 
 
-#### 5 pipelines
+#### 4 pipelines
 
-The module loading stage has 5 pipelines, which are described below.
+The module loading stage has 4 pipelines, which are described below.
 
 - **`resolve`** - responsible for generating file paths to read module files from storage.
 - **`fetch`** - responsible for loading files from storage.
 - **`transform`** - responsible for processing and transforming loaded files.  E.g. ES2015 to ES5 via babeljs. Or CoffeeScript to JavaScript.
 - **`dependency`** - responsible for parsing out dependencies from the loaded files and recursively feeding them to the module loading stage.
-- **`precompile`** - provides you with a hook for preemptively building modules in the fetch stage, which effectively prevents module processing in the build stage.
 
-These five pipelines are pluggable, which means that you can register handler functions (plugins) to process module data in each one of them. These pipelines are executed sequentially in the order listed above with each pipeline cascading data from one to the next. Furthermore, all these pipelines use Promises to orchestrate any asynchronous processing done by each configured handler.
+These four pipelines are pluggable, which means that you can register handler functions (plugins) to process module data in each one of them. These pipelines are executed sequentially in the order listed above with each pipeline cascading data from one to the next. Furthermore, all these pipelines use Promises to orchestrate any asynchronous processing done by each configured handler.
 
-Each one of these pipelines (with the exception of precompile) has a corresponding pre and post companion. That means that `resolve` really also provides you with `preresolve` and `postresolve`. The purpose for the pre and post handlers is to provide hooks to configure modules data to be used by the actual pipeline.
+Each one of these pipelines has a corresponding pre and post companion. That means that `resolve` really also provides you with `preresolve` and `postresolve`. The purpose for the pre and post handlers is to provide hooks to configure modules data to be used by the actual pipeline.
 
 More details on how to hook into these pipelines can be found in the [plugins](#plugins) section.
 
@@ -264,9 +263,9 @@ function compileModule(meta) {
 // Instantiate bitloader with default providers.
 //
 var bitloader = new Bitloader({
-  resolve    : resolvePath,
-  fetch      : loadFile,
-  precompile : compileModule
+  resolve: resolvePath,
+  fetch: loadFile,
+  postdependency: compileModule
 });
 ```
 
@@ -298,8 +297,6 @@ The basic shape looks like this, but plugin handlers are free to add more data t
   * dependency (moduleMeta)
     * parse out dependencies from moduleMeta.source and set moduleMeta.deps
     * recursively feed each item in moduleMeta.deps through the first stage
-  * precompile (moduleMeta)
-    * optionally builds and sets moduleMeta.exports, which prevents the build stage from processing the particular module
 
 * second stage (build stage) *sync*
   * compile - evalutes moduleMeta.source
@@ -385,7 +382,7 @@ var bitbundler = new Bitbundler({
 
 > You can alternatively use the short form `ignore: ["react", "jquery"]` when configuring ignore rules for bit-loader instances.
 
-By default, ignore rules in bit-loader instances will prevent the `transform` and `dependency` pipelines from processing modules. You can further customize which pipelines ignore which modules by specifying a `services` array with the names of the pipelines that ought to skip module processing. The valid pipelines are `resolve`, `fetch`, `transform`, `dependency`, and `precompile`.
+By default, ignore rules in bit-loader instances will prevent the `transform` and `dependency` pipelines from processing modules. You can further customize which pipelines ignore which modules by specifying a `services` array with the names of the pipelines that ought to skip module processing. The valid pipelines are `resolve`, `fetch`, `transform`, and `dependency`.
 
 The following example illustrates how to configure a plugin so that it ignores all modules in `src/views`
 

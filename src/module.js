@@ -21,11 +21,10 @@ var Type = {
  * stage. The different states are REGISTERED, LOADED, READY.
  *
  * <pre>
- * REGISTERED has four stages before a module can be LOADED.
+ * REGISTERED has three stages before a module can be LOADED.
  *  1. RESOLVE.
  *  2. FETCH.
  *  3. TRANSFORM.
- *  4. DEPENDENCY.
  *
  * LOADED has two stages before a module can be READY.
  *  1. COMPILE.
@@ -61,12 +60,6 @@ var State = {
    * @description When the module is going through the transform pipeline
    */
   TRANSFORM: "transform",
-
-  /**
-   * @type { string }
-   * @description When the moule is getting all the dependencies resolved
-   */
-  DEPENDENCY: "dependency",
 
   /**
    * @type { string }
