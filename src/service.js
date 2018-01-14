@@ -67,8 +67,8 @@ Service.prototype.runAsync = function(moduleMeta) {
   return Promise.resolve(moduleMeta)
     .then(runPipelineAsync(this.pre))
     .then(runPipelineAsync(this))
-    .then(runPipelineAsync(this.post))
     .then(runProviderAsync(this))
+    .then(runPipelineAsync(this.post))
     .then(logIt(this));
 };
 
@@ -81,8 +81,8 @@ Service.prototype.runSync = function(moduleMeta) {
   return [
     runPipelineSync(this.pre),
     runPipelineSync(this),
-    runPipelineSync(this.post),
     runProviderSync(this),
+    runPipelineSync(this.post),
     logIt(this)
   ].reduce(function(data, handler) {
     return handler(data);
