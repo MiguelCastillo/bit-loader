@@ -42,7 +42,7 @@ describe("Bitloader Test Suite", function() {
   });
 
   describe("When creating a new instance of Bitloader with a plugin with handlers for `fetch`, `transform`, `dependency`, and `compile`", function() {
-    var defaultResolveStub, defaultFetchStub, defaultCompileStub, resolveStub, fetchStub, transformStub, dependencyStub, precompileStub, compileStub;
+    var defaultResolveStub, defaultFetchStub, defaultCompileStub, resolveStub, fetchStub, transformStub, dependencyStub, postdependecyStub, precompileStub, compileStub;
 
     beforeEach(function() {
       defaultResolveStub = sinon.stub();
@@ -52,7 +52,8 @@ describe("Bitloader Test Suite", function() {
       fetchStub          = sinon.spy(function() { return { source: "var t = 'some source'; module.exports = t;" }; });
       transformStub      = sinon.spy(function() { return { source: "var t = 'transformed source'; module.exports = t;" }; });
       dependencyStub     = sinon.spy(function() { return { deps: [] }; });
-      precompileStub     = sinon.spy(function() { return { source: "module.exports = 'final vvvvalue';" }; });
+      postdependecyStub  = sinon.spy(function() { return { source: "module.exports = 'final vvvvalue';" }; });
+      precompileStub     = sinon.spy(function() { return { source: "should never be called" }; });
       compileStub        = sinon.spy(function() { return { exports: "compiled source" }; });
 
       bitloader = new Bitloader({
@@ -61,12 +62,13 @@ describe("Bitloader Test Suite", function() {
           compile : defaultCompileStub
         })
         .plugin({
-          resolve    : resolveStub,
-          fetch      : fetchStub,
-          transform  : transformStub,
-          dependency : dependencyStub,
-          precompile : precompileStub,
-          compile    : compileStub
+          resolve: resolveStub,
+          fetch: fetchStub,
+          transform: transformStub,
+          dependency: dependencyStub,
+          postdependency: postdependecyStub,
+          precompile: precompileStub,
+          compile: compileStub
         });
     });
 
@@ -115,12 +117,16 @@ describe("Bitloader Test Suite", function() {
         sinon.assert.calledOnce(dependencyStub);
       });
 
-      it("then `precompile` plugin is called once", function() {
-        sinon.assert.calledOnce(precompileStub);
+      it("then `postdependency` plugin is called once", function() {
+        sinon.assert.calledOnce(postdependecyStub);
       });
 
-      it("then `precompile` plugin is called once", function() {
-        sinon.assert.calledWith(precompileStub, sinon.match({deps: []}));
+      it("then `postdependency` plugin is called once", function() {
+        sinon.assert.calledWith(postdependecyStub, sinon.match({deps: []}));
+      });
+
+      it("then `precompile` plugin is NOT called", function() {
+        sinon.assert.notCalled(precompileStub);
       });
 
       it("then `compile` plugin is NOT called", function() {

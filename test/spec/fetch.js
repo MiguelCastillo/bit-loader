@@ -129,9 +129,6 @@ describe("Fetch Test Suite", function() {
         .returns(dependencyCommonData);
 
       precompileStub = sinon.stub();
-      precompileStub
-        .withArgs(sinon.match(transformLikeData))
-        .returns(precompileLikeData);
 
       loader = new Bitloader({
         resolve: resolveStub,
@@ -232,16 +229,8 @@ describe("Fetch Test Suite", function() {
         sinon.assert.calledWith(dependencyStub, sinon.match(transformCommonData));
       });
 
-      it("then `precompile` is called with `like` transform data", function() {
-        sinon.assert.calledWith(precompileStub, sinon.match(transformLikeData));
-      });
-
-      it("then `precompile` is called with `dep1` transform data", function() {
-        sinon.assert.calledWith(precompileStub, sinon.match(transformDep1Data));
-      });
-
-      it("then `precompile` is called with `common-dep` transform data", function() {
-        sinon.assert.calledWith(precompileStub, sinon.match(transformCommonData));
+      it("then `precompile` is never called", function() {
+        sinon.assert.notCalled(precompileStub);
       });
 
       it("then the module contains the expected referrer", function() {
@@ -268,7 +257,7 @@ describe("Fetch Test Suite", function() {
           name: "like",
           path: "this is the real path to like/like-name",
           state: "loaded",
-          source: "precompiled source",
+          source: "transformed source",
           type: "UNKNOWN"
         });
       });
@@ -311,7 +300,7 @@ describe("Fetch Test Suite", function() {
         });
 
         it("then the source is the precompiled source", function() {
-          expect(loadedModule.source).to.equal(precompileLikeData.source);
+          expect(loadedModule.source).to.equal(transformLikeData.source);
         });
       });
 
