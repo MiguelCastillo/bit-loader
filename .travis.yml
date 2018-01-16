@@ -4,7 +4,7 @@ node_js:
 deploy:
   provider: releases
   api_key:
-    secure: Tczk/9mE8bGk9X3Z8VkgWeFEHhCaE/YwwAhLH8Ac7Y6PUo/a2rBnzkBYP2q+z6xLyTnoUYjmOl6KrEsvGfCQrFD0TCDqu+h9BN3rSDoV32vpDnlhBapTXVeaIjcObEKZjZ3HKagMsHrn+z5I8LQR4/VRbDE/uUWlOaex9ZWSm3o=
+    secure: TiHd0EHdoiTJnHKO1lo5U//qzZ5VgynAcOqr8zFEvHzu7uNLWotTwoXMxlDDRVFg68udWRXLXQBSXp7RL6grNq29L7/XDBFVkFY99prEYUB18aRcXyDgbZbGfv1ZeQ7nnCdoz9m5AhwCcYHjIPblnvc5V2nyVyaGRhOVfvQrhVo=
   file:
     - "dist/index.js"
     - "dist/index.js.map"
