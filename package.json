@@ -17,9 +17,9 @@
   ],
   "scripts": {
     "prepublish": "grunt build",
-    "test": "grunt test",
+    "grunt:test": "grunt test",
     "build": "grunt build",
-    "mocha": "mocha --require babel-register test/SpecRunner.js"
+    "test": "mocha --require babel-register test/SpecRunner.js"
   },
   "repository": {
     "type": "git",
