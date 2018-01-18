@@ -57,6 +57,38 @@ describe("Fetch Test Suite", function() {
     });
   });
 
+  describe("When loading a module with a name and path", function() {
+    var loader, fetchStub, resolveStub, transformStub, dependencyStub, precompileStub;
+
+    beforeEach(function() {
+      fetchStub = sinon.stub();
+      resolveStub = sinon.stub();
+      transformStub = sinon.stub();
+      dependencyStub = sinon.stub();
+
+      dependencyStub.returns({ deps: ["test that path"]});
+
+      loader = new Bitloader({
+        resolve: resolveStub,
+        fetch: fetchStub,
+        transform: transformStub,
+        dependency: dependencyStub
+      });
+    });
+
+    describe("and the module has name `test` and path `23`", function() {
+      var result;
+
+      beforeEach(function() {
+        return loader.fetch({ name: 'test', path: "23" }).then(r => result = r);
+      });
+
+      it("then the resolve method is never called", function() {
+        sinon.assert.notCalled(resolveStub);
+      });
+    });
+  });
+
   describe("When loading modules by name", function() {
     var loader, fetchStub, resolveStub, transformStub, dependencyStub, precompileStub;
     var nameLikeData, resolveLikeData, fetchLikeData, transformLikeData, dependencyLikeData, precompileLikeData;
