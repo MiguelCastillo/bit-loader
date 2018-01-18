@@ -13,6 +13,16 @@ function File(options) {
   );
 }
 
+/**
+ * file has a couple of relevant fields.
+ * 
+ * - content, which is a string or buffer that is the actual file content. Sometime
+ *   this field comes along with a path in order to properly resolve the paths for
+ *   any dependencies relative to the given path.
+ * - path, which is a fully qualified path for the file. This does not get resolved
+ *   by bit-loader.
+ * - src, which is an array of files to be loaded. These gets resolved by bit-loader.
+ */
 function configureFile(file) {
   if (!file) {
     throw new TypeError("Must provide a valid input. String, Array<String>, { src: Array<String> }, { content: String | Buffer }");
