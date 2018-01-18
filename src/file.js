@@ -19,18 +19,16 @@ function configureFile(file) {
   }
 
   if (types.isString(file) || types.isArray(file)) {
-    return { path: file };
+    return { src: file };
   }
   else {
     const content = file.content || file.source;
-    const path = file.path || file.src;
 
     if (types.isString(content) || types.isBuffer(content)) {
-      return { content: content.toString(), path: path };
+      return { content: content.toString(), path: file.path };
     }
-    else if (path) {
-      return { path: path };
-    }
+
+    return file;
   }
 };
 
