@@ -52,7 +52,7 @@
     "load-grunt-tasks": "^3.5.2",
     "mocha": "~5.0.0",
     "pakit": "^1.0.1",
-    "sinon": "~4.1.6"
+    "sinon": "~4.2.0"
   },
   "dependencies": {
     "belty": "^5.2.1",
