@@ -26,9 +26,10 @@ describe("Fetch Test Suite", function() {
       });
     });
 
-    describe("and the module source is a hello world", function() {
+    describe("and fetching one module source of 'hello world'", function() {
       var result = null;
       beforeEach(function() {
+        debugger;
         return loader.fetch({ source: "console.log('hello world')" }).then(mod => result = mod);
       });
 
@@ -38,6 +39,29 @@ describe("Fetch Test Suite", function() {
 
       it("then the module has one dependencies", function() {
         expect(result.deps).to.have.lengthOf(1);
+      });
+    });
+
+    describe("and fetching two modules. One with source of 'hello world' and another with source 'second time'", function() {
+      var result = null;
+      beforeEach(function() {
+        return loader.fetch([{ source: "console.log('hello world')" }, { source: "console.log('second time')" }]).then(mod => result = mod);
+      });
+
+      it("then the first module has the expected data", function() {
+        expect(result[0].source).to.equal("console.log('hello world')");
+      });
+
+      it("then the first module has one dependencies", function() {
+        expect(result[0].deps).to.have.lengthOf(1);
+      });
+
+      it("then the second module source has the expected data", function() {
+        expect(result[1].source).to.equal("console.log('second time')");
+      });
+
+      it("then the second module has one dependencies", function() {
+        expect(result[1].deps).to.have.lengthOf(1);
       });
     });
 
@@ -77,10 +101,8 @@ describe("Fetch Test Suite", function() {
     });
 
     describe("and the module has name `test` and path `23`", function() {
-      var result;
-
       beforeEach(function() {
-        return loader.fetch({ name: 'test', path: "23" }).then(r => result = r);
+        return loader.fetch([{ name: 'test', path: "23" }]);
       });
 
       it("then the resolve method is never called", function() {
