@@ -2,7 +2,6 @@ const logger = require("loggero").create("controllers/importer");
 const types = require("dis-isa");
 const inherit = require("../inherit");
 const Controller = require("../controller");
-const File = require("../file");
 
 
 /**
@@ -24,14 +23,11 @@ inherit.base(Import).extends(Controller);
  *
  * @returns {Promise}
  */
-Import.prototype.import = function(data, referrer) {
-  const file = new File(data);
+Import.prototype.import = function(file, referrer) {
   const registry = this.context.controllers.registry;
   const loader = this.context.controllers.loader;
 
-  if (file.name || file.id || file.path) {
-    logger.info(file.name || file.id || file.path, referrer);
-  }
+  logger.info(types.isString(file) ? file : (file.name || file.id || file.path), referrer);
 
   return loader.load(file, referrer).then(getModuleExports(registry), moduleError);
 };

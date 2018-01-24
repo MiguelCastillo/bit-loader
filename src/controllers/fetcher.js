@@ -5,7 +5,6 @@ const helpers = require("./helpers");
 const Module = require("../module");
 const Controller = require("../controller");
 const utils = require("belty");
-const File = require("../file");
 
 var id = 0;
 
@@ -18,27 +17,25 @@ function Fetcher(context) {
 inherit.base(Fetcher).extends(Controller);
 
 
-Fetcher.prototype.fetch = function(data, referrer, deep) {
-  const file = new File(data);
-  const services = [fetchService, transformService, dependencyService];
-
-  const fetchFile = (
-    file.content ? { id: (file.id || "@anonymous-" + id++), source: file.content, path: file.path } :
-    file.path ? file :
-    file.src
-  );
-
-  if (fetchFile) {
-    return this._loadModules(fetchFile, referrer, deep, services);
-  }
-  else {
-    throw new Error("Must provide file path(s) and or content for the fetcher to load");
-  }
+Fetcher.prototype.fetch = function(files, referrer, deep) {
+  return this._loadModules(files, referrer, deep, configureServices(this.context, [fetchService, transformService, dependencyService]));
 };
 
 
-Fetcher.prototype.fetchOnly = function(names, referrer, deep) {
-  return this._loadModules(names, referrer, deep, [fetchService]);
+Fetcher.prototype.fetchOnly = function(files, referrer, deep) {
+  return this._loadModules(files, referrer, deep, configureServices(this.context, [fetchService]));
+};
+
+
+Fetcher.prototype._loadModules = function(files, referrer, deep, services) {
+  const deferred = (
+    deep === false ?
+    this._buildNodes(configureFiles(files), referrer, services) :
+    this._buildTree(configureFiles(files), referrer, services)
+  );
+
+  const getModule = (mod) => this.context.controllers.registry.getModule(mod.id);
+  return deferred.then((modules) => Array.isArray(files) ? modules.map(getModule) : getModule(modules[0]));
 };
 
 
@@ -72,13 +69,6 @@ Fetcher.prototype._buildNodes = function(modules, referrer, services) {
       .resolveModules(modules, referrer)
       .map(deferred => deferred.then(mod => getIfReady(this, mod) || getInProgress(this, mod) || runPipeline(this, mod, services)))
   );
-};
-
-
-Fetcher.prototype._loadModules = function(names, referrer, deep, services) {
-  services = services.map(service => service(this.context));
-  const deferred = deep === false ? this._buildNodes([].concat(names), referrer, services) : this._buildTree([].concat(names), referrer, services);
-  return deferred.then((result) => buildResult(this, names, result));
 };
 
 
@@ -145,6 +135,27 @@ function configureModuleId(mod) {
 }
 
 
+function configureServices(context, services) {
+  return services.map(service => service(context));
+}
+
+
+function configureFiles(files) {
+  return [].concat(files).map(file => {
+    const source = types.isString(file) ? false : (file.source || file.content);
+
+    return (
+      source ?
+      utils.assign({
+        id: (file.id || file.path || "@anonymous-" + id++),
+        source: source.toString()
+      }, utils.omit(file, ["source", "content"])) :
+      file
+    );
+  });
+}
+
+
 function fetchService(context) {
   return helpers.serviceRunner(context, Module.State.RESOLVE, Module.State.FETCH, context.services.fetch);
 }
@@ -194,12 +205,6 @@ function runPipeline(fetcher, mod, services) {
   const inProgress = services.reduce((deferred, service) => deferred.then(service), Promise.resolve(mod));
   inProgress.then(deleteInProgress, deleteInProgress);
   return (fetcher.inProgress[mod.id] = inProgress);
-}
-
-
-function buildResult(fetcher, items, modules) {
-  const getModule = (mod) => fetcher.context.controllers.registry.getModule(mod.id);
-  return Array.isArray(items) ? modules.map(getModule) : getModule(modules[0]);
 }
 
 

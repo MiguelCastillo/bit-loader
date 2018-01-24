@@ -2,7 +2,6 @@
 const types  = require("dis-isa");
 const inherit = require("../inherit");
 const Controller = require("../controller");
-const File = require("../file");
 
 
 /**
@@ -34,8 +33,7 @@ inherit.base(Loader).extends(Controller);
  *
  * @returns {Promise} - Promise that will resolve to a Module instance
  */
-Loader.prototype.load = function(data, referrer) {
-  const file = new File(data);
+Loader.prototype.load = function(file, referrer) {
   const fetcher = this.context.controllers.fetcher;
   const builder = this.context.controllers.builder;
   return fetcher.fetch(file, referrer).then(buildModules(builder));
