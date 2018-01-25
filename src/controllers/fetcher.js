@@ -141,7 +141,7 @@ function configureServices(context, services) {
 
 
 function configureFiles(files) {
-  return [].concat(files).map(file => {
+  return [].concat(files && files.src ? files.src : files).map(file => {
     const source = types.isString(file) ? false : (file.source || file.content);
 
     return (
