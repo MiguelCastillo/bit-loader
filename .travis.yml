@@ -1,6 +1,9 @@
 language: node_js
 node_js:
 - '5'
+script:
+  - npm run build
+  - npm test
 deploy:
   provider: releases
   api_key:
