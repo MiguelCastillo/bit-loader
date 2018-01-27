@@ -1,21 +1,25 @@
-import chance from "chance";
+import chanceFactory from "chance";
 import { expect } from "chai";
 import sinon from "sinon";
 import Bitloader from "../../src/bit-loader";
 import Module from "../../src/module";
 
+const chance = chanceFactory();
+
 describe("Fetch Test Suite", function() {
   describe("When loading modules from source", function() {
-    var loader, fetchStub, resolveStub, transformStub, dependencyStub, precompileStub;
+    var loader, fetchSrouce, fetchStub, resolveStub, transformStub, dependencyStub, precompileStub;
 
     beforeEach(function() {
+      fetchSrouce = "this should not be the content of the module";
+
       fetchStub = sinon.stub();
       resolveStub = sinon.stub();
       transformStub = sinon.stub();
       dependencyStub = sinon.stub();
       precompileStub = sinon.stub();
 
-      dependencyStub.returns({ deps: ["test that path"]});
+      fetchStub.returns({ source: fetchSrouce });
 
       loader = new Bitloader({
         resolve: resolveStub,
@@ -26,57 +30,225 @@ describe("Fetch Test Suite", function() {
       });
     });
 
-    describe("and fetching one module source of 'hello world'", function() {
-      var result = null;
-      beforeEach(function() {
-        debugger;
-        return loader.fetch({ source: "console.log('hello world')" }).then(mod => result = mod);
-      });
+    describe("and bit-loader has no plugins", function() {
+      describe("and fetching one module source of 'hello world'", function() {
+        var result = null, inputSource, transformSource;
 
-      it("then the module source has the expected data", function() {
-        expect(result.source).to.equal("console.log('hello world')");
+        beforeEach(function() {
+          transformSource = chance.paragraph();
+          inputSource = "console.log('hello world')";
+          transformStub.withArgs(sinon.match( { source: inputSource } )).returns({ source: transformSource });
+        });
+  
+        describe("with no dependencies", function() {
+          beforeEach(function() {
+            return loader.fetch({ source: inputSource }).then(mod => result = mod);
+          });
+  
+          it("then resolve is not called", function() {
+            sinon.assert.notCalled(resolveStub);
+          });
+    
+          it("then fetch is not called", function() {
+            sinon.assert.notCalled(fetchStub);
+          });
+    
+          it("then transform is called", function() {
+            sinon.assert.calledOnce(transformStub);
+          });
+    
+          it("then the module source has the expected data", function() {
+            expect(result.source).to.equal(transformSource);
+          });
+    
+          it("then the module has one dependencies", function() {
+            expect(result.deps).to.have.lengthOf(0);
+          });
+        });
+        
+        describe("with one dependencies", function() {
+          beforeEach(function() {
+            dependencyStub.returns({ deps: ["test that path"]});          
+            return loader.fetch({ source: inputSource }).then(mod => result = mod);
+          });
+  
+          it("then resolve is called once", function() {
+            sinon.assert.calledOnce(resolveStub);
+          });
+    
+          it("then fetch is not called", function() {
+            sinon.assert.notCalled(fetchStub);
+          });
+    
+          it("then transform is called", function() {
+            sinon.assert.calledOnce(transformStub);
+          });
+    
+          it("then the module source has the expected data", function() {
+            expect(result.source).to.equal(transformSource);
+          });
+    
+          it("then the module has one dependencies", function() {
+            expect(result.deps).to.have.lengthOf(1);
+          });
+        })
       });
+  
+      describe("and fetching two modules. One with source of 'hello world' and another with source 'second time'", function() {
+        var result = null, inputSource1, inputPath1, inputSource2, transformSource1, transformSource2;
 
-      it("then the module has one dependencies", function() {
-        expect(result.deps).to.have.lengthOf(1);
+        beforeEach(function() {
+          inputSource1 = "console.log('hello world')";
+          inputSource2 = "console.log('second time')";
+          inputPath1 = chance.string();
+          transformSource1 = chance.paragraph();
+          transformSource2 = chance.paragraph();
+          transformStub.withArgs(sinon.match( { source: inputSource1 } )).returns({ source: transformSource1 });
+          transformStub.withArgs(sinon.match( { source: inputSource2 } )).returns({ source: transformSource2 });
+        });
+  
+        describe("and the first module with path and neither has dependencies", function() {
+          beforeEach(function() {
+            return loader.fetch([{ source: inputSource1, path: inputPath1 }, { source: inputSource2 }]).then(mod => result = mod);
+          });
+  
+          it("then resolve is not called", function() {
+            sinon.assert.notCalled(resolveStub);
+          });
+    
+          it("then fetch is not called", function() {
+            sinon.assert.notCalled(fetchStub);
+          });
+    
+          it("then transform is called", function() {
+            sinon.assert.calledTwice(transformStub);
+          });
+    
+          it("then the first module has the expected data", function() {
+            expect(result[0].source).to.equal(transformSource1);
+          });
+    
+          it("then the first module has no dependencies", function() {
+            expect(result[0].deps).to.have.lengthOf(0);
+          });
+    
+          it("then the second module source has the expected data", function() {
+            expect(result[1].source).to.equal(transformSource2);
+          });
+    
+          it("then the second module has no dependencies", function() {
+            expect(result[1].deps).to.have.lengthOf(0);
+          });
+        });
+  
+        describe("and the first module with a path and one dependency for the second module", function() {
+          beforeEach(function() {
+            dependencyStub.withArgs(sinon.match({ source: transformSource2 })).returns({ deps: ["test that path"]});
+            return loader.fetch([{ source: inputSource1, path: inputPath1 }, { source: inputSource2 }]).then(mod => result = mod);
+          });
+  
+          it("then resolve is called one", function() {
+            sinon.assert.calledOnce(resolveStub);
+          });
+    
+          it("then fetch is not called", function() {
+            sinon.assert.notCalled(fetchStub);
+          });
+    
+          it("then transform is called", function() {
+            sinon.assert.calledTwice(transformStub);
+          });
+    
+          it("then the first module has the expected data", function() {
+            expect(result[0].source).to.equal(transformSource1);
+          });
+    
+          it("then the first module has NO dependencies", function() {
+            expect(result[0].deps).to.have.lengthOf(0);
+          });
+    
+          it("then the second module source has the expected data", function() {
+            expect(result[1].source).to.equal(transformSource2);
+          });
+  
+          it("then the second module has one dependencies", function() {
+            expect(result[1].deps).to.have.lengthOf(1);
+          });
+        });
       });
     });
 
-    describe("and fetching two modules. One with source of 'hello world' and another with source 'second time'", function() {
-      var result = null;
+    describe("and bit-loader has resolve, fetch, transform, and dependency plugins", function() {
+      var resolvePluginStub, fetchPluginStub, transformPluginStub, dependencyPluginStub;
+
       beforeEach(function() {
-        return loader.fetch([{ source: "console.log('hello world')" }, { source: "console.log('second time')" }]).then(mod => result = mod);
+        resolvePluginStub = sinon.stub();
+        fetchPluginStub = sinon.stub();
+        transformPluginStub = sinon.stub();
+        dependencyPluginStub = sinon.stub();
+
+        loader.plugin({
+          resolve: resolvePluginStub,
+          fetch: fetchPluginStub,
+          transform: transformPluginStub,
+          dependency: dependencyPluginStub
+        });
       });
 
-      it("then the first module has the expected data", function() {
-        expect(result[0].source).to.equal("console.log('hello world')");
-      });
+      describe("and fetching one module source of 'hello world'", function() {
+        var result = null, inputSource, transformSource;
 
-      it("then the first module has one dependencies", function() {
-        expect(result[0].deps).to.have.lengthOf(1);
-      });
+        beforeEach(function() {
+          transformSource = chance.paragraph();
+          inputSource = "console.log('hello world')";
+          transformStub.withArgs(sinon.match( { source: inputSource } )).returns({ source: transformSource });
+        });
+  
+        describe("with no dependencies", function() {
+          beforeEach(function() {
+            return loader.fetch({ source: inputSource }).then(mod => result = mod);
+          });
+  
+          it("then resolve provider is not called", function() {
+            sinon.assert.notCalled(resolveStub);
+          });
+    
+          it("then fetch provider is not called", function() {
+            sinon.assert.notCalled(fetchStub);
+          });
+    
+          it("then transform provider is called", function() {
+            sinon.assert.calledOnce(transformStub);
+          });
 
-      it("then the second module source has the expected data", function() {
-        expect(result[1].source).to.equal("console.log('second time')");
-      });
+          it("then dependency provider is called", function() {
+            sinon.assert.calledOnce(dependencyStub);
+          });
 
-      it("then the second module has one dependencies", function() {
-        expect(result[1].deps).to.have.lengthOf(1);
-      });
-    });
+          it("then resolve plugin is not called", function() {
+            sinon.assert.notCalled(resolvePluginStub);
+          });
+    
+          it("then fetch plugin is not called", function() {
+            sinon.assert.notCalled(fetchPluginStub);
+          });
+    
+          it("then transform plugin is called", function() {
+            sinon.assert.calledOnce(transformStub);
+          });
 
-    describe("and the module source has one depdnency", function() {
-      var result = null;
-      beforeEach(function() {
-        return loader.fetch({ source: "require('path');console.log('hello world')" }).then(mod => result = mod);
-      });
+          it("then dependency plugin is called", function() {
+            sinon.assert.calledOnce(dependencyPluginStub);
+          });
 
-      it("then the module source has the expected data", function() {
-        expect(result.source).to.equal("require('path');console.log('hello world')");
-      });
-
-      it("then the module has one dependencies", function() {
-        expect(result.deps).to.have.lengthOf(1);
+          it("then the module source has the expected data", function() {
+            expect(result.source).to.equal(transformSource);
+          });
+    
+          it("then the module has one dependencies", function() {
+            expect(result.deps).to.have.lengthOf(0);
+          });
+        });
       });
     });
   });
@@ -417,7 +589,7 @@ describe("Fetch Test Suite", function() {
       var excludeName, result;
 
       beforeEach(function() {
-        excludeName = chance().string();
+        excludeName = chance.string();
 
         return loader
           .plugin({
