@@ -1,6 +1,6 @@
 {
   "name": "@bit/loader",
-  "version": "9.2.2",
+  "version": "10.0.0",
   "description": "Framework for building module loaders with very little effort for noobs",
   "main": "dist/index.js",
   "directories": {
