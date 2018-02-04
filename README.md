@@ -325,7 +325,7 @@ Pattern matching rules allow you to define which modules are processed by `bit-l
 The following example sets a `match` rule in a plugin to only process modules that have `src/views` in the `path`.  All other modules are ignored by this plugin.
 
 ``` javascript
-var Bitloader = require("bit-loader");
+var Bitloader = require("@bit/loader");
 var bitloader = new Bitloader();
 
 bitloader.plugin({
@@ -343,7 +343,7 @@ bitloader.plugin({
 Expanding on the previous example, we set a `match` rule for a particular plugin handler so that it only processes modules with names that end in `region`. This basically tells the plugin that it can only process modules in `src/views` and that the particular transform can only process modules with names that end in `region`.
 
 ``` javascript
-var Bitloader = require("bit-loader");
+var Bitloader = require("@bit/loader");
 var bitloader = new Bitloader();
 
 bitloader.plugin({
@@ -387,7 +387,7 @@ By default, ignore rules in bit-loader instances will prevent the `transform` an
 The following example illustrates how to configure a plugin so that it ignores all modules in `src/views`
 
 ``` javascript
-var Bitloader = require("bit-loader");
+var Bitloader = require("@bit/loader");
 var bitloader = new Bitloader();
 
 bitloader.plugin({
@@ -411,7 +411,7 @@ bitloader.plugin({
 > `extensions` rules are case insensitive.
 
 ``` javascript
-var Bitloader = require("bit-loader");
+var Bitloader = require("@bit/loader");
 var bitloader = new Bitloader();
 
 bitloader.plugin({
