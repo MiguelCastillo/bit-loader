@@ -16,10 +16,10 @@
     "loader"
   ],
   "scripts": {
-    "prepublish": "grunt build",
-    "grunt:test": "grunt test",
-    "build": "grunt build",
-    "test": "mocha --require babel-register test/SpecRunner.js"
+    "prepublish": "npm run build",
+    "build": "pakit src/bit-loader.js --out dist/index.js",
+    "test": "npm run lint && mocha --require babel-register test/SpecRunner.js",
+    "lint": "eslint src/**/*.js test/**/*.js"
   },
   "repository": {
     "type": "git",
