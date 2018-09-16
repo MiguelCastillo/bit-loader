@@ -7,7 +7,7 @@
     "test": "tests"
   },
   "engines": {
-    "node": ">=6"
+    "node": ">=8"
   },
   "keywords": [
     "module",
@@ -33,29 +33,29 @@
   "homepage": "https://github.com/MiguelCastillo/bit-loader",
   "devDependencies": {
     "babel-bits": "^1.0.1",
-    "babel-preset-env": "^1.6.1",
+    "babel-preset-env": "^1.7.0",
     "babel-register": "^6.26.0",
     "bit-imports": "^3.1.1",
     "chai": "~4.1.2",
-    "chance": "^1.0.13",
+    "chance": "^1.0.16",
     "config-grunt-tasks": "^1.0.3",
     "connect-livereload": "^0.6.0",
     "eslint-tap": "^2.0.1",
-    "grunt": "~1.0.1",
-    "grunt-cli": "^1.2.0",
+    "grunt": "~1.0.3",
+    "grunt-cli": "^1.3.1",
     "grunt-concurrent": "~2.3.1",
-    "grunt-contrib-connect": "~1.0.2",
-    "grunt-contrib-watch": "^1.0.0",
-    "grunt-mocha": "^1.0.4",
+    "grunt-contrib-connect": "~2.0.0",
+    "grunt-contrib-watch": "^1.1.0",
+    "grunt-mocha": "^1.1.0",
     "grunt-pakit": "^0.2.2",
     "grunt-release": "~0.14.0",
     "load-grunt-tasks": "^4.0.0",
     "mocha": "~5.2.0",
-    "pakit": "^1.0.1",
-    "sinon": "~6.0.0"
+    "pakit": "^1.0.2",
+    "sinon": "~6.3.3"
   },
   "dependencies": {
-    "belty": "^5.2.1",
+    "belty": "^5.2.2",
     "dis-isa": "^1.3.2",
     "loggero": "~2.1.0",
     "roolio": "~0.1.1",
