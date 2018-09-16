@@ -2,7 +2,6 @@ import chanceFactory from "chance";
 import { expect } from "chai";
 import sinon from "sinon";
 import Bitloader from "../../src/bit-loader";
-import Module from "../../src/module";
 
 const chance = chanceFactory();
 
@@ -91,7 +90,7 @@ describe("Fetch Test Suite", function() {
           it("then the module has one dependencies", function() {
             expect(result.deps).to.have.lengthOf(1);
           });
-        })
+        });
       });
   
       describe("and fetching two modules. One with source of 'hello world' and another with source 'second time'", function() {
@@ -254,7 +253,7 @@ describe("Fetch Test Suite", function() {
   });
 
   describe("When loading a module with a name and path", function() {
-    var loader, fetchStub, resolveStub, transformStub, dependencyStub, precompileStub;
+    var loader, fetchStub, resolveStub, transformStub, dependencyStub;
 
     beforeEach(function() {
       fetchStub = sinon.stub();
@@ -274,7 +273,7 @@ describe("Fetch Test Suite", function() {
 
     describe("and the module has name `test` and path `23`", function() {
       beforeEach(function() {
-        return loader.fetch([{ name: 'test', path: "23" }]);
+        return loader.fetch([{ name: "test", path: "23" }]);
       });
 
       it("then the resolve method is never called", function() {
@@ -285,7 +284,7 @@ describe("Fetch Test Suite", function() {
 
   describe("When loading modules by name", function() {
     var loader, fetchStub, resolveStub, transformStub, dependencyStub, precompileStub;
-    var nameLikeData, resolveLikeData, fetchLikeData, transformLikeData, dependencyLikeData, precompileLikeData;
+    var nameLikeData, resolveLikeData, fetchLikeData, transformLikeData, dependencyLikeData;
     var nameDep1Data, resolveDep1Data, fetchDep1Data, transformDep1Data, dependencyDep1Data;
     var nameCommonData, resolveCommonData, fetchCommonData, transformCommonData, dependencyCommonData;
 
@@ -295,8 +294,6 @@ describe("Fetch Test Suite", function() {
       fetchLikeData = {source: "source content"};
       transformLikeData = {source: "transformed source"};
       dependencyLikeData = {deps: ["dep1", "common-dep"]};
-      precompileLikeData = {source: "precompiled source"};
-
 
       nameDep1Data = {name: "dep1"};
       resolveDep1Data = {path: "real path to dep1", id: "dep1-id"};
@@ -464,7 +461,7 @@ describe("Fetch Test Suite", function() {
       });
 
       it("then the module has two dependencies", function() {
-        expect(result.deps).to.have.lengthOf(2)
+        expect(result.deps).to.have.lengthOf(2);
       });
 
       it("then one of the dependencies is dep1", function() {

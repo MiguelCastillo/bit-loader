@@ -3,23 +3,16 @@
     "browser": true,
     "es6": true
   },
-  "parserOptions": {
-    "ecmaVersion": 6,
-    "sourceType": "module"
-  },
-  "ecmaFeatures": {
-    "modules": true
-  },
   "rules": {
     "curly": 2,
-    "no-console": 1,
-    "no-debugger": 1,
+    "no-console": 2,
+    "no-debugger": 2,
     "no-alert": 2,
     "no-use-before-define": 0,
     "no-underscore-dangle": 0,
     "no-multi-spaces": 0,
-    "no-unused-vars": 1,
-    "semi": 1,
+    "no-unused-vars": 2,
+    "semi": 2,
     "global-strict": 0,
     "wrap-iife": [2, "inside"],
     "quotes": [2, "double"],
