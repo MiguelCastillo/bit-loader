@@ -372,7 +372,7 @@ bitloader.plugin({
 The following example tells `bit-loader` to ignore modules with the name `react` and `jquery`.
 
 ``` javascript
-var Bitbundler = require("bit-bundler");
+var Bitbundler = require("@bit/bundler");
 var bitbundler = new Bitbundler({
   ignore: {
     name: ["react", "jquery"]
