@@ -46,7 +46,7 @@
     "grunt-concurrent": "~2.3.1",
     "grunt-contrib-connect": "~2.0.0",
     "grunt-contrib-watch": "^1.1.0",
-    "grunt-mocha": "^1.1.0",
+    "grunt-mocha": "^1.2.0",
     "grunt-pakit": "^0.2.2",
     "grunt-release": "~0.14.0",
     "load-grunt-tasks": "^4.0.0",
